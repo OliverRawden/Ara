@@ -60,23 +60,6 @@ public class AppDesktopIntegration {
                         AppOperationMode.switchToAsync(AppOperationMode.GUI);
                     }
                 });
-
-                // Set dock icon explicitly on macOS
-                // This is necessary in case the app was started through a script as it will have no icon otherwise
-                if (AppLogs.get().isWriteToSysout() && Taskbar.isTaskbarSupported()) {
-                    try {
-                        var iconUrl = Main.class.getResourceAsStream("resources/img/logo/padded/logo_128x128.png");
-                        if (iconUrl != null) {
-                            var awtIcon = ImageIO.read(iconUrl);
-                            Taskbar.getTaskbar().setIconImage(awtIcon);
-                        }
-                    } catch (Exception ex) {
-                        ErrorEventFactory.fromThrowable(ex)
-                                .omitted(true)
-                                .build()
-                                .handle();
-                    }
-                }
             }
         } catch (Throwable ex) {
             ErrorEventFactory.fromThrowable(ex).term().handle();

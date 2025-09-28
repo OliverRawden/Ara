@@ -49,7 +49,7 @@ public class DesktopHelper {
         }
     }
 
-    public static void browsePathLocal(Path file) {
+    public static void browsePath(Path file) {
         if (file == null) {
             return;
         }
@@ -77,7 +77,7 @@ public class DesktopHelper {
 
     public static void browseFileInDirectory(Path file) {
         if (!Desktop.getDesktop().isSupported(Desktop.Action.BROWSE_FILE_DIR)) {
-            browsePathLocal(file.getParent());
+            browsePath(file.getParent());
             return;
         }
 

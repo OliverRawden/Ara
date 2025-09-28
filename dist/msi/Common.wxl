@@ -1,4 +1,5 @@
 ﻿<WixLocalization Culture="en-us" xmlns="http://wixtoolset.org/schemas/v4/wxl">
+    <!-- TODO: Change names for msi installer -->
 	<String Id="Company" Value="XPipe UG (haftungsbeschränkt)" />
 	<String Id="Language" Value="1033" />
 

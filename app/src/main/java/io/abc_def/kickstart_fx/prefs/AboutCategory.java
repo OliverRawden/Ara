@@ -64,7 +64,7 @@ public class AboutCategory extends AppPrefsCategory {
 
             var size = 40;
             var graphic =
-                    PrettyImageHelper.ofFixedSizeSquare("logo/logo.png", size).createRegion();
+                    PrettyImageHelper.ofFixedSizeSquare("icon/logo_40x40.png", size).createRegion();
 
             var hbox = new HBox(graphic, text);
             hbox.setAlignment(Pos.CENTER_LEFT);

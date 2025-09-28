@@ -313,7 +313,7 @@ public class AppTheme {
     public static class Theme implements PrefsChoiceValue {
 
         public static final Theme PRIMER_LIGHT = new Theme(
-                "light",
+                "primerLight",
                 "primer",
                 new PrimerLight(),
                 () -> AppFontSizes.forOs(AppFontSizes.BASE_10_5, AppFontSizes.BASE_10_5, AppFontSizes.BASE_11),
@@ -329,7 +329,7 @@ public class AppTheme {
                 () -> Platform.getPreferences().getAccentColor(),
                 4);
         public static final Theme PRIMER_DARK = new Theme(
-                "dark",
+                "primerDark",
                 "primer",
                 new PrimerDark(),
                 () -> AppFontSizes.forOs(AppFontSizes.BASE_11, AppFontSizes.BASE_10_5, AppFontSizes.BASE_11),

@@ -251,10 +251,6 @@ public abstract class AppInstallation {
 
         @Override
         public Path getLangPath() {
-            if (!AppProperties.get().isImage()) {
-                return getBaseInstallationPath().resolve("lang");
-            }
-
             return getBaseInstallationPath().resolve("Contents", "Resources", "lang");
         }
 
@@ -266,10 +262,6 @@ public abstract class AppInstallation {
 
         @Override
         public Path getLogoPath() {
-            if (!AppProperties.get().isImage()) {
-                return getBaseInstallationPath().resolve("dist").resolve("logo").resolve("logo.icns");
-            }
-
             return getBaseInstallationPath()
                     .resolve("Contents")
                     .resolve("Resources")

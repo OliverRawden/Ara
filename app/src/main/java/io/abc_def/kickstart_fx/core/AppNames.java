@@ -13,7 +13,7 @@ public abstract class AppNames {
     }
 
     public static String propertyName(String name) {
-        return ofCurrent().getGroupName() + "." + ofCurrent().getSnakeName() + "." + name;
+        return ofCurrent().getGroupName() + "." + ofCurrent().getArtifactName() + "." + name;
     }
 
     public static String packageName() {
@@ -21,7 +21,7 @@ public abstract class AppNames {
     }
 
     public static String packageName(String name) {
-        return ofCurrent().getGroupName() + "." + ofCurrent().getSnakeName() + (name != null ? "." + name : "");
+        return ofCurrent().getGroupName() + "." + ofCurrent().getArtifactName() + (name != null ? "." + name : "");
     }
 
     public abstract String getName();
@@ -33,6 +33,8 @@ public abstract class AppNames {
     public abstract String getUppercaseName();
 
     public abstract String getGroupName();
+
+    public abstract String getArtifactName();
 
     public abstract String getExecutableName();
 
@@ -61,6 +63,11 @@ public abstract class AppNames {
         @Override
         public String getGroupName() {
             return "io.abc_def";
+        }
+
+        @Override
+        public String getArtifactName() {
+            return "kickstart_fx";
         }
 
         @Override

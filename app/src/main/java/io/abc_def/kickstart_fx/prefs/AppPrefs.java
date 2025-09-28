@@ -205,14 +205,6 @@ public final class AppPrefs {
         if (System.getProperty("os.name").toLowerCase().contains("server")) {
             performanceMode.setValue(true);
         }
-
-        if (OsType.ofLocal() == OsType.MACOS
-                && AppProperties.get()
-                        .getCanonicalVersion()
-                        .map(appVersion -> appVersion.getMajor() == 18)
-                        .orElse(false)) {
-            useSystemFont.set(false);
-        }
     }
 
     private void loadLocal() {

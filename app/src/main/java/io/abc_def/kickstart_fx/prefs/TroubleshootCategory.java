@@ -78,7 +78,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
                                     "openCurrentLogFile", "openCurrentLogFileDescription", "mdmz-text_snippet", e -> {
                                         AppLogs.get().flush();
                                         ThreadHelper.sleep(100);
-                                        DesktopHelper.browsePathLocal(AppLogs.get()
+                                        DesktopHelper.browsePath(AppLogs.get()
                                                 .getSessionLogsDirectory()
                                                 .resolve(AppNames.ofMain().getKebapName() + ".log"));
                                         e.consume();
@@ -93,7 +93,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
                                         "openInstallationDirectoryDescription",
                                         "mdomz-snippet_folder",
                                         e -> {
-                                            DesktopHelper.browsePathLocal(
+                                            DesktopHelper.browsePath(
                                                     AppInstallation.ofCurrent().getBaseInstallationPath());
                                             e.consume();
                                         })

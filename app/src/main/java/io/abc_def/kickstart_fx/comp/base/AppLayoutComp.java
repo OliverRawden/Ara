@@ -3,6 +3,7 @@ package io.abc_def.kickstart_fx.comp.base;
 import io.abc_def.kickstart_fx.comp.Comp;
 import io.abc_def.kickstart_fx.comp.CompStructure;
 import io.abc_def.kickstart_fx.core.AppLayoutModel;
+import io.abc_def.kickstart_fx.page.PrefsPageComp;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
 import io.abc_def.kickstart_fx.prefs.AppPrefs;
 
@@ -45,7 +46,8 @@ public class AppLayoutComp extends Comp<AppLayoutComp.Structure> {
         var sidebarR = sidebar.createRegion();
         pane.setLeft(sidebarR);
         model.getSelected().addListener((c, o, n) -> {
-            if (o != null && o.equals(model.getEntries().get(5))) {
+            var wasPrefs = o != null && o.comp() instanceof PrefsPageComp;
+            if (wasPrefs) {
                 AppPrefs.get().save();
             }
         });
