@@ -12,7 +12,7 @@ public class AppRestart {
         var loc = AppProperties.get().isDevelopmentEnvironment()
                 ? AppInstallation.ofDefault()
                 : AppInstallation.ofCurrent();
-        var suffix = (arguments.size() > 0 ? " " + String.join(" ", arguments) : "");
+        var suffix = (!arguments.isEmpty() ? " " + String.join(" ", arguments) : "");
         if (OsType.ofLocal() == OsType.LINUX) {
             return new String[] {
                 "sh",

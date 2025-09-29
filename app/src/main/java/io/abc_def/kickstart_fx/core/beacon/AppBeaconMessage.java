@@ -46,7 +46,7 @@ public interface AppBeaconMessage {
     @Builder
     @Jacksonized
     @JsonTypeName("exit")
-    public static class ExitRequest implements AppBeaconMessage {
+    class ExitRequest implements AppBeaconMessage {
 
         @Override
         public void handle() {}
@@ -56,7 +56,7 @@ public interface AppBeaconMessage {
     @Builder
     @Jacksonized
     @JsonTypeName("open")
-    public static class OpenRequest implements AppBeaconMessage {
+    class OpenRequest implements AppBeaconMessage {
 
         List<String> arguments;
 

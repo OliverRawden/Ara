@@ -14,7 +14,7 @@ import java.util.List;
 
 public class AppInstance {
 
-    public static void init() throws IOException {
+    public static void init() {
         var reachable = AppBeacon.get().isExistingBeaconRunning();
         if (!reachable) {
             // Even in case we are unable to reach another beacon server

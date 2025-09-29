@@ -81,7 +81,7 @@ public class TrackEvent {
     @Override
     public String toString() {
         var s = new StringBuilder(message != null ? message : "");
-        if (tags.size() > 0) {
+        if (!tags.isEmpty()) {
             s.append(" {\n");
             for (var e : tags.entrySet()) {
                 var valueString = e.getValue() != null ? e.getValue().toString() : "null";
@@ -97,7 +97,7 @@ public class TrackEvent {
             s.append("}");
         }
 
-        if (elements.size() > 0) {
+        if (!elements.isEmpty()) {
             s.append(" [\n");
             for (var e : elements) {
                 s.append("    ").append(e != null ? e.toString() : "null").append("\n");

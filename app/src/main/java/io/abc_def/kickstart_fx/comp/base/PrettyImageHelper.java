@@ -59,7 +59,7 @@ public class PrettyImageHelper {
                     var closest = available.stream()
                             .filter(integer -> integer >= mult)
                             .findFirst()
-                            .orElse(available.size() > 0 ? available.getLast() : 0);
+                            .orElse(!available.isEmpty() ? available.getLast() : 0);
                     return rasterizedImageIfExists(img, closest).orElse(null);
                 },
                 obs);

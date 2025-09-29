@@ -175,7 +175,7 @@ public class AppLogs {
             public void write(int b) {
                 if (b == '\r' || b == '\n') {
                     String line = baos.toString();
-                    if (line.length() == 0) {
+                    if (line.isEmpty()) {
                         return;
                     }
 
@@ -196,7 +196,7 @@ public class AppLogs {
             public void write(int b) {
                 if (b == '\r' || b == '\n') {
                     String line = baos.toString();
-                    if (line.length() == 0) {
+                    if (line.isEmpty()) {
                         return;
                     }
 

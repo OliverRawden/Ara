@@ -91,18 +91,6 @@ public abstract class Comp<S extends CompStructure<?>> {
         }));
     }
 
-    public void focusOnShow() {
-        onSceneAssign(struc -> {
-            Platform.runLater(() -> {
-                Platform.runLater(() -> {
-                    Platform.runLater(() -> {
-                        struc.get().requestFocus();
-                    });
-                });
-            });
-        });
-    }
-
     public Comp<S> minWidth(double width) {
         return apply(struc -> struc.get().setMinWidth(width));
     }
@@ -125,18 +113,6 @@ public abstract class Comp<S extends CompStructure<?>> {
 
     public Comp<S> vgrow() {
         return apply(struc -> VBox.setVgrow(struc.get(), Priority.ALWAYS));
-    }
-
-    public Comp<S> focusTraversable() {
-        return apply(struc -> struc.get().setFocusTraversable(true));
-    }
-
-    public Comp<S> focusTraversable(boolean b) {
-        return apply(struc -> struc.get().setFocusTraversable(b));
-    }
-
-    public Comp<S> focusTraversableForAccessibility() {
-        return apply(struc -> struc.get().focusTraversableProperty().bind(Platform.accessibilityActiveProperty()));
     }
 
     public Comp<S> visible(ObservableValue<Boolean> o) {
@@ -187,18 +163,6 @@ public abstract class Comp<S extends CompStructure<?>> {
 
     public Comp<S> styleClass(String styleClass) {
         return apply(struc -> struc.get().getStyleClass().add(styleClass));
-    }
-
-    public Comp<S> accessibleText(ObservableValue<String> text) {
-        return apply(struc -> struc.get().accessibleTextProperty().bind(text));
-    }
-
-    public Comp<S> accessibleText(String text) {
-        return apply(struc -> struc.get().setAccessibleText(text));
-    }
-
-    public Comp<S> accessibleTextKey(String key) {
-        return apply(struc -> struc.get().accessibleTextProperty().bind(AppI18n.observable(key)));
     }
 
     public Comp<S> grow(boolean width, boolean height) {

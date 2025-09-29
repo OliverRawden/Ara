@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.core;
 
-import io.abc_def.kickstart_fx.Main;
 import io.abc_def.kickstart_fx.core.mode.AppOperationMode;
 import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 import io.abc_def.kickstart_fx.platform.PlatformState;
@@ -9,7 +8,6 @@ import io.abc_def.kickstart_fx.util.OsType;
 import java.awt.*;
 import java.awt.desktop.*;
 import java.util.List;
-import javax.imageio.ImageIO;
 
 public class AppDesktopIntegration {
 
@@ -45,7 +43,7 @@ public class AppDesktopIntegration {
                     }
 
                     if (AppLayoutModel.get() != null) {
-                        AppLayoutModel.get().selectFileBrowser();
+                        AppLayoutModel.get().selectSettings();
                     }
                 });
 

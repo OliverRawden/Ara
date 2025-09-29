@@ -108,12 +108,8 @@ public class DesktopHelper {
                     struct.nShow = User32.SW_SHOWDEFAULT;
                     Shell32.INSTANCE.ShellExecuteEx(struct);
                 }
-                case OsType.Linux ignored -> {
-                    throw new UnsupportedOperationException();
-                }
-                case OsType.MacOs ignored -> {
-                    throw new UnsupportedOperationException();
-                }
+                case OsType.Linux ignored -> throw new UnsupportedOperationException();
+                case OsType.MacOs ignored -> throw new UnsupportedOperationException();
             }
         } catch (Throwable e) {
             ErrorEventFactory.fromThrowable("Unable to open file " + localFile, e)
@@ -123,15 +119,9 @@ public class DesktopHelper {
 
     public static void openInDefaultApplication(Path localFile) {
         switch (OsType.ofLocal()) {
-            case OsType.Linux linux -> {
-                LocalExec.readStdoutIfPossible("xdg-open", localFile.toString());
-            }
-            case OsType.MacOs macOs -> {
-                LocalExec.readStdoutIfPossible("open", localFile.toString());
-            }
-            case OsType.Windows windows -> {
-                LocalExec.readStdoutIfPossible("cmd", "/c", "start \"\" \"" + localFile.toString() + "\"");
-            }
+            case OsType.Linux linux -> LocalExec.readStdoutIfPossible("xdg-open", localFile.toString());
+            case OsType.MacOs macOs -> LocalExec.readStdoutIfPossible("open", localFile.toString());
+            case OsType.Windows windows -> LocalExec.readStdoutIfPossible("cmd", "/c", "start \"\" \"" + localFile.toString() + "\"");
         }
     }
 }

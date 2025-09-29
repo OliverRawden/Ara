@@ -266,11 +266,7 @@ public class PlatformThread {
             return false;
         }
 
-        if (AppOperationMode.isInShutdown()) {
-            return false;
-        }
-
-        return true;
+        return !AppOperationMode.isInShutdown();
     }
 
     public static void enterNestedEventLoop(Object key) {

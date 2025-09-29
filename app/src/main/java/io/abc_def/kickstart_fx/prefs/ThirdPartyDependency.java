@@ -45,7 +45,7 @@ public record ThirdPartyDependency(String name, String version, String licenseNa
     }
 
     public static List<ThirdPartyDependency> getAll() {
-        if (ALL.size() == 0) {
+        if (ALL.isEmpty()) {
             init();
         }
         return ALL;

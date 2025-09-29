@@ -196,7 +196,7 @@ public class ModalOverlayComp extends SimpleComp {
             content.getChildren().addFirst(Comp.vspacer(0).createRegion());
         }
 
-        if (newValue.getButtons().size() > 0) {
+        if (!newValue.getButtons().isEmpty()) {
             var max = new SimpleDoubleProperty();
             var buttonBar = new HBox();
             buttonBar.getStyleClass().add("button-bar");

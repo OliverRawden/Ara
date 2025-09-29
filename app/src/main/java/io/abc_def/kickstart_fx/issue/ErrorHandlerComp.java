@@ -138,12 +138,12 @@ public class ErrorHandlerComp extends SimpleComp {
             actionBox.getChildren().add(ac);
         }
 
-        var hasCustomActions = event.getCustomActions().size() > 0 || event.getLink() != null;
+        var hasCustomActions = !event.getCustomActions().isEmpty() || event.getLink() != null;
         if (hasCustomActions) {
             actionBox.getChildren().add(createActionComp(ErrorAction.ignore(), busy));
         }
 
-        if (actionBox.getChildren().size() > 0) {
+        if (!actionBox.getChildren().isEmpty()) {
             actionBox.getChildren().addFirst(header);
             content.getChildren().add(new Separator(Orientation.HORIZONTAL));
             actionBox.getChildren().get(1).getStyleClass().addAll(BUTTON_OUTLINED);

@@ -31,7 +31,7 @@ public class AppImages {
     }
 
     public static void init() {
-        if (images.size() > 0) {
+        if (!images.isEmpty()) {
             return;
         }
 
@@ -71,11 +71,7 @@ public class AppImages {
             return false;
         }
 
-        if (images.containsKey(file)) {
-            return true;
-        }
-
-        return false;
+        return images.containsKey(file);
     }
 
     public static Image image(String file) {

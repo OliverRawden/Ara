@@ -26,7 +26,7 @@ public class AppStyle {
     private static String FONT_CONTENTS = null;
 
     public static void init() {
-        if (STYLESHEET_CONTENTS.size() > 0) {
+        if (!STYLESHEET_CONTENTS.isEmpty()) {
             return;
         }
 

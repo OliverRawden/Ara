@@ -2,7 +2,6 @@ package io.abc_def.kickstart_fx.core;
 
 import io.abc_def.kickstart_fx.comp.Comp;
 import io.abc_def.kickstart_fx.page.*;
-import io.abc_def.kickstart_fx.page.PrefsPageComp;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
 import io.abc_def.kickstart_fx.util.GlobalTimer;
@@ -82,51 +81,10 @@ public class AppLayoutModel {
         }
     }
 
-    public void selectBlueprints() {
-        PlatformThread.runLaterIfNeeded(() -> {
-            selected.setValue(entries.getFirst());
-        });
-    }
-
-    public void selectMusicPlayer() {
-        PlatformThread.runLaterIfNeeded(() -> {
-            selected.setValue(entries.get(1));
-        });
-    }
-
-    public void selectFileBrowser() {
-        PlatformThread.runLaterIfNeeded(() -> {
-            selected.setValue(entries.get(2));
-        });
-    }
-
-    public void selectOverview() {
-        PlatformThread.runLaterIfNeeded(() -> {
-            selected.setValue(entries.get(3));
-        });
-    }
-
-    public void selectMarkdown() {
-        PlatformThread.runLaterIfNeeded(() -> {
-            selected.setValue(entries.get(4));
-        });
-    }
-
-    public void selectMonkeyTester() {
-        PlatformThread.runLaterIfNeeded(() -> {
-            selected.setValue(entries.get(5));
-        });
-    }
-
-    public void selectDeveloper() {
-        PlatformThread.runLaterIfNeeded(() -> {
-            selected.setValue(entries.get(6));
-        });
-    }
-
     public void selectSettings() {
         PlatformThread.runLaterIfNeeded(() -> {
-            selected.setValue(entries.get(7));
+            var found = entries.stream().filter(entry -> entry.comp instanceof PrefsPageComp).findFirst();
+            selected.setValue(found.orElseThrow());
         });
     }
 

@@ -16,7 +16,7 @@ public class MonkeyTesterPageComp extends SimpleComp {
     protected Region createSimple() {
         var stack = new StackPane();
         stack.visibleProperty().subscribe(v -> {
-            if (!v || stack.getChildren().size() > 0) {
+            if (!v || !stack.getChildren().isEmpty()) {
                 return;
             }
 

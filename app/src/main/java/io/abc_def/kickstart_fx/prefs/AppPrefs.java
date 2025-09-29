@@ -243,7 +243,7 @@ public final class AppPrefs {
                 .findFirst();
         found.ifPresent(appPrefsCategory -> {
             PlatformThread.runLaterIfNeeded(() -> {
-                AppLayoutModel.get().selectFileBrowser();
+                AppLayoutModel.get().selectSettings();
 
                 Platform.runLater(() -> {
                     // Reset scroll in case the target category is already somewhat in focus

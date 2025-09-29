@@ -158,7 +158,6 @@ public enum PlatformState {
             var ex = new IllegalStateException("Unable to load fonts. Do you have a valid font package installed?", e);
             lastError = ex;
             PlatformState.setCurrent(PlatformState.EXITED);
-            return;
         }
     }
 

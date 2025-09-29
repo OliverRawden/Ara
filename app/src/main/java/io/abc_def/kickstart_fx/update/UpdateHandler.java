@@ -1,7 +1,6 @@
 package io.abc_def.kickstart_fx.update;
 
 import io.abc_def.kickstart_fx.comp.base.ModalButton;
-import io.abc_def.kickstart_fx.core.AppProperties;
 import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 import io.abc_def.kickstart_fx.issue.TrackEvent;
 import io.abc_def.kickstart_fx.prefs.AppPrefs;

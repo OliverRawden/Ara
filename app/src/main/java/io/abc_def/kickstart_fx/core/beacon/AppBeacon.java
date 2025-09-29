@@ -11,7 +11,7 @@ public abstract class AppBeacon {
 
     public abstract boolean isExistingBeaconRunning();
 
-    public abstract void sendRequest(AppBeaconMessage message) throws IOException;
+    public abstract void sendRequest(AppBeaconMessage message);
 
     public static void init() {
         try {
