@@ -130,11 +130,11 @@ public abstract class AppInstallation {
         return base;
     }
 
-    public abstract Path getDaemonDebugScriptPath();
+    public abstract Path getDebugScriptPath();
 
     public abstract Path getLangPath();
 
-    public abstract Path getDaemonExecutablePath();
+    public abstract Path getExecutablePath();
 
     public abstract Path getLogoPath();
 
@@ -145,7 +145,7 @@ public abstract class AppInstallation {
         }
 
         @Override
-        public Path getDaemonDebugScriptPath() {
+        public Path getDebugScriptPath() {
             return getBaseInstallationPath()
                     .resolve("scripts", AppNames.ofCurrent().getExecutableName() + "_debug.bat");
         }
@@ -156,7 +156,7 @@ public abstract class AppInstallation {
         }
 
         @Override
-        public Path getDaemonExecutablePath() {
+        public Path getExecutablePath() {
             return getBaseInstallationPath().resolve(AppNames.ofCurrent().getExecutableName() + ".exe");
         }
 
@@ -193,7 +193,7 @@ public abstract class AppInstallation {
         }
 
         @Override
-        public Path getDaemonDebugScriptPath() {
+        public Path getDebugScriptPath() {
             return getBaseInstallationPath()
                     .resolve("scripts", AppNames.ofCurrent().getExecutableName() + "_debug.sh");
         }
@@ -204,7 +204,7 @@ public abstract class AppInstallation {
         }
 
         @Override
-        public Path getDaemonExecutablePath() {
+        public Path getExecutablePath() {
             return getBaseInstallationPath().resolve("bin", AppNames.ofCurrent().getExecutableName());
         }
 
@@ -240,7 +240,7 @@ public abstract class AppInstallation {
         }
 
         @Override
-        public Path getDaemonDebugScriptPath() {
+        public Path getDebugScriptPath() {
             return getBaseInstallationPath()
                     .resolve(
                             "Contents",
@@ -255,7 +255,7 @@ public abstract class AppInstallation {
         }
 
         @Override
-        public Path getDaemonExecutablePath() {
+        public Path getExecutablePath() {
             return getBaseInstallationPath()
                     .resolve("Contents", "MacOS", AppNames.ofCurrent().getExecutableName());
         }

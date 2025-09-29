@@ -64,7 +64,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
                 .addComp(
                         new TileButtonComp("launchDebugMode", "launchDebugModeDescription", "mdmz-refresh", e -> {
                                     AppOperationMode.executeAfterShutdown(() -> {
-                                        var script = AppInstallation.ofCurrent().getDaemonDebugScriptPath();
+                                        var script = AppInstallation.ofCurrent().getDebugScriptPath();
                                         DesktopHelper.openInDefaultApplication(script);
                                     });
                                     e.consume();

@@ -57,15 +57,6 @@ public abstract class UpdateHandler {
         TrackEvent.builder().type("info").message(msg).handle();
     }
 
-    protected final boolean isUpdate(String releaseVersion) {
-        if (!AppProperties.get().getVersion().equals(releaseVersion)) {
-            event("Release has a different version");
-            return true;
-        }
-
-        return false;
-    }
-
     public final AvailableRelease refreshUpdateCheckSilent() {
         try {
             return refreshUpdateCheck();
@@ -98,6 +89,7 @@ public abstract class UpdateHandler {
         String sourceDist;
         String version;
         String releaseUrl;
+        String repository;
         String body;
         Instant checkTime;
         boolean isUpdate;

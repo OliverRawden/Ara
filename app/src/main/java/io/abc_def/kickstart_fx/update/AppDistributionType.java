@@ -77,7 +77,7 @@ public enum AppDistributionType implements Translatable {
 
     private static boolean isDifferentDaemonExecutable() {
         var cached = AppCache.getNonNull("daemonExecutable", String.class, () -> null);
-        var current = AppInstallation.ofCurrent().getDaemonExecutablePath().toString();
+        var current = AppInstallation.ofCurrent().getExecutablePath().toString();
         if (current.equals(cached)) {
             return false;
         }

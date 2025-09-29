@@ -38,6 +38,8 @@ public abstract class AppNames {
 
     public abstract String getExecutableName();
 
+    public abstract String getDistName();
+
     private static class Main extends AppNames {
 
         @Override
@@ -72,6 +74,11 @@ public abstract class AppNames {
 
         @Override
         public String getExecutableName() {
+            return "kickstartfx";
+        }
+
+        @Override
+        public String getDistName() {
             return "kickstartfx";
         }
     }
