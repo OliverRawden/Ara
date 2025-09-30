@@ -83,7 +83,9 @@ public class AppLayoutModel {
 
     public void selectSettings() {
         PlatformThread.runLaterIfNeeded(() -> {
-            var found = entries.stream().filter(entry -> entry.comp instanceof PrefsPageComp).findFirst();
+            var found = entries.stream()
+                    .filter(entry -> entry.comp instanceof PrefsPageComp)
+                    .findFirst();
             selected.setValue(found.orElseThrow());
         });
     }

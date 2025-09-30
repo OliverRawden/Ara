@@ -36,7 +36,9 @@ public class BasicUpdater extends UpdateHandler {
 
         // On Windows, we can implement a simple autoupdater
         // This is however very basic
-        if (OsType.ofLocal() == OsType.WINDOWS && (AppDistributionType.get() == AppDistributionType.NATIVE_INSTALLATION || !AppProperties.get().isRuntimeImage())) {
+        if (OsType.ofLocal() == OsType.WINDOWS
+                && (AppDistributionType.get() == AppDistributionType.NATIVE_INSTALLATION
+                        || !AppProperties.get().isRuntimeImage())) {
             list.add(new ModalButton(
                     "installUpdate",
                     () -> {
@@ -45,10 +47,12 @@ public class BasicUpdater extends UpdateHandler {
                             return;
                         }
 
-                        var url = rel.getRepository() + "/releases/download/" + rel.getVersion() + "/" +
-                                AppNames.ofCurrent().getDistName() + "-installer-windows-" + AppProperties.get().getArch() + ".msi";
+                        var url = rel.getRepository() + "/releases/download/" + rel.getVersion() + "/"
+                                + AppNames.ofCurrent().getDistName() + "-installer-windows-"
+                                + AppProperties.get().getArch() + ".msi";
                         AppOperationMode.executeAfterShutdown(() -> {
-                            var command = "start \"\" /wait msiexec /i \"" + url + "\" /qb&start \"\" \"" + AppInstallation.ofCurrent().getExecutablePath() + "\"";
+                            var command = "start \"\" /wait msiexec /i \"" + url + "\" /qb&start \"\" \""
+                                    + AppInstallation.ofCurrent().getExecutablePath() + "\"";
                             LocalExec.executeAsync("cmd", "/c", command);
                         });
                     },

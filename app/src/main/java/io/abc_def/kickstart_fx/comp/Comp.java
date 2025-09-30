@@ -5,12 +5,9 @@ import io.abc_def.kickstart_fx.core.AppI18n;
 import io.abc_def.kickstart_fx.platform.BindingsHelper;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
 
-import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
-import javafx.scene.Node;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCombination;

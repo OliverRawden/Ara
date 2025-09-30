@@ -7,7 +7,8 @@ import io.abc_def.kickstart_fx.util.ThreadHelper;
 public class AppDebugModeCheck {
 
     public static void printIfNeeded() {
-        if (!AppProperties.get().isRuntimeImage() || !AppLogs.get().getLogLevel().equals("trace")) {
+        if (!AppProperties.get().isRuntimeImage()
+                || !AppLogs.get().getLogLevel().equals("trace")) {
             return;
         }
 

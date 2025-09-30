@@ -9,7 +9,6 @@ import io.abc_def.kickstart_fx.util.OsType;
 import io.abc_def.kickstart_fx.util.ThreadHelper;
 
 import java.awt.*;
-import java.io.IOException;
 import java.util.List;
 
 public class AppInstance {

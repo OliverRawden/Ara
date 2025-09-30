@@ -121,7 +121,8 @@ public class DesktopHelper {
         switch (OsType.ofLocal()) {
             case OsType.Linux linux -> LocalExec.readStdoutIfPossible("xdg-open", localFile.toString());
             case OsType.MacOs macOs -> LocalExec.readStdoutIfPossible("open", localFile.toString());
-            case OsType.Windows windows -> LocalExec.readStdoutIfPossible("cmd", "/c", "start \"\" \"" + localFile.toString() + "\"");
+            case OsType.Windows windows ->
+                LocalExec.readStdoutIfPossible("cmd", "/c", "start \"\" \"" + localFile.toString() + "\"");
         }
     }
 }
