@@ -6,7 +6,7 @@ tasks.register('createGithubChangelog', DefaultTask) {
         mkdir(dir)
         
         def target = dir.file("github-changelog.md").asFile
-        def sourceFile = file("dist/changelog/${canonicalVersionString}.md")
+        def sourceFile = file("$projectDir/changelog/${canonicalVersionString}.md")
         if (!sourceFile.exists()) {
             target.text = "";
             return
