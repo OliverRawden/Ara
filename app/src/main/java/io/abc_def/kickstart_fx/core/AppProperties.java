@@ -22,7 +22,7 @@ public class AppProperties {
     UUID buildUuid;
     String sentryUrl;
     String arch;
-    boolean image;
+    boolean runtimeImage;
     boolean useVirtualThreads;
     Path dataDir;
     Path defaultDataDir;
@@ -59,7 +59,7 @@ public class AppProperties {
         }
         var referenceDir = Files.exists(appDir) ? appDir : Path.of(System.getProperty("user.dir"));
 
-        image = AppProperties.class
+        runtimeImage = AppProperties.class
                 .getProtectionDomain()
                 .getCodeSource()
                 .getLocation()
@@ -168,7 +168,7 @@ public class AppProperties {
     }
 
     public boolean isDevelopmentEnvironment() {
-        return !isImage();
+        return !isRuntimeImage();
     }
 
     public Optional<AppVersion> getCanonicalVersion() {

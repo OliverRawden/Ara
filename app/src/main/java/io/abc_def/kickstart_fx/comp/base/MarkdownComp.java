@@ -58,7 +58,7 @@ public class MarkdownComp extends Comp<CompStructure<StackPane>> {
 
         int hash;
         // Rebuild files for updates in case the css have been changed
-        if (AppProperties.get().isImage()) {
+        if (AppProperties.get().isRuntimeImage()) {
             hash = markdown.hashCode() + AppProperties.get().getVersion().hashCode();
         } else {
             hash = markdown.hashCode();

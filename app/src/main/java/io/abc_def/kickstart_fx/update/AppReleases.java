@@ -13,9 +13,8 @@ import java.util.Optional;
 
 public class AppReleases {
 
-    // TODO: Put your own repo URL here
-    // For demo purposes, the xpipe updates are shown
-    private static final String GITHUB_REPOSITORY = "xpipe-io/xpipe";
+    // TODO: Put your own GitHub repo location here
+    private static final String GITHUB_REPOSITORY = "xpipe-io/kickstartfx";
 
     private static GHRepository repository;
 

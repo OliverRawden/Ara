@@ -8,13 +8,13 @@ import java.nio.file.Path;
 
 public abstract class AppInstallation {
 
-    private static final Windows WINDOWS = AppProperties.get().isImage()
+    private static final Windows WINDOWS = AppProperties.get().isRuntimeImage()
             ? new Windows(determineCurrentInstallationBasePath())
             : new WindowsDev(determineDefaultInstallationBasePath(), determineCurrentInstallationBasePath());
-    private static final Linux LINUX = AppProperties.get().isImage()
+    private static final Linux LINUX = AppProperties.get().isRuntimeImage()
             ? new Linux(determineCurrentInstallationBasePath())
             : new LinuxDev(determineDefaultInstallationBasePath(), determineCurrentInstallationBasePath());
-    private static final MacOs MACOS = AppProperties.get().isImage()
+    private static final MacOs MACOS = AppProperties.get().isRuntimeImage()
             ? new MacOs(determineCurrentInstallationBasePath())
             : new MacOsDev(determineDefaultInstallationBasePath(), determineCurrentInstallationBasePath());
     private final Path base;
@@ -80,7 +80,7 @@ public abstract class AppInstallation {
         if (name.endsWith("java") || name.endsWith("java.exe")) {
             // If we are not an image, we are probably running in a development environment where we want to use the
             // working directory
-            var isImage = AppProperties.get().isImage();
+            var isImage = AppProperties.get().isRuntimeImage();
             if (!isImage) {
                 return Path.of(System.getProperty("user.dir"));
             }
@@ -210,7 +210,7 @@ public abstract class AppInstallation {
 
         @Override
         public Path getLogoPath() {
-            if (!AppProperties.get().isImage()) {
+            if (!AppProperties.get().isRuntimeImage()) {
                 return getBaseInstallationPath().resolve("dist").resolve("logo").resolve("logo.png");
             }
 

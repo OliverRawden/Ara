@@ -129,7 +129,6 @@ public class SentryErrorHandler implements ErrorHandler {
                     options.setAttachServerName(false);
                     options.setRelease(AppProperties.get().getVersion());
                     options.setEnableShutdownHook(false);
-                    options.setProguardUuid(AppProperties.get().getBuildUuid().toString());
                     options.setTag("os", System.getProperty("os.name"));
                     options.setTag("osVersion", System.getProperty("os.version"));
                     options.setTag("arch", AppProperties.get().getArch());

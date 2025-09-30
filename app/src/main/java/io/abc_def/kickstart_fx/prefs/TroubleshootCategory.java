@@ -59,7 +59,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
                                     UserReportComp.show(event.build());
                                     e.consume();
                                 })
-                                .grow(true, false),
+                                .maxWidth(2000),
                         null)
                 .addComp(
                         new TileButtonComp("launchDebugMode", "launchDebugModeDescription", "mdmz-refresh", e -> {
@@ -69,7 +69,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
                                     });
                                     e.consume();
                                 })
-                                .grow(true, false),
+                                .maxWidth(2000),
                         null);
 
         if (AppLogs.get().isWriteToFile()) {
@@ -83,7 +83,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
                                                 .resolve(AppNames.ofMain().getKebapName() + ".log"));
                                         e.consume();
                                     })
-                            .grow(true, false),
+                            .maxWidth(2000),
                     null);
         }
 
@@ -97,7 +97,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
                                                     AppInstallation.ofCurrent().getBaseInstallationPath());
                                             e.consume();
                                         })
-                                .grow(true, false),
+                                .maxWidth(2000),
                         null)
                 .addComp(
                         new TileButtonComp(
@@ -130,7 +130,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
                                             modal.show();
                                             e.consume();
                                         })
-                                .grow(true, false),
+                                .maxWidth(2000),
                         null)
                 .addComp(
                         new TileButtonComp("clearCaches", "clearCachesDescription", "mdi2t-trash-can-outline", e -> {
@@ -143,14 +143,14 @@ public class TroubleshootCategory extends AppPrefsCategory {
                                     modal.show();
                                     e.consume();
                                 })
-                                .grow(true, false),
+                                .maxWidth(2000),
                         null)
                 .addComp(
                         new TileButtonComp("createHeapDump", "createHeapDumpDescription", "mdi2m-memory", e -> {
                                     heapDump();
                                     e.consume();
                                 })
-                                .grow(true, false),
+                                .maxWidth(2000),
                         null);
 
         return b.buildComp();

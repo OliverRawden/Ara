@@ -18,8 +18,7 @@ public class LinksCategory extends AppPrefsCategory {
                                         "documentation", "documentationDescription", "mdi2b-book-open-variant", e -> {
                                             Hyperlinks.open(Hyperlinks.DOCS);
                                             e.consume();
-                                        })
-                                .grow(true, false),
+                                        }).maxWidth(2000),
                         null)
                 .addComp(
                         new TileButtonComp("thirdParty", "thirdPartyDescription", "mdi2o-open-source-initiative", e -> {
@@ -28,8 +27,7 @@ public class LinksCategory extends AppPrefsCategory {
                                             .styleClass("open-source-notices");
                                     var modal = ModalOverlay.of("openSourceNotices", comp);
                                     modal.show();
-                                })
-                                .grow(true, false))
+                                }).maxWidth(2000))
                 .addComp(Comp.vspacer(40))
                 .buildComp();
     }
