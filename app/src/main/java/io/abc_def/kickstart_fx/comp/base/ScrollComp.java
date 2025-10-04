@@ -19,7 +19,7 @@ public class ScrollComp extends Comp<CompStructure<ScrollPane>> {
     }
 
     @Override
-    public CompStructure<ScrollPane> createBase() {
+    protected CompStructure<ScrollPane> createBase() {
         var r = content.createRegion();
         var stack = new StackPane(r);
         stack.getStyleClass().add("scroll-comp-content");

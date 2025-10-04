@@ -45,7 +45,7 @@ public class ButtonComp extends Comp<CompStructure<Button>> {
     }
 
     @Override
-    public CompStructure<Button> createBase() {
+    protected CompStructure<Button> createBase() {
         var button = new Button(null);
         if (name != null) {
             name.subscribe(t -> {

@@ -26,7 +26,7 @@ public class ToggleSwitchComp extends Comp<CompStructure<ToggleSwitch>> {
     ObservableValue<LabelGraphic> graphic;
 
     @Override
-    public CompStructure<ToggleSwitch> createBase() {
+    protected CompStructure<ToggleSwitch> createBase() {
         var s = new ToggleSwitch();
         s.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.SPACE || event.getCode() == KeyCode.ENTER) {

@@ -38,7 +38,7 @@ public class SideMenuBarComp extends Comp<CompStructure<VBox>> {
     private final ObservableList<AppLayoutModel.QueueEntry> queueEntries;
 
     @Override
-    public CompStructure<VBox> createBase() {
+    protected CompStructure<VBox> createBase() {
         var vbox = new VBox();
         vbox.setFillWidth(true);
 

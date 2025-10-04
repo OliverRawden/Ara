@@ -43,7 +43,7 @@ public class IconButtonComp extends Comp<CompStructure<Button>> {
     }
 
     @Override
-    public CompStructure<Button> createBase() {
+    protected CompStructure<Button> createBase() {
         var button = new Button();
         button.getStyleClass().add(Styles.FLAT);
         // AtlantaFX sets underline to true. This bugs out ikonli: https://github.com/kordamp/ikonli/issues/175

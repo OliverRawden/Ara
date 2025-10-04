@@ -33,7 +33,7 @@ public class LabelComp extends Comp<CompStructure<Label>> {
     }
 
     @Override
-    public CompStructure<Label> createBase() {
+    protected CompStructure<Label> createBase() {
         var label = new Label();
         text.subscribe(t -> {
             PlatformThread.runLaterIfNeeded(() -> label.setText(t));

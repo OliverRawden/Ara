@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class AppLayoutComp extends Comp<AppLayoutComp.Structure> {
 
     @Override
-    public Structure createBase() {
+    protected Structure createBase() {
         var model = AppLayoutModel.get();
         Map<Comp<?>, ObservableValue<Boolean>> map = model.getEntries().stream()
                 .filter(entry -> entry.comp() != null)

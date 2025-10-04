@@ -36,7 +36,7 @@ public class IntFieldComp extends Comp<CompStructure<TextField>> {
     }
 
     @Override
-    public CompStructure<TextField> createBase() {
+    protected CompStructure<TextField> createBase() {
         var field = new TextField(value.getValue() != null ? value.getValue().toString() : null);
 
         value.addListener((ChangeListener<Number>) (observableValue, oldValue, newValue) -> {

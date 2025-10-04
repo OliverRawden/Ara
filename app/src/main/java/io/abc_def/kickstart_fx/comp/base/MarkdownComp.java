@@ -127,7 +127,7 @@ public class MarkdownComp extends Comp<CompStructure<StackPane>> {
     }
 
     @Override
-    public CompStructure<StackPane> createBase() {
+    protected CompStructure<StackPane> createBase() {
         var sp = new StackPane();
 
         if (OsType.ofLocal() == OsType.WINDOWS && AppProperties.get().getArch().equals("arm64")) {

@@ -18,7 +18,7 @@ public class StackComp extends Comp<CompStructure<StackPane>> {
     }
 
     @Override
-    public CompStructure<StackPane> createBase() {
+    protected CompStructure<StackPane> createBase() {
         var pane = new StackPane();
         for (var c : comps) {
             pane.getChildren().add(c.createRegion());

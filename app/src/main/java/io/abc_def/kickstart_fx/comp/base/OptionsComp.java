@@ -31,7 +31,7 @@ public class OptionsComp extends Comp<CompStructure<VBox>> {
     }
 
     @Override
-    public CompStructure<VBox> createBase() {
+    protected CompStructure<VBox> createBase() {
         VBox pane = new VBox();
         pane.getStyleClass().add("options-comp");
 

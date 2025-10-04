@@ -45,7 +45,7 @@ public class ThirdPartyDependencyListComp extends Comp<CompStructure<?>> {
     }
 
     @Override
-    public CompStructure<?> createBase() {
+    protected CompStructure<?> createBase() {
         var tps = ThirdPartyDependency.getAll().stream().map(this::createPane).toArray(TitledPane[]::new);
         var acc = new Accordion(tps);
         acc.getStyleClass().add("third-party-dependency-list-comp");

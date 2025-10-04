@@ -39,7 +39,7 @@ public class TextFieldComp extends Comp<CompStructure<TextField>> {
     }
 
     @Override
-    public CompStructure<TextField> createBase() {
+    protected CompStructure<TextField> createBase() {
         var text = new TextField(currentValue.getValue() != null ? currentValue.getValue() : null);
         text.textProperty().addListener((c, o, n) -> {
             currentValue.setValue(n != null && !n.isEmpty() ? n : null);

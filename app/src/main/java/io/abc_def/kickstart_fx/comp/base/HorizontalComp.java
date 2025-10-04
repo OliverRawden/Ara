@@ -30,7 +30,7 @@ public class HorizontalComp extends Comp<CompStructure<HBox>> {
     }
 
     @Override
-    public CompStructure<HBox> createBase() {
+    protected CompStructure<HBox> createBase() {
         var b = new HBox();
         b.getStyleClass().add("horizontal-comp");
         entries.addListener((ListChangeListener<? super Comp<?>>) c -> {

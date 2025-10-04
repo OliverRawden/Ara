@@ -17,7 +17,7 @@ public class FontIconComp extends Comp<FontIconComp.Structure> {
     private final ObservableValue<String> icon;
 
     @Override
-    public FontIconComp.Structure createBase() {
+    protected FontIconComp.Structure createBase() {
         var fi = new FontIcon();
         icon.subscribe(val -> {
             PlatformThread.runLaterIfNeeded(() -> {

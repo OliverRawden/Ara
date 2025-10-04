@@ -55,7 +55,7 @@ public class TileButtonComp extends Comp<TileButtonComp.Structure> {
     }
 
     @Override
-    public Structure createBase() {
+    protected Structure createBase() {
         var bt = new Button();
         bt.getStyleClass().add("tile-button-comp");
         bt.setOnAction(e -> {

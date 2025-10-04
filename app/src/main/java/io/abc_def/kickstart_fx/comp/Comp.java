@@ -53,7 +53,7 @@ public abstract class Comp<S extends CompStructure<?>> {
     public static <R extends Region> Comp<CompStructure<R>> of(Supplier<R> r) {
         return new Comp<>() {
             @Override
-            public CompStructure<R> createBase() {
+            protected CompStructure<R> createBase() {
                 return new SimpleCompStructure<>(r.get());
             }
         };
@@ -191,5 +191,5 @@ public abstract class Comp<S extends CompStructure<?>> {
         return struc;
     }
 
-    public abstract S createBase();
+    protected abstract S createBase();
 }

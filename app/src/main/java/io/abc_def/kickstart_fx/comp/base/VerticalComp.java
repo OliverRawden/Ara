@@ -29,7 +29,7 @@ public class VerticalComp extends Comp<CompStructure<VBox>> {
     }
 
     @Override
-    public CompStructure<VBox> createBase() {
+    protected CompStructure<VBox> createBase() {
         VBox b = new VBox();
         b.getStyleClass().add("vertical-comp");
         entries.addListener((ListChangeListener<? super Comp<?>>) c -> {
