@@ -33,14 +33,6 @@
     -fx-background-color: transparent;
 }
 
-.root:light .loading-comp {
-    -fx-background-color: rgba(100, 100, 100, 0.3);
-}
-
-.root:dark .loading-comp {
-    -fx-background-color: rgba(0, 0, 0, 0.4);
-}
-
 .toggle-group-comp .toggle-button {
     -fx-padding: 3 10;
 }
