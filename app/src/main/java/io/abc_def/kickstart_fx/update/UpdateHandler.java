@@ -91,6 +91,5 @@ public abstract class UpdateHandler {
         String repository;
         String body;
         Instant checkTime;
-        boolean isUpdate;
     }
 }

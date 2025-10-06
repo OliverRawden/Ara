@@ -249,6 +249,10 @@ public final class AppPrefs {
                     // Reset scroll in case the target category is already somewhat in focus
                     selectedCategory.setValue(null);
                     selectedCategory.setValue(appPrefsCategory);
+                    Platform.runLater(() -> {
+                        selectedCategory.setValue(null);
+                        selectedCategory.setValue(appPrefsCategory);
+                    });
                 });
             });
         });

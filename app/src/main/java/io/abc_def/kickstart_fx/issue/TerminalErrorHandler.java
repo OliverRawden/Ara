@@ -81,7 +81,7 @@ public class TerminalErrorHandler extends GuiErrorHandlerBase implements ErrorHa
 
         try {
             var rel = AppDistributionType.get().getUpdateHandler().refreshUpdateCheck();
-            if (rel != null && rel.isUpdate()) {
+            if (rel != null) {
                 var updateModal = ModalOverlay.of(
                         "updateAvailableTitle",
                         AppDialog.dialogText(AppI18n.get("updateAvailableContent", rel.getVersion())));

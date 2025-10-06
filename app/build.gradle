@@ -90,7 +90,7 @@ run {
 processResources {
     // Generate binary stylesheets from css
     doLast {
-        def pkg = groupName.replaceAll("\\.", "/") + "/" + artifactName
+        def pkg = groupName.replaceAll("\\.", "/") + "/" + artifactName.replaceAll("\\.", "/")
         def cssFiles = fileTree(dir: "$sourceSets.main.output.resourcesDir/$pkg/resources/style")
         cssFiles.include "**/*.css"
         cssFiles.each { css ->
@@ -106,7 +106,7 @@ processResources {
     }
 
     doLast {
-        def pkg = groupName.replaceAll("\\.", "/") + "/" + artifactName
+        def pkg = groupName.replaceAll("\\.", "/") + "/" + artifactName.replaceAll("\\.", "/")
         def resourcesDir = new File(sourceSets.main.output.resourcesDir, "$pkg/resources/third-party")
         resourcesDir.mkdirs()
         copy {
