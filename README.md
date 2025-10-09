@@ -128,3 +128,17 @@ You can contact [crschnick@xpipe.io](mailto:crschnick@xpipe.io) to request this 
 If this license is incompatible with your enterprise project, you can request to instead license the source code under the [Apache License](/LICENSE-APL.md). This license is best suited for individuals and organizations looking for key functionalities for application development while fully retaining their intellectual property rights. All dependencies that are included with KickstartFX are compatible with the Apache License as well.
 
 You can contact [crschnick@xpipe.io](mailto:crschnick@xpipe.io) to get a quote for your use case of your enterprise. This can can optionally also include prioritized support.
+
+## Projects using KickstartFX
+
+As this project is brand-new, there are only two projects that are based on KickstartFX. You can take a look at them for inspiration on what you can implement with KickstartFX as the basis:
+
+- **[XPipe](https://github.com/xpipe-io/xpipe)**: The XPipe project can show you what a fully customized project can look like. While KickstartFX is based on XPipe, going the other way around can show you what is possible with KickstartFX and JavaFX in general. If you are looking to evaluate whether the JavaFX tech stack is a suitable and future-proof solution for your planned desktop application, make sure to give XPipe a try.
+
+![](https://github.com/xpipe-io/.github/raw/main/img/hub_shadow.png)
+
+- **[Pdx-Unlimiter](https://github.com/crschnick/pdx_unlimiter)**: The Pdx-Unlimiter project is an older JavaFX-based companion app for various strategy games. It has a large community in gaming and has been developed over the last 5 years. With the release of KickstartFX, the whole application was reworked to be based on KickstartFX, throwing out all the old legacy JavaFX platform code. The [v3 releases](https://github.com/crschnick/pdx_unlimiter/releases), which are currently in beta, come with a completely redesigned interface and a much improved user experience. Plus a lot of performance improvements automatically included with KickstartFX.
+
+![](https://github.com/crschnick/pdx_unlimiter/blob/master/misc/v3_screenshot.png?raw=true)
+
+If you are building a project with KickstartFX, let us know and your project can be added to this list.
