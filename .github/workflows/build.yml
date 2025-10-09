@@ -21,4 +21,4 @@ jobs:
           cache: gradle
 
       - name: Execute build
-        run: ./gradlew build
+        run: ./gradlew spotlessApply build
