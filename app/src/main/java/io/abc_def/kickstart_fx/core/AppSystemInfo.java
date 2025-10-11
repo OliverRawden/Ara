@@ -1,5 +1,8 @@
 package io.abc_def.kickstart_fx.core;
 
+import com.sun.jna.platform.win32.KnownFolders;
+import com.sun.jna.platform.win32.Shell32Util;
+import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 import io.abc_def.kickstart_fx.util.LocalExec;
 import io.abc_def.kickstart_fx.util.OsType;
 
@@ -73,6 +76,7 @@ public abstract class AppSystemInfo {
         private Path temp;
         private Path downloads;
         private Path desktop;
+        private Path documents;
 
         public Path getSystemRoot() {
             var root = AppSystemInfo.parsePath(System.getenv("SystemRoot"));
@@ -192,12 +196,31 @@ public abstract class AppSystemInfo {
                 return downloads;
             }
 
-            var fallback = getUserHome().resolve("Downloads");
+            try {
+                var r = Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Downloads);
+                // Replace 8.3 filename
+                return (downloads = Path.of(r).toRealPath());
+            } catch (Exception e) {
+                ErrorEventFactory.fromThrowable(e).handle();
+                var fallback = getUserHome().resolve("Downloads");
+                return (downloads = fallback);
+            }
+        }
 
-            // The proper way would be to run
-            // (New-Object -ComObject Shell.Application).NameSpace('shell:Downloads').Self.Path in powershell
-            // However, this is too slow
-            return (downloads = fallback);
+        public Path getDocuments() {
+            if (documents != null) {
+                return documents;
+            }
+
+            try {
+                var r = Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Documents);
+                // Replace 8.3 filename
+                return (documents = Path.of(r).toRealPath());
+            } catch (Exception e) {
+                ErrorEventFactory.fromThrowable(e).handle();
+                var fallback = getUserHome().resolve("Documents");
+                return (documents = fallback);
+            }
         }
 
         @Override
@@ -206,12 +229,15 @@ public abstract class AppSystemInfo {
                 return desktop;
             }
 
-            var fallback = getUserHome().resolve("Desktop");
-
-            // The proper way would be to run
-            // [Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop) in powershell
-            // However, this is too slow
-            return (desktop = fallback);
+            try {
+                var r = Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Desktop);
+                // Replace 8.3 filename
+                return (desktop = Path.of(r).toRealPath());
+            } catch (Exception e) {
+                ErrorEventFactory.fromThrowable(e).handle();
+                var fallback = getUserHome().resolve("Desktop");
+                return (desktop = fallback);
+            }
         }
     }
 
