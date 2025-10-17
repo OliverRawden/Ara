@@ -35,6 +35,17 @@ def getPlatformName() {
 }
 
 
+tasks.register('checkCompatibleJDK', DefaultTask) {
+    doLast {
+        def unsupported = !file("${System.getProperty("java.home")}/jmods/java.base.jmod").exists()
+        if (unsupported) {
+            throw new UnsupportedOperationException("Current JDK " + System.getProperty("java.vendor.version") +
+                    " implements https://openjdk.org/jeps/493 and does not ship with jmods." +
+                    " This is currently not supported by the jpackage plugin. Please use another JDK distribution with included jmods")
+        }
+    }
+}
+
 jlink {
     imageDir = file("${project.layout.buildDirectory.get()}/image")
     options = [
@@ -126,4 +137,6 @@ if (os.isMacOsX()) {
 if (!jdkHasBundledJavaFx) {
     jpackageImage.dependsOn(downloadJavafxJmods)
 }
+
+tasks.jlink.dependsOn(checkCompatibleJDK)
 
