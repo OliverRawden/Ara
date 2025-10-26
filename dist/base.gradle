@@ -65,10 +65,10 @@ if (os.isWindows()) {
             var signEnv = System.getenv("AZURE_KEY_VAULT_URI")
             if (signEnv != null && !signEnv.isEmpty()) {
                 file("$distDir/base/${jpackageExecutableName}.exe").writable = true
-                providers.exec {
+                execOps.exec {
                     commandLine "$projectDir\\tools\\sign.bat", "$distDir/base/${jpackageExecutableName}.exe"
                     ignoreExitValue = !ci
-                }.getResult().get()
+                }
                 file("$distDir/base/${jpackageExecutableName}.exe").writable = false
             }
         }
