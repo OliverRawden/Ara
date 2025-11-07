@@ -20,6 +20,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.MapChangeListener;
 import javafx.css.PseudoClass;
+import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
@@ -32,6 +33,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
+import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.function.Supplier;
@@ -46,42 +48,68 @@ public class AppTheme {
     private static boolean init;
 
     public static void initThemeHandlers(Stage stage) {
-        stage.getScene().rootProperty().subscribe(root -> {
-            if (root == null) {
-                return;
-            }
+        if (stage.getScene() == null) {
+            return;
+        }
 
-            root.pseudoClassStateChanged(
-                    PseudoClass.getPseudoClass(OsType.ofLocal().getId()), true);
-            if (AppPrefs.get() == null) {
-                var def = Theme.getDefaultLightTheme();
-                root.pseudoClassStateChanged(PseudoClass.getPseudoClass(def.getCssId()), true);
-                root.pseudoClassStateChanged(LIGHT, true);
-                root.pseudoClassStateChanged(DARK, false);
-                root.pseudoClassStateChanged(PRETTY, true);
-                root.pseudoClassStateChanged(PERFORMANCE, false);
-                return;
-            }
+        if (AppPrefs.get() == null) {
+            var root = stage.getScene().getRoot();
+            applyClasses(root, Theme.getDefaultLightTheme(), false);
+            return;
+        }
 
-            AppPrefs.get().theme().subscribe(t -> {
-                Theme.ALL.forEach(theme -> {
-                    root.pseudoClassStateChanged(
-                            PseudoClass.getPseudoClass(theme.getCssId()),
-                            theme.getCssId().equals(t.getCssId()));
-                });
-                if (t == null) {
-                    return;
-                }
-
-                root.pseudoClassStateChanged(LIGHT, !t.isDark());
-                root.pseudoClassStateChanged(DARK, t.isDark());
-            });
-
-            AppPrefs.get().performanceMode().subscribe(val -> {
-                root.pseudoClassStateChanged(PRETTY, !val);
-                root.pseudoClassStateChanged(PERFORMANCE, val);
-            });
+        stage.getScene().rootProperty().subscribe(parent -> {
+            applyClasses(parent, AppPrefs.get().theme().getValue(), AppPrefs.get().performanceMode().getValue());
         });
+
+
+        // Allow for GC
+        var ref = new WeakReference<>(stage);
+
+        AppPrefs.get().theme().subscribe(t -> {
+            var val = ref.get();
+            if (val != null) {
+                var scene = val.getScene();
+                if (scene != null) {
+                    var r = scene.getRoot();
+                    applyClasses(r, t, AppPrefs.get().performanceMode().get());
+                }
+            }
+        });
+
+        AppPrefs.get().performanceMode().subscribe(pm -> {
+            var val = ref.get();
+            if (val != null) {
+                var scene = val.getScene();
+                if (scene != null) {
+                    var r = scene.getRoot();
+                    applyClasses(r, AppPrefs.get().theme().getValue(), pm);
+                }
+            }
+        });
+    }
+
+    private static void applyClasses(Node r, Theme t, boolean perf) {
+        if (r == null) {
+            return;
+        }
+
+        r.pseudoClassStateChanged(
+                PseudoClass.getPseudoClass(OsType.ofLocal().getId()), true);
+
+        Theme.ALL.forEach(theme -> {
+            r.pseudoClassStateChanged(
+                    PseudoClass.getPseudoClass(theme.getCssId()),
+                    theme.getCssId().equals(t.getCssId()));
+        });
+
+        if (t != null) {
+            r.pseudoClassStateChanged(LIGHT, !t.isDark());
+            r.pseudoClassStateChanged(DARK, t.isDark());
+        }
+
+        r.pseudoClassStateChanged(PRETTY, !perf);
+        r.pseudoClassStateChanged(PERFORMANCE, perf);
     }
 
     public static void init() {
