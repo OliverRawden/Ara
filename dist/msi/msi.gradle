@@ -1,7 +1,7 @@
 def distDir = "${project.layout.buildDirectory.get()}/dist"
 
 // TODO: Change this to a random UUID
-def RELEASE_PRODUCT_CODE = '{fb687ed1-5446-4d4b-be8a-b98e3b6f6039}'
+def UPGRADE_CODE = '{fb687ed1-5446-4d4b-be8a-b98e3b6f6039}'
 
 tasks.register('installerDist', DefaultTask) {
     dependsOn baseDist
@@ -25,7 +25,7 @@ tasks.register('signInstaller', Exec) {
 tasks.register('buildInstaller', Exec) {
     dependsOn installerDist
     commandLine 'cmd', '/c', 'CALL', projectDir.toString() + "/msi/build_installer_${arch}.bat"
-    environment('PRODUCT_CODE', RELEASE_PRODUCT_CODE)
+    environment('UPGRADE_CODE', UPGRADE_CODE)
     environment('PRODUCT_NAME', productName)
     environment('CANONICAL_VERSION', windowsSchemaCanonicalVersion)
     environment('EXECUTABLE_NAME', jpackageExecutableName)

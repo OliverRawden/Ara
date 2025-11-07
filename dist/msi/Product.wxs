@@ -2,9 +2,12 @@
   xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
   xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
-	<?define UpgradeCode = "$(var.DynamicProductCode)" ?>
+	<?define UpgradeCode = "$(var.UpgradeCode)" ?>
 
-	<!-- TODO: Do you want the installer to install into AppData, ProgramFiles, or both? Adapt the scope based on that -->
+	<!--
+	 TODO: Do you want the installer to be able to install into AppData, ProgramFiles, or both? Adapt the scope based on that.
+	 Also check out the WiX documentation to get familiar with it. Note to always look for up-to-date WiX docs, older docs for v3 or lower do not apply anymore
+	 -->
 	<Package Name="$(var.DynamicProductName)" Language="!(loc.Language)" Version="$(var.BuildVersion)"
 			 Manufacturer="!(loc.Company)" UpgradeCode="$(var.UpgradeCode)" InstallerVersion="500"
 			 Scope="perUserOrMachine">
