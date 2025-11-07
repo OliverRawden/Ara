@@ -41,6 +41,7 @@ public abstract class AppInstallation {
     }
 
     private static Path determineDefaultInstallationBasePath() {
+        // TODO: Check if these rules apply to your app installation locations
         return switch (OsType.ofLocal()) {
             case OsType.Linux ignored -> Path.of("/opt/" + AppNames.ofCurrent().getKebapName());
             case OsType.MacOs ignored ->

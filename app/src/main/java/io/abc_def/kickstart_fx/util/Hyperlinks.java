@@ -8,6 +8,6 @@ public class Hyperlinks {
     public static final String TRANSLATE = "https://github.com/xpipe-io/kickstartfx/tree/main/lang";
 
     public static void open(String uri) {
-        DesktopHelper.openUrlInBrowser(uri);
+        DesktopHelper.openUrl(uri);
     }
 }

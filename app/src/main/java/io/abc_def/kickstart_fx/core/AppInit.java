@@ -128,19 +128,23 @@ public class AppInit {
         AppOperationMode.setInStartup(true);
         setup(args);
 
-        if (AppProperties.get().isAotTrainMode()) {
-            AppOperationMode.switchToSyncOrThrow(AppOperationMode.BACKGROUND);
-            AppOperationMode.setInStartup(false);
-            AppAotTrain.runTrainingMode();
-            AppOperationMode.shutdown(false);
-            return;
-        }
+        try {
+            if (AppProperties.get().isAotTrainMode()) {
+                AppOperationMode.switchToSyncOrThrow(AppOperationMode.BACKGROUND);
+                AppOperationMode.setInStartup(false);
+                AppAotTrain.runTrainingMode();
+                AppOperationMode.shutdown(false);
+                return;
+            }
 
-        var startupMode = getStartupMode();
-        AppOperationMode.switchToSyncOrThrow(startupMode);
-        // If it doesn't find time, the JVM will not gc the startup workload
-        System.gc();
-        AppOperationMode.setInStartup(false);
-        AppOpenArguments.init();
+            var startupMode = getStartupMode();
+            AppOperationMode.switchToSyncOrThrow(startupMode);
+            // If it doesn't find time, the JVM will not gc the startup workload
+            System.gc();
+            AppOperationMode.setInStartup(false);
+            AppOpenArguments.init();
+        } catch (Throwable ex) {
+            ErrorEventFactory.fromThrowable(ex).term().handle();
+        }
     }
 }
