@@ -137,8 +137,8 @@ As this project is brand-new, there are only two projects that are based on Kick
 
 ![](https://github.com/xpipe-io/.github/raw/main/img/hub_shadow.png)
 
-- **[Pdx-Unlimiter](https://github.com/crschnick/pdx_unlimiter)**: The Pdx-Unlimiter project is an older JavaFX-based companion app for various strategy games. It has a large community in gaming and has been developed over the last 5 years. With the release of KickstartFX, the whole application was reworked to be based on KickstartFX, throwing out all the old legacy JavaFX platform code. The [v3 releases](https://github.com/crschnick/pdx_unlimiter/releases), which are currently in beta, come with a completely redesigned interface and a much improved user experience. Plus a lot of performance improvements automatically included with KickstartFX.
+- **[Pdx-Unlimiter](https://github.com/crschnick/pdx_unlimiter)**: The Pdx-Unlimiter project is an older JavaFX-based companion app for various strategy games. It has a large community in gaming and has been developed over the last 5 years. With the release of KickstartFX, the whole application was reworked to be based on KickstartFX, throwing out all the old legacy JavaFX platform code. The new releases come with a completely redesigned interface and a much improved user experience. Plus a lot of performance improvements automatically included with KickstartFX.
 
-![](https://github.com/crschnick/pdx_unlimiter/blob/master/misc/v3_screenshot.png?raw=true)
+![](https://github.com/crschnick/pdx_unlimiter/blob/master/misc/eu5_screenshot.png?raw=true)
 
 If you are building a project with KickstartFX, let us know and your project can be added to this list.
