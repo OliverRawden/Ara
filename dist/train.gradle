@@ -11,11 +11,12 @@ tasks.register('trainAot', DefaultTask) {
                 "-D" + propertyName("logLevel") + "=trace",
                 "-D" + propertyName("useVirtualThreads") + "=false",
         ]
+        def jvmName = System.getProperty("java.vendor.version")
         if (os.isWindows()) {
             def imageDir = "$distDir/base"
             def bat = "$imageDir/runtime/bin/${jpackageExecutableName}.bat"
             def cl = ['cmd', '/c', bat] + properties
-            def graal = System.getProperty("java.vendor.version").toLowerCase().contains("graal")
+            def graal = jvmName != null && jvmName.toLowerCase().contains("graal")
             execOps.exec {
                 commandLine cl
                 workingDir "$imageDir"
@@ -31,7 +32,7 @@ tasks.register('trainAot', DefaultTask) {
             def imageDir = "$distDir/base"
             def script = "$imageDir/lib/runtime/bin/${jpackageExecutableName}"
             def cl = [script.toString()] + properties
-            def graal = System.getProperty("java.vendor.version").toLowerCase().contains("graal")
+            def graal = jvmName != null && jvmName.toLowerCase().contains("graal")
             execOps.exec {
                 commandLine cl
                 workingDir "$imageDir"
@@ -47,7 +48,7 @@ tasks.register('trainAot', DefaultTask) {
             def imageDir = "$distDir/${productName}.app"
             def script = "$imageDir/Contents/runtime/Contents/Home/bin/${jpackageExecutableName}"
             def cl = [script.toString()] + properties
-            def graal = System.getProperty("java.vendor.version").toLowerCase().contains("graal")
+            def graal = jvmName != null && jvmName.toLowerCase().contains("graal")
             execOps.exec {
                 commandLine cl
                 workingDir "$imageDir"
