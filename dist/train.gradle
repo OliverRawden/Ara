@@ -20,8 +20,10 @@ tasks.register('trainAot', DefaultTask) {
             execOps.exec {
                 commandLine cl
                 workingDir "$imageDir"
+                // Important: The cache will contain AVX instructions if trained with AVX on (default)
+                // To make it not crash on systems without AVX, disable AVX while training
                 environment "CDS_JVM_OPTS",
-                            "-XX:+AOTClassLinking -XX:AOTCacheOutput=./server/cache.aot -Xlog:aot" + (graal ? " --add-modules jdk.internal.vm.ci" : "")
+                            "-XX:UseAVX=0 -XX:+AOTClassLinking -XX:AOTCacheOutput=./server/cache.aot -Xlog:aot" + (graal ? " --add-modules jdk.internal.vm.ci" : "")
             }
 
             def cfg = file("$imageDir/app/${jpackageExecutableName}.cfg")
