@@ -90,7 +90,7 @@ public final class AppPrefs {
             .requiresRestart(false)
             .build());
     public final BooleanProperty focusWindowOnNotifications = map(Mapping.builder()
-            .property(new GlobalBooleanProperty(false))
+            .property(new GlobalBooleanProperty(true))
             .key("focusWindowOnNotifications")
             .valueClass(Boolean.class)
             .build());
