@@ -14,13 +14,9 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class DesktopHelper {
-    
+
     public static void openUrl(String uri) {
         if (uri == null) {
-            return;
-        }
-
-        if (!Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             return;
         }
 
@@ -55,6 +51,13 @@ public class DesktopHelper {
     public static void browseFile(Path file) {
         if (file == null || !Files.exists(file)) {
             return;
+        }
+
+        if (!Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            if (OsType.ofLocal() == OsType.LINUX) {
+                LocalExec.readStdoutIfPossible("xdg-open", file.toString());
+                return;
+            }
         }
 
         // This can be a blocking operation
