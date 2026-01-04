@@ -31,7 +31,7 @@ public class DesktopHelper {
 
         if (!Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             if (OsType.ofLocal() == OsType.LINUX) {
-                LocalExec.readStdoutIfPossible("xdg-open", parsed.toString());
+                LocalExec.executeAsync("xdg-open", parsed.toString());
                 return;
             }
         }
@@ -50,7 +50,7 @@ public class DesktopHelper {
             }
 
             if (OsType.ofLocal() == OsType.LINUX) {
-                LocalExec.readStdoutIfPossible("xdg-open", parsed.toString());
+                LocalExec.executeAsync("xdg-open", parsed.toString());
             }
         });
     }
@@ -62,7 +62,7 @@ public class DesktopHelper {
 
         if (!Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             if (OsType.ofLocal() == OsType.LINUX) {
-                LocalExec.readStdoutIfPossible("xdg-open", file.toString());
+                LocalExec.executeAsync("xdg-open", file.toString());
                 return;
             }
         }
@@ -83,7 +83,7 @@ public class DesktopHelper {
             }
 
             if (OsType.ofLocal() == OsType.LINUX) {
-                LocalExec.readStdoutIfPossible("xdg-open", file.toString());
+                LocalExec.executeAsync("xdg-open", file.toString());
             }
         });
     }
