@@ -16,7 +16,7 @@ configurations {
     javafx
 }
 
-if (customJavaFxLibsPath != null) {
+if (hasProperty("customJavaFxLibsPath") && customJavaFxLibsPath != null) {
     repositories {
         flatDir {
             dirs customJavaFxLibsPath
