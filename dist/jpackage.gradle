@@ -49,7 +49,9 @@ jlink {
         options.addAll('--strip-native-debug-symbols', 'exclude-debuginfo-files')
     }
 
-    if (!jdkHasBundledJavaFx) {
+    if (hasProperty("customJavaFxJmodsPath")) {
+        addExtraModulePath(customJavaFxJmodsPath.toString())
+    } else if (!jdkHasBundledJavaFx) {
         addExtraModulePath(layout.projectDirectory.dir("javafx/${platformName}/${arch}").toString())
     }
     addExtraModulePath(layout.projectDirectory.dir("jna/${platformName}/${arch}").toString())

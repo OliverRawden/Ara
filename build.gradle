@@ -214,11 +214,13 @@ project.ext {
     // Development and production javafx versions can be different
     // Dev uses the maven dependencies and production uses jmods
     // unless jdkHasBundledJavaFx is set to true
-    devJavafxVersion = '26-ea+3'
-    productionJavafxVersion = '26-ea+3'
+    devJavafxVersion = '26-ea+19'
+    productionJavafxVersion = '26-ea+19'
     jdkHasBundledJavaFx = ModuleFinder.ofSystem().find("javafx.base").isPresent()
+
     // Define a custom JavaFX SDK location to use custom JavaFX jars instead of the default one
-    customJavaFxPath = null
+    // customJavaFxLibsPath = file("C:\\Projects\\jfx-sandbox\\build\\sdk\\lib")
+    // customJavaFxJmodsPath = file("C:\\Projects\\jfx-sandbox\\build\\jmods")
 
     // TODO: Set your own Sentry DSN. If you don't want to use Sentry, set this to null
     // This value is not a secret
