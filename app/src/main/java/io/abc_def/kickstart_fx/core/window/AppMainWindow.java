@@ -51,7 +51,7 @@ public class AppMainWindow {
 
     private final BooleanProperty windowActive = new SimpleBooleanProperty(false);
     private volatile Instant lastUpdate;
-    private boolean shown = false;
+    public NativeWinWindowControl windowHandle;
 
     private AppMainWindow(Stage stage) {
         this.stage = stage;
@@ -159,11 +159,23 @@ public class AppMainWindow {
 
     public void show() {
         stage.show();
-        if (OsType.ofLocal() == OsType.WINDOWS && !shown) {
-            var ctrl = new NativeWinWindowControl(stage);
-            AppWindowsShutdown.registerHook(ctrl.getWindowHandle());
+
+        if (OsType.ofLocal() == OsType.WINDOWS) {
+            var currentControl = new NativeWinWindowControl(stage);
+
+            // Clean up old window as the HWND might not be reused
+            var oldControl = windowHandle;
+            if (oldControl != null && !oldControl.getWindowHandle().equals(currentControl.getWindowHandle())) {
+                AppWindowsShutdown.unregisterHook(oldControl.getWindowHandle());
+                windowHandle = null;
+            }
+
+            if (windowHandle == null) {
+                var ctrl = new NativeWinWindowControl(stage);
+                windowHandle = ctrl;
+                AppWindowsShutdown.registerHook(ctrl.getWindowHandle());
+            }
         }
-        shown = true;
     }
 
     public void focus(boolean force) {
