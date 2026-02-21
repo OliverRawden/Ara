@@ -89,8 +89,6 @@ The following rpm installers are available:
 - [Linux .rpm Installer (x86-64)](../../releases/latest/download/kickstartfx-installer-linux-x86_64.rpm)
 - [Linux .rpm Installer (ARM 64)](../../releases/latest/download/kickstartfx-installer-linux-arm64.rpm) (Not built all the time)
 
-The same applies here, you should use a package manager that supports resolving and installing required dependencies if needed.
-
 #### Portable
 
 In case you prefer to use an archive version that you can extract anywhere, you can use these:
@@ -98,8 +96,13 @@ In case you prefer to use an archive version that you can extract anywhere, you 
 - [Linux .tar.gz Portable (x86-64)](../../releases/latest/download/kickstartfx-portable-linux-x86_64.tar.gz)
 - [Linux .tar.gz Portable (ARM 64)](../../releases/latest/download/kickstartfx-portable-linux-arm64.tar.gz) (Not built all the time)
 
-Note that the portable version assumes that you have some basic packages for graphical systems already installed
-as it is not a perfect standalone version. It should however run on most systems.
+#### AppImages
+
+Alternatively, there are also AppImages available. These can be useful if you are using an immutable distro.
+
+- [Linux .AppImage Portable (x86-64)](../../releases/latest/download/kickstartfx-portable-linux-x86_64.AppImage)
+- [Linux .AppImage Portable (ARM 64)](../../releases/latest/download/kickstartfx-portable-linux-arm64.AppImage)
+
 
 ## Showcase
 

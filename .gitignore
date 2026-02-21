@@ -20,5 +20,6 @@ ComponentsGenerated.wxs
 !dist/javafx/**/bin
 i18n.gradle
 dist/javafx/**
+dist/appimage/appimagetool-*
 gradle.properties
 hs_err_*

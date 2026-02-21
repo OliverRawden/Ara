@@ -1,0 +1,52 @@
+def pkgName = kebapProductName
+def targetDir = "/opt/$pkgName"
+def appName = displayName
+
+tasks.register('appImage', DefaultTask) {
+    doLast {
+        copy {
+            from layout.buildDirectory.dir("dist/base")
+            into layout.buildDirectory.dir("appimage/${appName}.AppDir$targetDir")
+        }
+
+        def desktopSource = replaceVariablesInFile("$projectDir/appimage/app.desktop", Map.of(
+                '__NAME__', productName,
+                '__EXECUTABLE__', jpackageExecutableName,
+                '__ICON__', pkgName,
+                '__DESCRIPTION__', 'Kickstart your JavaFX application'
+        ))
+        copy {
+            from(desktopSource)
+            into layout.buildDirectory.dir("appimage/${appName}.AppDir/")
+            filePermissions {
+                unix(0644)
+            }
+            rename 'app.desktop', "${pkgName}.desktop"
+        }
+
+        copy {
+            from("$projectDir/logo/logo.png")
+            into layout.buildDirectory.dir("appimage/${appName}.AppDir/")
+            rename 'logo.png', "${pkgName}.png"
+        }
+        copy {
+            from(replaceVariablesInFile("${projectDir}/appimage/AppRun", Map.of(
+                    '__TARGET__', targetDir,
+                    '__EXECUTABLE_NAME__', jpackageExecutableName
+            )).toString())
+            into layout.buildDirectory.dir("appimage/${appName}.AppDir")
+            filePermissions {
+                unix(0775)
+            }
+        }
+        copy {
+            from("$projectDir/logo/logo.png")
+            into layout.buildDirectory.dir("appimage/${appName}.AppDir/.DirIcon")
+        }
+        execOps.exec {
+            commandLine "${projectDir}/appimage/build_appimage.sh", "$projectDir", "$arch", arch == "x86_64" ? "x86_64" : "aarch64", "${appName}.AppDir", distName
+        }
+    }
+}
+
+dist.finalizedBy(appImage)
