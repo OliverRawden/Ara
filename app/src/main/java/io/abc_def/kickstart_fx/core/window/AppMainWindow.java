@@ -100,7 +100,7 @@ public class AppMainWindow {
 
         stage.setScene(scene);
         if (AppPrefs.get() != null) {
-            stage.opacityProperty().bind(PlatformThread.sync(AppPrefs.get().windowOpacity()));
+            stage.opacityProperty().bind(AppPrefs.get().windowOpacity());
         }
         AppWindowStyle.addIcons(stage);
         AppWindowStyle.addStylesheets(stage.getScene());

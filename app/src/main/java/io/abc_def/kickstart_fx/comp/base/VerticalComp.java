@@ -20,10 +20,6 @@ public class VerticalComp extends Comp<CompStructure<VBox>> {
         entries = FXCollections.observableArrayList(List.copyOf(comps));
     }
 
-    public VerticalComp(ObservableList<Comp<?>> entries) {
-        this.entries = PlatformThread.sync(entries);
-    }
-
     public Comp<CompStructure<VBox>> spacing(double spacing) {
         return apply(struc -> struc.get().setSpacing(spacing));
     }

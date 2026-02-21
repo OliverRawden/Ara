@@ -21,10 +21,6 @@ public class HorizontalComp extends Comp<CompStructure<HBox>> {
         entries = FXCollections.observableArrayList(List.copyOf(comps));
     }
 
-    public HorizontalComp(ObservableList<Comp<?>> entries) {
-        this.entries = PlatformThread.sync(entries);
-    }
-
     public Comp<CompStructure<HBox>> spacing(double spacing) {
         return apply(struc -> struc.get().setSpacing(spacing));
     }
