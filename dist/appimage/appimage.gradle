@@ -1,6 +1,6 @@
 def pkgName = kebapProductName
 def targetDir = "/opt/$pkgName"
-def appName = displayName
+def appName = productName
 
 tasks.register('appImage', DefaultTask) {
     doLast {

@@ -12,30 +12,28 @@ import javafx.beans.value.ObservableValue;
 import lombok.Getter;
 
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
 public enum AppDistributionType implements Translatable {
-    UNKNOWN("unknown", false, () -> new BasicUpdater(false)),
-    DEVELOPMENT("development", true, () -> new BasicUpdater(false)),
-    PORTABLE("portable", false, () -> new BasicUpdater(true)),
-    NATIVE_INSTALLATION("install", true, () -> new BasicUpdater(true));
+    UNKNOWN("unknown", () -> new BasicUpdater(false)),
+    DEVELOPMENT("development", () -> new BasicUpdater(false)),
+    PORTABLE("portable", () -> new BasicUpdater(true)),
+    APP_IMAGE("appImage", () -> new BasicUpdater(true)),
+    NATIVE_INSTALLATION("install", () -> new BasicUpdater(true));
 
     private static AppDistributionType type;
 
     @Getter
     private final String id;
 
-    @Getter
-    private final boolean supportsUrls;
-
     private final Supplier<UpdateHandler> updateHandlerSupplier;
     private UpdateHandler updateHandler;
 
-    AppDistributionType(String id, boolean supportsUrls, Supplier<UpdateHandler> updateHandlerSupplier) {
+    AppDistributionType(String id, Supplier<UpdateHandler> updateHandlerSupplier) {
         this.id = id;
-        this.supportsUrls = supportsUrls;
         this.updateHandlerSupplier = updateHandlerSupplier;
     }
 
@@ -124,6 +122,21 @@ public enum AppDistributionType implements Translatable {
         // Fix for community AUR builds that use the RPM dist
         if (OsType.ofLocal() == OsType.LINUX && Files.exists(Path.of("/etc/arch-release"))) {
             return PORTABLE;
+        }
+
+        if (OsType.ofLocal() == OsType.LINUX
+                && System.getenv("APPDIR") != null
+                && System.getenv("APPIMAGE") != null) {
+            try {
+                var dir = Path.of(System.getenv("APPDIR"));
+                if (AppInstallation.ofCurrent()
+                        .getBaseInstallationPath()
+                        .startsWith(dir)) {
+                    return APP_IMAGE;
+                }
+
+            } catch (InvalidPathException ignored) {
+            }
         }
 
         return AppDistributionType.NATIVE_INSTALLATION;
