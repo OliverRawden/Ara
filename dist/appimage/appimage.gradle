@@ -41,7 +41,8 @@ tasks.register('appImage', DefaultTask) {
         }
         copy {
             from("$projectDir/logo/logo.png")
-            into layout.buildDirectory.dir("appimage/${appName}.AppDir/.DirIcon")
+            into layout.buildDirectory.dir("appimage/${appName}.AppDir")
+            rename 'logo.png', ".DirIcon"
         }
         execOps.exec {
             commandLine "${projectDir}/appimage/build_appimage.sh", "$projectDir", "$arch", arch == "x86_64" ? "x86_64" : "aarch64", "${appName}.AppDir", distName
