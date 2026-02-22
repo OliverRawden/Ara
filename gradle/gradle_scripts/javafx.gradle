@@ -48,7 +48,8 @@ if (customJavaFxLibsPath != null) {
 tasks.register('downloadJavafxJmods', DefaultTask) {
     doLast {
         def targetDir = file("$projectDir/javafx/$javafxPlatform/$arch")
-        if (fileTree(targetDir).filter { it.name != ".gitkeep" }.getFiles().size() > 0) {
+        def versionFile = file("$targetDir/version")
+        if (versionFile.exists() && versionFile.text.strip() == productionJavafxVersion) {
             return
         }
 
@@ -74,5 +75,6 @@ tasks.register('downloadJavafxJmods', DefaultTask) {
             from layout.buildDirectory.file("javafx-jmods-$majorVersion")
             into targetDir
         }
+        versionFile.text = productionJavafxVersion
     }
 }
