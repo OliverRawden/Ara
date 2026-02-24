@@ -21,7 +21,7 @@ jobs:
         run: |
           dotnet tool install --global AzureSignTool
           # Fix globalsign shenanigans of them not publishing the certificate
-          Import-Certificate -CertStoreLocation "Cert:\CurrentUser\CA" -FilePath "${{ github.workspace }}/xpipe/.github/workflows/globalsign-timestamp-cert.cer"
+          Import-Certificate -CertStoreLocation "Cert:\CurrentUser\CA" -FilePath ".github/workflows/globalsign-timestamp-cert.cer"
 
       - name: Set up JDK
         uses: actions/setup-java@v5
