@@ -69,6 +69,7 @@ if (file("i18n.gradle").exists()) {
 if (os.isLinux()) {
     apply from: 'linux_packages.gradle'
     apply from: 'appimage/appimage.gradle'
+    apply from: 'appimage/aur.gradle'
 } else if (os.isWindows()) {
     apply from: 'msi/msi.gradle'
 } else if (os.isMacOsX()) {

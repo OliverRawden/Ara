@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.util;
 
-import io.abc_def.kickstart_fx.core.AppSystemInfo;
 import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 
 import com.sun.jna.platform.win32.Shell32;
@@ -15,7 +14,7 @@ import java.util.List;
 
 public class DesktopHelper {
 
-    public static void openUrl(String uri) {
+    public static void openUrlInBrowser(String uri) {
         if (uri == null) {
             return;
         }
