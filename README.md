@@ -38,10 +38,6 @@ It features the following features that you won't find in other templates:
 - Application logo templates that look native on every operating system, including a macOS 26 liquid glass icon
 - Included third-party open source licenses of all dependencies, plus the required button to display them in the application
 
-## Status
-
-KickstartFX is a brand-new project, at least technically. While most parts come straight from XPipe, there was still some work done adapting the code and build scripts to be more template-friendly for this new repository. While the original codebase from XPipe is very stable, there might be issues that were introduced in the template creation process when adapting the original codebase. These should be ironed out in a while. Make sure to report any issues that you find.
-
 ## Downloads
 
 You can run the latest release right now to see for yourself. These releases were generated using this template repository.

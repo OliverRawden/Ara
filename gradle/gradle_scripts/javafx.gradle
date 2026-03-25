@@ -28,8 +28,12 @@ if (customJavaFxLibsPath != null) {
         javafx files("$customJavaFxLibsPath/javafx.graphics.jar")
         javafx files("$customJavaFxLibsPath/javafx.media.jar")
         javafx files("$customJavaFxLibsPath/javafx.web.jar")
+
+        // Required by sample components, not necessary for base application
         javafx files("$customJavaFxLibsPath/javafx.fxml.jar")
         javafx files("$customJavaFxLibsPath/javafx.swing.jar")
+        javafx files("$customJavaFxLibsPath/jfx.incubator.input.jar")
+        javafx files("$customJavaFxLibsPath/jfx.incubator.richtext.jar")
     }
 } else if (!jdkHasBundledJavaFx) {
     // Always use maven version for development
@@ -40,8 +44,12 @@ if (customJavaFxLibsPath != null) {
         javafx "org.openjfx:javafx-graphics:${devJavafxVersion}:${platformClassifier}"
         javafx "org.openjfx:javafx-media:${devJavafxVersion}:${platformClassifier}"
         javafx "org.openjfx:javafx-web:${devJavafxVersion}:${platformClassifier}"
+
+        // Required by sample components, not necessary for base application
         javafx "org.openjfx:javafx-fxml:${devJavafxVersion}:${platformClassifier}"
         javafx "org.openjfx:javafx-swing:${devJavafxVersion}:${platformClassifier}"
+        javafx "org.openjfx:jfx-incubator-input:${devJavafxVersion}:${platformClassifier}"
+        javafx "org.openjfx:jfx-incubator-richtext:${devJavafxVersion}:${platformClassifier}"
     }
 }
 
