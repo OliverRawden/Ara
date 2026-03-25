@@ -53,3 +53,7 @@
 .button:default, .button.accent {
     -color-button-bg-focused: -color-accent-subtle;
 }
+
+.text-field:focused {
+    -fx-prompt-text-fill: -color-fg-subtle;
+}
