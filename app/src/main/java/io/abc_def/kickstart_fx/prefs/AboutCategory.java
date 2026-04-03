@@ -1,6 +1,8 @@
 package io.abc_def.kickstart_fx.prefs;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+
+import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.LabelComp;
 import io.abc_def.kickstart_fx.comp.base.PrettyImageHelper;
 import io.abc_def.kickstart_fx.comp.base.VerticalComp;
@@ -35,23 +37,23 @@ public class AboutCategory extends AppPrefsCategory {
     }
 
     @Override
-    public Comp<?> create() {
+    public BaseRegionBuilder<?, ?> create() {
         var props = createProperties();
         var update = new UpdateCheckComp().prefWidth(600);
         return new VerticalComp(List.of(
                         props,
-                        Comp.vspacer(1),
+                        RegionBuilder.vspacer(1),
                         update,
-                        Comp.vspacer(5),
-                        Comp.hseparator().padding(Insets.EMPTY).maxWidth(600)))
-                .apply(s -> s.get().setFillWidth(true))
-                .apply(struc -> struc.get().setSpacing(12))
-                .styleClass("information")
-                .styleClass("about-tab");
+                        RegionBuilder.vspacer(5),
+                        RegionBuilder.hseparator().padding(Insets.EMPTY).maxWidth(600)))
+                .apply(s -> s.setFillWidth(true))
+                .apply(struc -> struc.setSpacing(12))
+                .style("information")
+                .style("about-tab");
     }
 
-    private Comp<?> createProperties() {
-        var title = Comp.of(() -> {
+    private BaseRegionBuilder<?, ?> createProperties() {
+        var title = RegionBuilder.of(() -> {
             var header = new Label();
             header.setText(AppNames.ofCurrent().getName() + " Desktop");
             AppFontSizes.xl(header);
@@ -64,7 +66,7 @@ public class AboutCategory extends AppPrefsCategory {
 
             var size = 40;
             var graphic = PrettyImageHelper.ofFixedSizeSquare("icon/logo_40x40.png", size)
-                    .createRegion();
+                    .build();
 
             var hbox = new HBox(graphic, text);
             hbox.setAlignment(Pos.CENTER_LEFT);
@@ -73,12 +75,12 @@ public class AboutCategory extends AppPrefsCategory {
             return hbox;
         });
 
-        title.styleClass(Styles.TEXT_BOLD);
+        title.style(Styles.TEXT_BOLD);
 
         var section = new OptionsBuilder()
-                .addComp(Comp.vspacer(40))
+                .addComp(RegionBuilder.vspacer(40))
                 .addComp(title, null)
-                .addComp(Comp.vspacer(10))
+                .addComp(RegionBuilder.vspacer(10))
                 .name("build")
                 .addComp(new LabelComp(AppProperties.get().getBuild()), null)
                 .name("distribution")
@@ -93,6 +95,6 @@ public class AboutCategory extends AppPrefsCategory {
                 .name("javafxBuild")
                 .addComp(new LabelComp("JavaFX " + System.getProperty("javafx.runtime.version") + (Boolean.getBoolean("javafx.enablePreview") ? " + Preview" : "")))
                 .buildComp();
-        return section.styleClass("properties-comp");
+        return section.style("properties-comp");
     }
 }

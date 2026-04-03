@@ -1,11 +1,12 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
+import atlantafx.base.controls.Spacer;
+import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
+import io.abc_def.kickstart_fx.comp.RegionStructure;
+import io.abc_def.kickstart_fx.comp.RegionStructureBuilder;
 import io.abc_def.kickstart_fx.core.AppFontSizes;
 import io.abc_def.kickstart_fx.core.AppI18n;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
-
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
@@ -15,15 +16,16 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-
-import atlantafx.base.controls.Spacer;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.Value;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.function.Consumer;
 
 @Getter
-public class TileButtonComp extends Comp<TileButtonComp.Structure> {
+public class TileButtonComp extends RegionStructureBuilder<Button, TileButtonComp.Structure> {
 
     private final ObservableValue<String> name;
     private final ObservableValue<String> description;
@@ -34,7 +36,7 @@ public class TileButtonComp extends Comp<TileButtonComp.Structure> {
     private double iconSize = 0.55;
 
     @Setter
-    private Comp<?> right;
+    private BaseRegionBuilder<?, ?> right;
 
     public TileButtonComp(String nameKey, String descriptionKey, String icon, Consumer<ActionEvent> action) {
         this.name = AppI18n.observable(nameKey);
@@ -55,7 +57,7 @@ public class TileButtonComp extends Comp<TileButtonComp.Structure> {
     }
 
     @Override
-    protected Structure createBase() {
+    public Structure createBase() {
         var bt = new Button();
         bt.getStyleClass().add("tile-button-comp");
         bt.setOnAction(e -> {
@@ -81,10 +83,10 @@ public class TileButtonComp extends Comp<TileButtonComp.Structure> {
         var text = new VBox(header, desc);
         text.setSpacing(2);
 
-        var fi = new FontIconComp(icon).createStructure();
+        var fi = new FontIconComp(icon).buildStructure();
         var pane = fi.getPane();
         var hbox = new HBox(pane, text);
-        Region rightRegion = right != null ? right.createRegion() : null;
+        Region rightRegion = right != null ? right.build() : null;
         if (rightRegion != null) {
             hbox.getChildren().add(new Spacer());
             hbox.getChildren().add(rightRegion);
@@ -117,7 +119,7 @@ public class TileButtonComp extends Comp<TileButtonComp.Structure> {
 
     @Value
     @Builder
-    public static class Structure implements CompStructure<Button> {
+    public static class Structure implements RegionStructure<Button> {
         Button button;
         HBox content;
         FontIcon graphic;

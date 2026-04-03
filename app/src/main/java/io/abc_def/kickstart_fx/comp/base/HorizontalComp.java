@@ -1,10 +1,8 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -13,29 +11,29 @@ import javafx.scene.layout.HBox;
 
 import java.util.List;
 
-public class HorizontalComp extends Comp<CompStructure<HBox>> {
+public class HorizontalComp extends RegionBuilder<HBox> {
 
-    private final ObservableList<Comp<?>> entries;
+    private final ObservableList<BaseRegionBuilder<?, ?>> entries;
 
-    public HorizontalComp(List<Comp<?>> comps) {
+    public HorizontalComp(List<BaseRegionBuilder<?, ?>> comps) {
         entries = FXCollections.observableArrayList(List.copyOf(comps));
     }
 
-    public Comp<CompStructure<HBox>> spacing(double spacing) {
-        return apply(struc -> struc.get().setSpacing(spacing));
+    public RegionBuilder<HBox> spacing(double spacing) {
+        return apply(struc -> struc.setSpacing(spacing));
     }
 
     @Override
-    protected CompStructure<HBox> createBase() {
+    public HBox createSimple() {
         var b = new HBox();
         b.getStyleClass().add("horizontal-comp");
-        entries.addListener((ListChangeListener<? super Comp<?>>) c -> {
-            b.getChildren().setAll(c.getList().stream().map(Comp::createRegion).toList());
+        entries.addListener((ListChangeListener<? super BaseRegionBuilder<?, ?>>) c -> {
+            b.getChildren().setAll(c.getList().stream().map(ab -> ab.build()).toList());
         });
         for (var entry : entries) {
-            b.getChildren().add(entry.createRegion());
+            b.getChildren().add(entry.build());
         }
         b.setAlignment(Pos.CENTER);
-        return new SimpleCompStructure<>(b);
+        return b;
     }
 }

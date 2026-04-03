@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.page;
 
-import io.abc_def.kickstart_fx.comp.SimpleComp;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ButtonComp;
 import io.abc_def.kickstart_fx.comp.base.VerticalComp;
 import io.abc_def.kickstart_fx.core.AppI18n;
@@ -13,7 +13,7 @@ import javafx.scene.layout.Region;
 
 import java.util.List;
 
-public class DeveloperPageComp extends SimpleComp {
+public class DeveloperPageComp extends SimpleRegionBuilder {
 
     @Override
     protected Region createSimple() {
@@ -65,6 +65,6 @@ public class DeveloperPageComp extends SimpleComp {
         buttons.spacing(20);
         buttons.padding(new Insets(50));
 
-        return buttons.createRegion();
+        return buttons.build();
     }
 }

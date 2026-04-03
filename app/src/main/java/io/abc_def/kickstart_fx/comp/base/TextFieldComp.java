@@ -1,18 +1,18 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
-
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.TextField;
+import javafx.scene.control.skin.TextFieldSkin;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.Pane;
+import javafx.scene.shape.Rectangle;
 
 import java.util.Objects;
 
-public class TextFieldComp extends Comp<CompStructure<TextField>> {
+public class TextFieldComp extends RegionBuilder<TextField> {
 
     private final Property<String> lastAppliedValue;
     private final Property<String> currentValue;
@@ -39,10 +39,10 @@ public class TextFieldComp extends Comp<CompStructure<TextField>> {
     }
 
     @Override
-    protected CompStructure<TextField> createBase() {
-        var text = new TextField(currentValue.getValue() != null ? currentValue.getValue() : null);
+    public TextField createSimple() {
+        var text = new TextField(currentValue.getValue() != null ? currentValue.getValue() : "");
         text.textProperty().addListener((c, o, n) -> {
-            currentValue.setValue(n != null && !n.isEmpty() ? n : null);
+            currentValue.setValue(n != null && n.length() > 0 ? n : null);
         });
         lastAppliedValue.addListener((c, o, n) -> {
             PlatformThread.runLaterIfNeeded(() -> {
@@ -72,6 +72,15 @@ public class TextFieldComp extends Comp<CompStructure<TextField>> {
             }
         });
 
-        return new SimpleCompStructure<>(text);
+        // Fix caret not being visible on right side when overflowing
+        text.setSkin(new TextFieldSkin(text));
+        Pane pane = (Pane) text.getChildrenUnmodifiable().getFirst();
+        var rec = new Rectangle();
+        rec.widthProperty().bind(pane.widthProperty().add(2));
+        rec.heightProperty().bind(pane.heightProperty());
+        rec.setSmooth(false);
+        text.getChildrenUnmodifiable().getFirst().setClip(rec);
+
+        return text;
     }
 }

@@ -1,32 +1,31 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import atlantafx.base.controls.ToggleSwitch;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
+import io.abc_def.kickstart_fx.core.AppI18n;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
-
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.Property;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.css.PseudoClass;
 import javafx.geometry.Pos;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-
-import atlantafx.base.controls.ToggleSwitch;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @Value
 @EqualsAndHashCode(callSuper = true)
-public class ToggleSwitchComp extends Comp<CompStructure<ToggleSwitch>> {
+public class ToggleSwitchComp extends RegionBuilder<ToggleSwitch> {
 
     Property<Boolean> selected;
     ObservableValue<String> name;
     ObservableValue<LabelGraphic> graphic;
 
     @Override
-    protected CompStructure<ToggleSwitch> createBase() {
+    public ToggleSwitch createSimple() {
         var s = new ToggleSwitch();
         s.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.SPACE || event.getCode() == KeyCode.ENTER) {
@@ -34,6 +33,17 @@ public class ToggleSwitchComp extends Comp<CompStructure<ToggleSwitch>> {
                 event.consume();
             }
         });
+        s.accessibleTextProperty()
+                .bind(Bindings.createStringBinding(
+                        () -> {
+                            if (name != null && name.getValue() != null) {
+                                return name.getValue();
+                            }
+
+                            return AppI18n.get("toggleButton");
+                        },
+                        name != null ? name : new ReadOnlyObjectWrapper<>(),
+                        AppI18n.activeLanguage()));
         s.setAlignment(Pos.CENTER);
         s.getStyleClass().add("toggle-switch-comp");
         s.setSelected(selected.getValue() != null ? selected.getValue() : false);
@@ -58,8 +68,17 @@ public class ToggleSwitchComp extends Comp<CompStructure<ToggleSwitch>> {
                     s.setGraphic(value.createGraphicNode());
                 });
             });
+            s.setAlignment(Pos.CENTER);
             s.pseudoClassStateChanged(PseudoClass.getPseudoClass("has-graphic"), true);
         }
-        return new SimpleCompStructure<>(s);
+
+        s.setOnKeyPressed(keyEvent -> {
+            if (keyEvent.getCode() == KeyCode.SPACE || keyEvent.getCode() == KeyCode.ENTER) {
+                s.setSelected(!s.isSelected());
+                keyEvent.consume();
+            }
+        });
+
+        return s;
     }
 }

@@ -1,11 +1,8 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
-
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
@@ -13,14 +10,13 @@ import javafx.css.Size;
 import javafx.css.SizeUnits;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 @Getter
 @AllArgsConstructor
-public class ButtonComp extends Comp<CompStructure<Button>> {
+public class ButtonComp extends RegionBuilder<Button> {
 
     private final ObservableValue<String> name;
     private final ObservableValue<LabelGraphic> graphic;
@@ -38,15 +34,10 @@ public class ButtonComp extends Comp<CompStructure<Button>> {
         this.listener = listener;
     }
 
-    public ButtonComp(ObservableValue<String> name, LabelGraphic graphic, Runnable listener) {
-        this.name = name;
-        this.graphic = new ReadOnlyObjectWrapper<>(graphic);
-        this.listener = listener;
-    }
-
     @Override
-    protected CompStructure<Button> createBase() {
+    public Button createSimple() {
         var button = new Button(null);
+        button.setMnemonicParsing(false);
         if (name != null) {
             name.subscribe(t -> {
                 PlatformThread.runLaterIfNeeded(() -> button.setText(t));
@@ -77,6 +68,6 @@ public class ButtonComp extends Comp<CompStructure<Button>> {
             button.setOnAction(e -> getListener().run());
         }
         button.getStyleClass().add("button-comp");
-        return new SimpleCompStructure<>(button);
+        return button;
     }
 }

@@ -1,6 +1,8 @@
 package io.abc_def.kickstart_fx.platform;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
+
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.LabelComp;
 import io.abc_def.kickstart_fx.comp.base.OptionsComp;
 import io.abc_def.kickstart_fx.comp.base.ToggleSwitchComp;
@@ -23,8 +25,8 @@ public class OptionsBuilder {
 
     private ObservableValue<String> name;
     private ObservableValue<String> description;
-    private Comp<?> comp;
-    private Comp<?> lastCompHeadReference;
+    private BaseRegionBuilder<?, ?> comp;
+    private BaseRegionBuilder<?, ?> lastCompHeadReference;
     private ObservableValue<String> lastNameReference;
 
     private void finishCurrent() {
@@ -58,7 +60,7 @@ public class OptionsBuilder {
     public OptionsBuilder addTitle(String titleKey) {
         finishCurrent();
         entries.add(new OptionsComp.Entry(
-                titleKey, null, null, new LabelComp(AppI18n.observable(titleKey)).styleClass("title-header")));
+                titleKey, null, null, new LabelComp(AppI18n.observable(titleKey)).style("title-header")));
         return this;
     }
 
@@ -83,7 +85,7 @@ public class OptionsBuilder {
         return this;
     }
 
-    private void pushComp(Comp<?> comp) {
+    private void pushComp(BaseRegionBuilder<?, ?> comp) {
         finishCurrent();
         this.comp = comp;
         this.lastCompHeadReference = comp;
@@ -97,7 +99,7 @@ public class OptionsBuilder {
     }
 
     public OptionsBuilder spacer(double size) {
-        return addComp(Comp.of(() -> new Spacer(size, Orientation.VERTICAL)));
+        return addComp(RegionBuilder.of(() -> new Spacer(size, Orientation.VERTICAL)));
     }
 
     public OptionsBuilder name(String nameKey) {
@@ -119,12 +121,12 @@ public class OptionsBuilder {
         return this;
     }
 
-    public OptionsBuilder addComp(Comp<?> comp) {
+    public OptionsBuilder addComp(BaseRegionBuilder<?, ?> comp) {
         pushComp(comp);
         return this;
     }
 
-    public OptionsBuilder addComp(Comp<?> comp, Property<?> prop) {
+    public OptionsBuilder addComp(BaseRegionBuilder<?, ?> comp, Property<?> prop) {
         pushComp(comp);
         props.add(prop);
         return this;

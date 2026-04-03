@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.prefs;
 
-import io.abc_def.kickstart_fx.comp.SimpleComp;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.TileButtonComp;
 import io.abc_def.kickstart_fx.core.AppI18n;
 import io.abc_def.kickstart_fx.update.AppDistributionType;
@@ -10,7 +10,7 @@ import io.abc_def.kickstart_fx.util.ThreadHelper;
 import javafx.beans.binding.Bindings;
 import javafx.scene.layout.Region;
 
-public class UpdateCheckComp extends SimpleComp {
+public class UpdateCheckComp extends SimpleRegionBuilder {
 
     @Override
     protected Region createSimple() {
@@ -66,8 +66,8 @@ public class UpdateCheckComp extends SimpleComp {
                     });
                     actionEvent.consume();
                 })
-                .styleClass("update-button")
+                .style("update-button")
                 .disable(uh.getBusy())
-                .createRegion();
+                .build();
     }
 }

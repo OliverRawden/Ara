@@ -1,8 +1,6 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.core.AppI18n;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
 import io.abc_def.kickstart_fx.util.Translatable;
@@ -23,7 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-public class ChoiceComp<T> extends Comp<CompStructure<ComboBox<T>>> {
+public class ChoiceComp<T> extends RegionBuilder<ComboBox<T>> {
 
     Property<T> value;
     ObservableValue<Map<T, ObservableValue<String>>> range;
@@ -44,7 +42,7 @@ public class ChoiceComp<T> extends Comp<CompStructure<ComboBox<T>>> {
     }
 
     @Override
-    protected CompStructure<ComboBox<T>> createBase() {
+    public ComboBox<T> createSimple() {
         var cb = new ComboBox<T>();
         cb.setConverter(new StringConverter<>() {
             @Override
@@ -84,6 +82,6 @@ public class ChoiceComp<T> extends Comp<CompStructure<ComboBox<T>>> {
 
         cb.getStyleClass().add("choice-comp");
         cb.setMaxWidth(10000);
-        return new SimpleCompStructure<>(cb);
+        return cb;
     }
 }

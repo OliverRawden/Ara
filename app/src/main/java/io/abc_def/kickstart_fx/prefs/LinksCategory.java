@@ -1,6 +1,8 @@
 package io.abc_def.kickstart_fx.prefs;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+
+import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ModalOverlay;
 import io.abc_def.kickstart_fx.comp.base.TileButtonComp;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
@@ -9,10 +11,10 @@ import io.abc_def.kickstart_fx.util.Hyperlinks;
 
 public class LinksCategory extends AppPrefsCategory {
 
-    private Comp<?> createLinks() {
+    private BaseRegionBuilder<?, ?> createLinks() {
         return new OptionsBuilder()
                 .addTitle("links")
-                .addComp(Comp.vspacer(19))
+                .addComp(RegionBuilder.vspacer(19))
                 .addComp(
                         new TileButtonComp(
                                         "documentation", "documentationDescription", "mdi2b-book-open-variant", e -> {
@@ -25,12 +27,12 @@ public class LinksCategory extends AppPrefsCategory {
                         new TileButtonComp("thirdParty", "thirdPartyDescription", "mdi2o-open-source-initiative", e -> {
                                     var comp = new ThirdPartyDependencyListComp()
                                             .prefWidth(650)
-                                            .styleClass("open-source-notices");
+                                            .style("open-source-notices");
                                     var modal = ModalOverlay.of("openSourceNotices", comp);
                                     modal.show();
                                 })
                                 .maxWidth(2000))
-                .addComp(Comp.vspacer(40))
+                .addComp(RegionBuilder.vspacer(40))
                 .buildComp();
     }
 
@@ -45,8 +47,8 @@ public class LinksCategory extends AppPrefsCategory {
     }
 
     @Override
-    public Comp<?> create() {
-        return createLinks().styleClass("information").styleClass("about-tab").apply(struc -> struc.get()
+    public BaseRegionBuilder<?, ?> create() {
+        return createLinks().style("information").style("about-tab").apply(struc -> struc
                 .setPrefWidth(600));
     }
 }

@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.update;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.MarkdownComp;
 import io.abc_def.kickstart_fx.comp.base.ModalOverlay;
 import io.abc_def.kickstart_fx.issue.TrackEvent;
@@ -24,10 +24,7 @@ public class UpdateAvailableDialog {
                 .handle();
         var u = uh.getLastUpdateCheckResult().getValue();
 
-        var comp = Comp.of(() -> {
-            var markdown = new MarkdownComp(u.getBody() != null ? u.getBody() : "", s -> s, false).createRegion();
-            return markdown;
-        });
+        var comp = new MarkdownComp(u.getBody() != null ? u.getBody() : "", s -> s, false);
         var modal = ModalOverlay.of("updateReadyAlertTitle", comp.prefWidth(600), null);
         for (var action : uh.createActions()) {
             modal.addButton(action);

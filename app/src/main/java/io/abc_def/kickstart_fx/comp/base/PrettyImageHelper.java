@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.core.AppImages;
 import io.abc_def.kickstart_fx.core.window.AppMainWindow;
 import io.abc_def.kickstart_fx.platform.BindingsHelper;
@@ -65,15 +65,15 @@ public class PrettyImageHelper {
                 obs);
     }
 
-    public static Comp<?> ofFixedSizeSquare(String img, int size) {
+    public static BaseRegionBuilder<?, ?> ofFixedSizeSquare(String img, int size) {
         return ofFixedSize(img, size, size);
     }
 
-    public static Comp<?> ofFixedSize(String img, int w, int h) {
+    public static BaseRegionBuilder<?, ?> ofFixedSize(String img, int w, int h) {
         return ofFixedSize(new SimpleStringProperty(img), w, h);
     }
 
-    public static Comp<?> ofFixedSize(ObservableValue<String> img, int w, int h) {
+    public static BaseRegionBuilder<?, ?> ofFixedSize(ObservableValue<String> img, int w, int h) {
         if (img == null) {
             return new PrettyImageComp(new SimpleStringProperty(null), w, h);
         }
@@ -84,7 +84,7 @@ public class PrettyImageHelper {
         return new PrettyImageComp(binding, w, h);
     }
 
-    public static Comp<?> ofSpecificFixedSize(String img, int w, int h) {
+    public static BaseRegionBuilder<?, ?> ofSpecificFixedSize(String img, int w, int h) {
         var b = rasterizedImageIfExistsScaled(img, h, h, h * 2);
         return new PrettyImageComp(b, w, h);
     }

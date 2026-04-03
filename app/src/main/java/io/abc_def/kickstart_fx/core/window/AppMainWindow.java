@@ -83,7 +83,7 @@ public class AppMainWindow {
         INSTANCE = new AppMainWindow(stage);
         AppModifiedStage.prepareStage(stage);
 
-        var content = new AppMainWindowContentComp(stage).createRegion();
+        var content = new AppMainWindowContentComp(stage).build();
         content.opacityProperty()
                 .bind(Bindings.createDoubleBinding(
                         () -> {
@@ -136,7 +136,7 @@ public class AppMainWindow {
             try {
                 TrackEvent.info("Window content node creation started");
                 var content = new AppLayoutComp();
-                var s = content.createStructure();
+                var s = content.buildStructure();
                 TrackEvent.info("Window content node structure created");
                 loadedContent.setValue(s);
             } catch (Throwable t) {

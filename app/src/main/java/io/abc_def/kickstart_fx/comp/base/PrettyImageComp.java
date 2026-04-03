@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.SimpleComp;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 import io.abc_def.kickstart_fx.core.AppImages;
 import io.abc_def.kickstart_fx.issue.TrackEvent;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
@@ -18,7 +18,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.util.function.Consumer;
 
-public class PrettyImageComp extends SimpleComp {
+public class PrettyImageComp extends SimpleRegionBuilder {
 
     private final ObservableValue<String> value;
     private final double width;

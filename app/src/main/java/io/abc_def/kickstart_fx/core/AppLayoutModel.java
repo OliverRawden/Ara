@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.core;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.page.*;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
@@ -154,7 +154,7 @@ public class AppLayoutModel {
         double browserConnectionsWidth;
     }
 
-    public record Entry(ObservableValue<String> name, LabelGraphic icon, Comp<?> comp, Runnable action) {}
+    public record Entry(ObservableValue<String> name, LabelGraphic icon, RegionBuilder<?> comp, Runnable action) {}
 
     @Value
     @NonFinal

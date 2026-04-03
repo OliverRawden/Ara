@@ -1,27 +1,24 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
+import io.abc_def.kickstart_fx.core.AppCache;
 import io.abc_def.kickstart_fx.core.AppProperties;
 import io.abc_def.kickstart_fx.core.AppResources;
-import io.abc_def.kickstart_fx.core.AppSystemInfo;
 import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 import io.abc_def.kickstart_fx.platform.MarkdownHelper;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
 import io.abc_def.kickstart_fx.prefs.AppPrefs;
 import io.abc_def.kickstart_fx.util.Hyperlinks;
 import io.abc_def.kickstart_fx.util.OsType;
-
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
-
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 
@@ -30,10 +27,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.UnaryOperator;
 
-public class MarkdownComp extends Comp<CompStructure<StackPane>> {
+public class MarkdownComp extends RegionBuilder<StackPane> {
 
     private static Boolean WEB_VIEW_SUPPORTED;
-
+    private static Path DIR;
     private final ObservableValue<String> markdown;
     private final UnaryOperator<String> htmlTransformation;
     private final boolean bodyPadding;
@@ -52,6 +49,10 @@ public class MarkdownComp extends Comp<CompStructure<StackPane>> {
     }
 
     private Path getHtmlFile(String markdown) {
+        if (DIR == null) {
+            DIR = AppCache.getBasePath().resolve("md");
+        }
+
         if (markdown == null) {
             return null;
         }
@@ -63,7 +64,7 @@ public class MarkdownComp extends Comp<CompStructure<StackPane>> {
         } else {
             hash = markdown.hashCode();
         }
-        var file = AppSystemInfo.ofCurrent().getTemp().resolve("webview").resolve("md-" + hash + ".html");
+        var file = DIR.resolve("md-" + hash + ".html");
         if (Files.exists(file)) {
             return file;
         }
@@ -88,8 +89,7 @@ public class MarkdownComp extends Comp<CompStructure<StackPane>> {
         wv.setContextMenuEnabled(false);
         wv.setPageFill(Color.TRANSPARENT);
         wv.getEngine()
-                .setUserDataDirectory(
-                        AppProperties.get().getDataDir().resolve("webview").toFile());
+                .setUserDataDirectory(AppCache.getBasePath().resolve("webview").toFile());
         var theme = AppPrefs.get() != null
                         && AppPrefs.get().theme().getValue() != null
                         && AppPrefs.get().theme().getValue().isDark()
@@ -106,6 +106,14 @@ public class MarkdownComp extends Comp<CompStructure<StackPane>> {
                     wv.getEngine().load(contentUrl.toString());
                 }
             });
+        });
+
+        // Fix initial scrollbar size
+        wv.lookupAll(".scroll-bar").stream().findFirst().ifPresent(node -> {
+            Region region = (Region) node;
+            region.setMinWidth(0);
+            region.setPrefWidth(7);
+            region.setMaxWidth(7);
         });
 
         wv.getStyleClass().add("markdown-comp");
@@ -127,7 +135,7 @@ public class MarkdownComp extends Comp<CompStructure<StackPane>> {
     }
 
     @Override
-    protected CompStructure<StackPane> createBase() {
+    public StackPane createSimple() {
         var sp = new StackPane();
 
         if (OsType.ofLocal() == OsType.WINDOWS && AppProperties.get().getArch().equals("arm64")) {
@@ -157,6 +165,6 @@ public class MarkdownComp extends Comp<CompStructure<StackPane>> {
             sp.getChildren().add(text);
         }
 
-        return new SimpleCompStructure<>(sp);
+        return sp;
     }
 }

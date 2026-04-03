@@ -1,6 +1,7 @@
 package io.abc_def.kickstart_fx.core.window;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ModalButton;
 import io.abc_def.kickstart_fx.comp.base.ModalOverlay;
 import io.abc_def.kickstart_fx.core.AppI18n;
@@ -104,12 +105,12 @@ public class AppDialog {
         }
     }
 
-    public static Comp<?> dialogTextKey(String s) {
+    public static BaseRegionBuilder<?, ?> dialogTextKey(String s) {
         return dialogText(AppI18n.observable(s));
     }
 
-    public static Comp<?> dialogText(String s) {
-        return Comp.of(() -> {
+    public static BaseRegionBuilder<?, ?> dialogText(String s) {
+        return RegionBuilder.of(() -> {
                     var text = new Text(s);
                     text.getStyleClass().add("dialog-text");
                     var sp = new StackPane(text);
@@ -119,8 +120,8 @@ public class AppDialog {
                 .prefWidth(450);
     }
 
-    public static Comp<?> dialogText(ObservableValue<String> s) {
-        return Comp.of(() -> {
+    public static BaseRegionBuilder<?, ?> dialogText(ObservableValue<String> s) {
+        return RegionBuilder.of(() -> {
                     var text = new Text();
                     text.getStyleClass().add("dialog-text");
                     text.textProperty().bind(s);

@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.prefs;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.OptionsBuilder;
 
@@ -16,7 +16,7 @@ public class UpdatesCategory extends AppPrefsCategory {
         return new LabelGraphic.IconGraphic("mdi2d-download-box-outline");
     }
 
-    public Comp<?> create() {
+    public BaseRegionBuilder<?, ?> create() {
         var prefs = AppPrefs.get();
         var builder = new OptionsBuilder();
         builder.addTitle("updates")

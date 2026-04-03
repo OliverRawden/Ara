@@ -1,6 +1,7 @@
 package io.abc_def.kickstart_fx.prefs;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
+
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 
 public abstract class AppPrefsCategory {
@@ -13,5 +14,5 @@ public abstract class AppPrefsCategory {
 
     protected abstract LabelGraphic getIcon();
 
-    public abstract Comp<?> create();
+    public abstract BaseRegionBuilder<?, ?> create();
 }

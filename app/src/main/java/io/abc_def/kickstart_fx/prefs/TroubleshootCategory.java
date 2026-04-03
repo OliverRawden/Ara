@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.prefs;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ModalOverlay;
 import io.abc_def.kickstart_fx.comp.base.TileButtonComp;
 import io.abc_def.kickstart_fx.core.*;
@@ -47,7 +47,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
     }
 
     @Override
-    public Comp<?> create() {
+    public BaseRegionBuilder<?, ?> create() {
         OptionsBuilder b = new OptionsBuilder()
                 .addTitle("troubleshootingOptions")
                 .spacer(19)

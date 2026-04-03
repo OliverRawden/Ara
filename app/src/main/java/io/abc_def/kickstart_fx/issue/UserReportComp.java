@@ -68,8 +68,8 @@ public class UserReportComp extends ModalOverlayContentComp {
                         includedDiagnostics,
                         file -> false,
                         () -> false)
-                .styleClass("attachment-list")
-                .createRegion();
+                .style("attachment-list")
+                .build();
 
         var reportSection = new VBox(
                 infoHeader,
