@@ -71,16 +71,6 @@ public class TextFieldComp extends RegionBuilder<TextField> {
                 lastAppliedValue.setValue(currentValue.getValue());
             }
         });
-
-        // Fix caret not being visible on right side when overflowing
-        text.setSkin(new TextFieldSkin(text));
-        Pane pane = (Pane) text.getChildrenUnmodifiable().getFirst();
-        var rec = new Rectangle();
-        rec.widthProperty().bind(pane.widthProperty().add(2));
-        rec.heightProperty().bind(pane.heightProperty());
-        rec.setSmooth(false);
-        text.getChildrenUnmodifiable().getFirst().setClip(rec);
-
         return text;
     }
 }

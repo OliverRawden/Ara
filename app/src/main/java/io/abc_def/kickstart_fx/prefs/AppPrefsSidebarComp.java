@@ -57,7 +57,7 @@ public class AppPrefsSidebarComp extends SimpleRegionBuilder {
         });
         restartButton.maxWidth(2000);
         restartButton.visible(AppPrefs.get().getRequiresRestart());
-        restartButton.padding(new Insets(6, 10, 6, 6));
+        restartButton.apply(button -> button.setPadding(new Insets(6, 10, 6, 6)));
         buttons.add(RegionBuilder.vspacer());
         buttons.add(restartButton);
 

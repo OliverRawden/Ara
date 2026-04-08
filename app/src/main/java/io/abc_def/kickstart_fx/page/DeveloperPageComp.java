@@ -63,7 +63,7 @@ public class DeveloperPageComp extends SimpleRegionBuilder {
                 tray,
                 background));
         buttons.spacing(20);
-        buttons.padding(new Insets(50));
+        buttons.apply(r -> r.setPadding(new Insets(50)));
 
         return buttons.build();
     }

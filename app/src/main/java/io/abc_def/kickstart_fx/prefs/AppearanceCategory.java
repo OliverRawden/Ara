@@ -18,12 +18,15 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.Slider;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 import atlantafx.base.controls.ProgressSliderSkin;
 import atlantafx.base.theme.Styles;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.Arrays;
@@ -80,7 +83,7 @@ public class AppearanceCategory extends AppPrefsCategory {
         var prefs = AppPrefs.get();
         var c = ChoiceComp.ofTranslatable(prefs.language, Arrays.asList(SupportedLocale.values()), false);
         c.maxWidth(300.0);
-        c.hgrow();
+        c.apply(cb -> HBox.setHgrow(cb, Priority.ALWAYS));
         var visit = new ButtonComp(AppI18n.observable("translate"), new FontIcon("mdi2w-web"), () -> {
             Hyperlinks.open(Hyperlinks.TRANSLATE);
         });
@@ -102,7 +105,7 @@ public class AppearanceCategory extends AppPrefsCategory {
     }
 
     @Override
-    public BaseRegionBuilder<?, ?> create() {
+    public AbstractRegionBuilder<?, ?> create() {
         var prefs = AppPrefs.get();
         return new OptionsBuilder()
                 .addTitle("uiOptions")

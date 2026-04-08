@@ -21,6 +21,7 @@ import javafx.scene.layout.VBox;
 
 import atlantafx.base.controls.Spacer;
 import atlantafx.base.theme.Styles;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.List;
 
@@ -37,7 +38,7 @@ public class AboutCategory extends AppPrefsCategory {
     }
 
     @Override
-    public BaseRegionBuilder<?, ?> create() {
+    public AbstractRegionBuilder<?, ?> create() {
         var props = createProperties();
         var update = new UpdateCheckComp().prefWidth(600);
         return new VerticalComp(List.of(
@@ -45,14 +46,14 @@ public class AboutCategory extends AppPrefsCategory {
                         RegionBuilder.vspacer(1),
                         update,
                         RegionBuilder.vspacer(5),
-                        RegionBuilder.hseparator().padding(Insets.EMPTY).maxWidth(600)))
+                        RegionBuilder.hseparator().apply(r -> r.setPadding(Insets.EMPTY)).maxWidth(600)))
                 .apply(s -> s.setFillWidth(true))
                 .apply(struc -> struc.setSpacing(12))
                 .style("information")
                 .style("about-tab");
     }
 
-    private BaseRegionBuilder<?, ?> createProperties() {
+    private AbstractRegionBuilder<?, ?> createProperties() {
         var title = RegionBuilder.of(() -> {
             var header = new Label();
             header.setText(AppNames.ofCurrent().getName() + " Desktop");

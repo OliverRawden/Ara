@@ -10,24 +10,25 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.Map;
 
 public class MultiContentComp extends SimpleRegionBuilder {
 
     private final boolean requestFocus;
-    private final Map<BaseRegionBuilder<?, ?>, ObservableValue<Boolean>> content;
+    private final Map<AbstractRegionBuilder<?, ?>, ObservableValue<Boolean>> content;
 
-    public MultiContentComp(boolean requestFocus, Map<BaseRegionBuilder<?, ?>, ObservableValue<Boolean>> content) {
+    public MultiContentComp(boolean requestFocus, Map<AbstractRegionBuilder<?, ?>, ObservableValue<Boolean>> content) {
         this.requestFocus = requestFocus;
         this.content = FXCollections.observableMap(content);
     }
 
     @Override
     protected Region createSimple() {
-        ObservableMap<BaseRegionBuilder<?, ?>, Region> m = FXCollections.observableHashMap();
+        ObservableMap<AbstractRegionBuilder<?, ?>, Region> m = FXCollections.observableHashMap();
         var stack = new StackPane();
-        m.addListener((MapChangeListener<? super BaseRegionBuilder<?, ?>, Region>) change -> {
+        m.addListener((MapChangeListener<? super AbstractRegionBuilder<?, ?>, Region>) change -> {
             if (change.wasAdded()) {
                 stack.getChildren().add(change.getValueAdded());
             } else {
@@ -47,7 +48,7 @@ public class MultiContentComp extends SimpleRegionBuilder {
             }
         });
 
-        for (Map.Entry<BaseRegionBuilder<?, ?>, ObservableValue<Boolean>> e : content.entrySet()) {
+        for (Map.Entry<AbstractRegionBuilder<?, ?>, ObservableValue<Boolean>> e : content.entrySet()) {
             var r = e.getKey().build();
             e.getValue().subscribe(val -> {
                 PlatformThread.runLaterIfNeeded(() -> {

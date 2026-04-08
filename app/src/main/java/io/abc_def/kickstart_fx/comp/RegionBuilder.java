@@ -1,14 +1,22 @@
 package io.abc_def.kickstart_fx.comp;
 
 import atlantafx.base.controls.Spacer;
+import io.abc_def.kickstart_fx.platform.BindingsHelper;
 import javafx.geometry.Orientation;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.Region;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 import org.int4.fx.builders.context.BuildContext;
 
 import java.util.function.Supplier;
 
-public abstract class RegionBuilder<T extends Region> extends BaseRegionBuilder<T, RegionBuilder<T>> {
+public abstract class RegionBuilder<T extends Region> extends AbstractRegionBuilder<T, RegionBuilder<T>> {
+
+    public RegionBuilder() {
+        apply(t -> {
+            BindingsHelper.preserve(t, RegionBuilder.this);
+        });
+    }
 
     public static RegionBuilder<Region> empty() {
         return of(() -> {

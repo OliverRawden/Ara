@@ -20,6 +20,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.function.Consumer;
@@ -36,7 +37,7 @@ public class TileButtonComp extends RegionStructureBuilder<Button, TileButtonCom
     private double iconSize = 0.55;
 
     @Setter
-    private BaseRegionBuilder<?, ?> right;
+    private AbstractRegionBuilder<?, ?> right;
 
     public TileButtonComp(String nameKey, String descriptionKey, String icon, Consumer<ActionEvent> action) {
         this.name = AppI18n.observable(nameKey);

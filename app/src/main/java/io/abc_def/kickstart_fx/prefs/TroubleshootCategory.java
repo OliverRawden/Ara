@@ -16,6 +16,7 @@ import io.abc_def.kickstart_fx.util.ThreadHelper;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.awt.*;
 import java.lang.management.ManagementFactory;
@@ -47,7 +48,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
     }
 
     @Override
-    public BaseRegionBuilder<?, ?> create() {
+    public AbstractRegionBuilder<?, ?> create() {
         OptionsBuilder b = new OptionsBuilder()
                 .addTitle("troubleshootingOptions")
                 .spacer(19)

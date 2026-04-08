@@ -21,39 +21,7 @@ public abstract class BaseRegionBuilder<T extends Region, B extends BaseRegionBu
         });
     }
 
-    public B hgrow() {
-        apply(t -> HBox.setHgrow(t, Priority.ALWAYS));
-        return self();
-    }
-
-    public B vgrow() {
-        apply(t -> VBox.setVgrow(t, Priority.ALWAYS));
-        return self();
-    }
-
     public B padding(Insets insets) {
         return apply(struc -> struc.setPadding(insets));
-    }
-
-    public B show(ObservableValue<Boolean> when) {
-        return this.hide(when.map((b) -> !b).orElse(true));
-    }
-
-    public B hide(ObservableValue<Boolean> o) {
-        return apply(struc -> {
-            var region = struc;
-            BindingsHelper.preserve(region, o);
-            o.subscribe(n -> {
-                PlatformThread.runLaterIfNeeded(() -> {
-                    if (!n) {
-                        region.setVisible(true);
-                        region.setManaged(true);
-                    } else {
-                        region.setVisible(false);
-                        region.setManaged(false);
-                    }
-                });
-            });
-        });
     }
 }

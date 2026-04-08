@@ -64,7 +64,7 @@ public class SideMenuBarComp extends RegionBuilder<VBox> {
         {
             var b = new IconButtonComp("mdi2u-update", () -> UpdateAvailableDialog.showIfNeeded(false));
             var stack = createStyle(null, b);
-            stack.hide(Bindings.createBooleanBinding(
+            stack.invisible(Bindings.createBooleanBinding(
                     () -> {
                         return AppDistributionType.get()
                                         .getUpdateHandler()
@@ -122,7 +122,7 @@ public class SideMenuBarComp extends RegionBuilder<VBox> {
         return vbox;
     }
 
-    private BaseRegionBuilder<?,?> createStyle(AppLayoutModel.Entry e, IconButtonComp b) {
+    private AbstractRegionBuilder<?,?> createStyle(AppLayoutModel.Entry e, IconButtonComp b) {
         var selected = PseudoClass.getPseudoClass("selected");
 
         b.apply(struc -> {

@@ -5,6 +5,7 @@ import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ChoiceComp;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.OptionsBuilder;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 public class SystemCategory extends AppPrefsCategory {
 
@@ -18,7 +19,7 @@ public class SystemCategory extends AppPrefsCategory {
         return new LabelGraphic.IconGraphic("mdi2d-desktop-classic");
     }
 
-    public BaseRegionBuilder<?, ?> create() {
+    public AbstractRegionBuilder<?, ?> create() {
         var prefs = AppPrefs.get();
         var builder = new OptionsBuilder();
         builder.addTitle("system")

@@ -27,7 +27,7 @@ public class AppLayoutComp extends RegionStructureBuilder<BorderPane, AppLayoutC
     @Override
     protected Structure createBase() {
         var model = AppLayoutModel.get();
-        Map<BaseRegionBuilder<?, ?>, ObservableValue<Boolean>> map = model.getEntries().stream()
+        Map<AbstractRegionBuilder<?, ?>, ObservableValue<Boolean>> map = model.getEntries().stream()
                 .filter(entry -> entry.comp() != null)
                 .collect(Collectors.toMap(
                         entry -> entry.comp(),

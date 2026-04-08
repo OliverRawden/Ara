@@ -13,6 +13,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 public class PrefsPageComp extends SimpleRegionBuilder {
 
@@ -22,7 +23,7 @@ public class PrefsPageComp extends SimpleRegionBuilder {
                 .filter(appPrefsCategory -> appPrefsCategory.show())
                 .toList();
         var list = categories.stream()
-                .<BaseRegionBuilder<?, ?>>map(appPrefsCategory -> {
+                .<AbstractRegionBuilder<?, ?>>map(appPrefsCategory -> {
                     var r = appPrefsCategory
                             .create()
                             .style("prefs-container")
