@@ -1,12 +1,12 @@
 package io.abc_def.kickstart_fx.platform;
 
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.PrettyImageHelper;
 
 import javafx.scene.Node;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.function.Supplier;
@@ -58,7 +58,7 @@ public abstract class LabelGraphic {
     @EqualsAndHashCode(callSuper = true)
     public static class CompGraphic extends LabelGraphic {
 
-        BaseRegionBuilder<?, ?> comp;
+        AbstractRegionBuilder<?, ?> comp;
 
         @Override
         public Node createGraphicNode() {

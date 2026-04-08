@@ -1,7 +1,9 @@
 package io.abc_def.kickstart_fx.comp;
 
+import io.abc_def.kickstart_fx.platform.BindingsHelper;
 import javafx.scene.layout.Region;
 
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 import org.int4.fx.builders.context.BuildContext;
 
 import java.util.ArrayList;
@@ -9,9 +11,15 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public abstract class RegionStructureBuilder<R extends Region, S extends RegionStructure<R>>
-        extends BaseRegionBuilder<R, RegionStructureBuilder<R, S>> {
+        extends AbstractRegionBuilder<R, RegionStructureBuilder<R, S>> {
 
     private final List<Consumer<? super S>> options = new ArrayList<>();
+
+    public RegionStructureBuilder() {
+        apply(t -> {
+            BindingsHelper.preserve(t, RegionStructureBuilder.this);
+        });
+    }
 
     public final RegionStructureBuilder<R, S> applyStructure(Consumer<? super S> option) {
         options.add(option);
