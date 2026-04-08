@@ -1,10 +1,10 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import atlantafx.base.controls.ToggleSwitch;
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.core.AppI18n;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
+
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -13,6 +13,8 @@ import javafx.css.PseudoClass;
 import javafx.geometry.Pos;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+
+import atlantafx.base.controls.ToggleSwitch;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 

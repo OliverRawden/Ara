@@ -45,7 +45,8 @@ public class ModalOverlay {
         return of(titleKey != null ? AppI18n.observable(titleKey) : null, content, graphic);
     }
 
-    public static ModalOverlay of(ObservableValue<String> title, AbstractRegionBuilder<?, ?> content, LabelGraphic graphic) {
+    public static ModalOverlay of(
+            ObservableValue<String> title, AbstractRegionBuilder<?, ?> content, LabelGraphic graphic) {
         return new ModalOverlay(title, content, graphic, new ArrayList<>(), true, false);
     }
 

@@ -1,8 +1,10 @@
 package io.abc_def.kickstart_fx.comp.base;
 
 import io.abc_def.kickstart_fx.core.mode.AppOperationMode;
+
 import javafx.beans.property.Property;
 import javafx.scene.control.Button;
+
 import lombok.Value;
 import lombok.experimental.NonFinal;
 

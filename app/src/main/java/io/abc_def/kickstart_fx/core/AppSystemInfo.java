@@ -1,10 +1,11 @@
 package io.abc_def.kickstart_fx.core;
 
-import com.sun.jna.platform.win32.KnownFolders;
-import com.sun.jna.platform.win32.Shell32Util;
 import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 import io.abc_def.kickstart_fx.util.LocalExec;
 import io.abc_def.kickstart_fx.util.OsType;
+
+import com.sun.jna.platform.win32.KnownFolders;
+import com.sun.jna.platform.win32.Shell32Util;
 
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -256,7 +257,8 @@ public abstract class AppSystemInfo {
             if (env != null) {
                 try {
                     return Path.of(env);
-                } catch (InvalidPathException ignored) {}
+                } catch (InvalidPathException ignored) {
+                }
             }
 
             // This can actually fail and return ?

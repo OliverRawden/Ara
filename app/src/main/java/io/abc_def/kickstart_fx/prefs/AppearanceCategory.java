@@ -1,7 +1,5 @@
 package io.abc_def.kickstart_fx.prefs;
 
-
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ButtonComp;
 import io.abc_def.kickstart_fx.comp.base.ChoiceComp;

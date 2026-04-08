@@ -1,8 +1,7 @@
 package io.abc_def.kickstart_fx.prefs;
 
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
-
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
+
 import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 public abstract class AppPrefsCategory {

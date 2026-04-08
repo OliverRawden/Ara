@@ -30,7 +30,7 @@ public class AppPrefsSidebarComp extends SimpleRegionBuilder {
                 .filter(appPrefsCategory -> appPrefsCategory.show())
                 .toList();
         var buttons = effectiveCategories.stream()
-                .<AbstractRegionBuilder<?,?>>map(appPrefsCategory -> {
+                .<AbstractRegionBuilder<?, ?>>map(appPrefsCategory -> {
                     return new ButtonComp(
                                     AppI18n.observable(appPrefsCategory.getId()),
                                     new ReadOnlyObjectWrapper<>(appPrefsCategory.getIcon()),
@@ -42,10 +42,8 @@ public class AppPrefsSidebarComp extends SimpleRegionBuilder {
                                 struc.setTextAlignment(TextAlignment.LEFT);
                                 struc.setAlignment(Pos.CENTER_LEFT);
                                 AppPrefs.get().getSelectedCategory().subscribe(val -> {
-                                    struc
-                                            .pseudoClassStateChanged(
-                                                    PseudoClass.getPseudoClass("selected"),
-                                                    appPrefsCategory.equals(val));
+                                    struc.pseudoClassStateChanged(
+                                            PseudoClass.getPseudoClass("selected"), appPrefsCategory.equals(val));
                                 });
                             })
                             .maxWidth(2000);

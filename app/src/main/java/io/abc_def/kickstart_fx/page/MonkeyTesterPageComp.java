@@ -1,8 +1,7 @@
 package io.abc_def.kickstart_fx.page;
 
-
 import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
-import javafx.scene.control.ListCell;
+
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.SplitPane;

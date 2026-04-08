@@ -1,12 +1,11 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import atlantafx.base.controls.Spacer;
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.RegionStructure;
 import io.abc_def.kickstart_fx.comp.RegionStructureBuilder;
 import io.abc_def.kickstart_fx.core.AppFontSizes;
 import io.abc_def.kickstart_fx.core.AppI18n;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
+
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
@@ -16,6 +15,8 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+
+import atlantafx.base.controls.Spacer;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

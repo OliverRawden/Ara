@@ -1,12 +1,13 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
+
 import javafx.beans.binding.Bindings;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.skin.ScrollPaneSkin;
 import javafx.scene.layout.StackPane;
+
 import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 public class ScrollComp extends RegionBuilder<ScrollPane> {

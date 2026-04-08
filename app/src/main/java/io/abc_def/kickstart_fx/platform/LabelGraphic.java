@@ -58,7 +58,7 @@ public abstract class LabelGraphic {
     @EqualsAndHashCode(callSuper = true)
     public static class CompGraphic extends LabelGraphic {
 
-        BaseRegionBuilder<?,?> comp;
+        BaseRegionBuilder<?, ?> comp;
 
         @Override
         public Node createGraphicNode() {

@@ -1,10 +1,12 @@
 package io.abc_def.kickstart_fx.comp;
 
-import atlantafx.base.controls.Spacer;
 import io.abc_def.kickstart_fx.platform.BindingsHelper;
+
 import javafx.geometry.Orientation;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.Region;
+
+import atlantafx.base.controls.Spacer;
 import org.int4.fx.builders.common.AbstractRegionBuilder;
 import org.int4.fx.builders.context.BuildContext;
 

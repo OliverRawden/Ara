@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.RegionStructure;
 import io.abc_def.kickstart_fx.comp.RegionStructureBuilder;
 import io.abc_def.kickstart_fx.core.AppLayoutModel;
@@ -14,6 +13,7 @@ import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+
 import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.ArrayList;

@@ -1,7 +1,7 @@
 package io.abc_def.kickstart_fx.comp.base;
 
 import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
-import javafx.beans.value.ObservableValue;
+
 import lombok.Getter;
 
 @Getter

@@ -1,13 +1,12 @@
 package io.abc_def.kickstart_fx.prefs;
 
-
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ModalOverlay;
 import io.abc_def.kickstart_fx.comp.base.TileButtonComp;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.OptionsBuilder;
 import io.abc_def.kickstart_fx.util.Hyperlinks;
+
 import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 public class LinksCategory extends AppPrefsCategory {
@@ -49,7 +48,6 @@ public class LinksCategory extends AppPrefsCategory {
 
     @Override
     public AbstractRegionBuilder<?, ?> create() {
-        return createLinks().style("information").style("about-tab").apply(struc -> struc
-                .setPrefWidth(600));
+        return createLinks().style("information").style("about-tab").apply(struc -> struc.setPrefWidth(600));
     }
 }

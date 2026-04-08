@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.update;
 
-import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.MarkdownComp;
 import io.abc_def.kickstart_fx.comp.base.ModalOverlay;
 import io.abc_def.kickstart_fx.issue.TrackEvent;

@@ -3,8 +3,10 @@ package io.abc_def.kickstart_fx.comp.base;
 import io.abc_def.kickstart_fx.comp.RegionStructure;
 import io.abc_def.kickstart_fx.comp.RegionStructureBuilder;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
+
 import javafx.beans.value.ObservableValue;
 import javafx.scene.layout.StackPane;
+
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import org.kordamp.ikonli.javafx.FontIcon;

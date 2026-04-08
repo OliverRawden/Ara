@@ -3,13 +3,14 @@ package io.abc_def.kickstart_fx.comp.base;
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
-import javafx.beans.property.ReadOnlyObjectWrapper;
+
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.css.Size;
 import javafx.css.SizeUnits;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.kordamp.ikonli.javafx.FontIcon;

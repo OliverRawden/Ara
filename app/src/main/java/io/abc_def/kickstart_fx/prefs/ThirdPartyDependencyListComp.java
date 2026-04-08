@@ -3,7 +3,7 @@ package io.abc_def.kickstart_fx.prefs;
 import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 import io.abc_def.kickstart_fx.core.AppFontSizes;
 import io.abc_def.kickstart_fx.util.Hyperlinks;
-import javafx.beans.property.ReadOnlyStringWrapper;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;

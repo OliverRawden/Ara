@@ -1,14 +1,16 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import atlantafx.base.theme.Styles;
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
+
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.css.Size;
 import javafx.css.SizeUnits;
 import javafx.scene.control.Button;
+
+import atlantafx.base.theme.Styles;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 public class IconButtonComp extends RegionBuilder<Button> {

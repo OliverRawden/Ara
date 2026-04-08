@@ -1,11 +1,12 @@
 package io.abc_def.kickstart_fx.comp.base;
 
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
-import io.abc_def.kickstart_fx.platform.PlatformThread;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.layout.VBox;
+
 import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.List;

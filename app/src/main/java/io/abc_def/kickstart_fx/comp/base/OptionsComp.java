@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.platform.BindingsHelper;
 
@@ -177,5 +176,9 @@ public class OptionsComp extends RegionBuilder<VBox> {
         return pane;
     }
 
-    public record Entry(String key, ObservableValue<String> description, ObservableValue<String> name, AbstractRegionBuilder<?, ?> comp) {}
+    public record Entry(
+            String key,
+            ObservableValue<String> description,
+            ObservableValue<String> name,
+            AbstractRegionBuilder<?, ?> comp) {}
 }

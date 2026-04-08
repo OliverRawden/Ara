@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.core.AppFontSizes;
 import io.abc_def.kickstart_fx.core.AppLayoutModel;
@@ -122,7 +121,7 @@ public class SideMenuBarComp extends RegionBuilder<VBox> {
         return vbox;
     }
 
-    private AbstractRegionBuilder<?,?> createStyle(AppLayoutModel.Entry e, IconButtonComp b) {
+    private AbstractRegionBuilder<?, ?> createStyle(AppLayoutModel.Entry e, IconButtonComp b) {
         var selected = PseudoClass.getPseudoClass("selected");
 
         b.apply(struc -> {
@@ -163,8 +162,7 @@ public class SideMenuBarComp extends RegionBuilder<VBox> {
                 Platform.getPreferences().accentColorProperty());
 
         var indicator = RegionBuilder.empty().style("indicator");
-        var stack =
-                new StackComp(List.of(indicator, b)).apply(struc -> struc.setAlignment(Pos.CENTER_LEFT));
+        var stack = new StackComp(List.of(indicator, b)).apply(struc -> struc.setAlignment(Pos.CENTER_LEFT));
         stack.apply(struc -> {
             var indicatorRegion = (Region) struc.getChildren().getFirst();
             var buttonRegion = (Region) struc.getChildren().get(1);

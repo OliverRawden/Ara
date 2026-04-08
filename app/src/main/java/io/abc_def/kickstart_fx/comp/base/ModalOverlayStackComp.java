@@ -1,11 +1,12 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
+
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.layout.Region;
+
 import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.concurrent.atomic.AtomicInteger;

@@ -1,7 +1,5 @@
 package io.abc_def.kickstart_fx.platform;
 
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
-
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.LabelComp;
 import io.abc_def.kickstart_fx.comp.base.OptionsComp;
@@ -11,9 +9,7 @@ import io.abc_def.kickstart_fx.prefs.AppPrefs;
 
 import javafx.beans.property.*;
 import javafx.beans.value.ObservableValue;
-import javafx.geometry.Orientation;
 
-import atlantafx.base.controls.Spacer;
 import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.ArrayList;

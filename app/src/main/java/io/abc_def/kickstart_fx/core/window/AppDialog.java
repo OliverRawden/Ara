@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.core.window;
 
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ModalButton;
 import io.abc_def.kickstart_fx.comp.base.ModalOverlay;

@@ -1,7 +1,5 @@
 package io.abc_def.kickstart_fx.prefs;
 
-
-import io.abc_def.kickstart_fx.comp.BaseRegionBuilder;
 import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.LabelComp;
 import io.abc_def.kickstart_fx.comp.base.PrettyImageHelper;
@@ -46,7 +44,9 @@ public class AboutCategory extends AppPrefsCategory {
                         RegionBuilder.vspacer(1),
                         update,
                         RegionBuilder.vspacer(5),
-                        RegionBuilder.hseparator().apply(r -> r.setPadding(Insets.EMPTY)).maxWidth(600)))
+                        RegionBuilder.hseparator()
+                                .apply(r -> r.setPadding(Insets.EMPTY))
+                                .maxWidth(600)))
                 .apply(s -> s.setFillWidth(true))
                 .apply(struc -> struc.setSpacing(12))
                 .style("information")
@@ -94,7 +94,8 @@ public class AboutCategory extends AppPrefsCategory {
                                 + System.getProperty("java.vm.version")),
                         null)
                 .name("javafxBuild")
-                .addComp(new LabelComp("JavaFX " + System.getProperty("javafx.runtime.version") + (Boolean.getBoolean("javafx.enablePreview") ? " + Preview" : "")))
+                .addComp(new LabelComp("JavaFX " + System.getProperty("javafx.runtime.version")
+                        + (Boolean.getBoolean("javafx.enablePreview") ? " + Preview" : "")))
                 .buildComp();
         return section.style("properties-comp");
     }
