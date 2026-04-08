@@ -21,12 +21,12 @@ public class AppConfigurationDialog {
                 .sub(AppearanceCategory.languageChoice())
                 .sub(AppearanceCategory.themeChoice())
                 .buildComp();
-        options.styleClass("initial-setup");
-        options.styleClass("prefs-container");
+        options.style("initial-setup");
+        options.style("prefs-container");
 
         var scroll = new ScrollComp(options);
         scroll.apply(struc -> {
-            struc.get().prefHeightProperty().bind(((Region) struc.get().getContent()).heightProperty());
+            struc.prefHeightProperty().bind(((Region) struc.getContent()).heightProperty());
         });
         scroll.minWidth(650);
         scroll.prefWidth(650);

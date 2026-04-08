@@ -1,7 +1,7 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.SimpleComp;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 import io.abc_def.kickstart_fx.core.AppFontSizes;
 import io.abc_def.kickstart_fx.core.AppI18n;
 import io.abc_def.kickstart_fx.core.AppLogs;
@@ -28,23 +28,24 @@ import atlantafx.base.controls.ModalPane;
 import atlantafx.base.layout.ModalBox;
 import atlantafx.base.theme.Styles;
 import atlantafx.base.util.Animations;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ModalOverlayComp extends SimpleComp {
+public class ModalOverlayComp extends SimpleRegionBuilder {
 
-    private final Comp<?> background;
+    private final AbstractRegionBuilder<?, ?> background;
     private final Property<ModalOverlay> overlayContent;
     private final AtomicBoolean actionRunning = new AtomicBoolean();
 
-    public ModalOverlayComp(Comp<?> background, Property<ModalOverlay> overlayContent) {
+    public ModalOverlayComp(AbstractRegionBuilder<?, ?> background, Property<ModalOverlay> overlayContent) {
         this.background = background;
         this.overlayContent = overlayContent;
     }
 
     @Override
     protected Region createSimple() {
-        var bgRegion = background.createRegion();
+        var bgRegion = background.build();
         var modal = new ModalPane();
         modal.setInTransitionFactory(
                 OsType.ofLocal() == OsType.LINUX ? null : node -> Animations.fadeIn(node, Duration.millis(150)));
@@ -170,7 +171,7 @@ public class ModalOverlayComp extends SimpleComp {
     }
 
     private Region toBox(ModalPane pane, ModalOverlay newValue) {
-        Region r = newValue.getContent().createRegion();
+        Region r = newValue.getContent().build();
 
         var content = new VBox(r);
         content.getStyleClass().add("content");
@@ -188,12 +189,12 @@ public class ModalOverlayComp extends SimpleComp {
                             ? newValue.getGraphic()
                             : new LabelGraphic.IconGraphic("mdi2i-information-outline"));
             l.apply(struc -> {
-                struc.get().setGraphicTextGap(8);
-                AppFontSizes.xl(struc.get());
+                struc.setGraphicTextGap(8);
+                AppFontSizes.xl(struc);
             });
-            content.getChildren().addFirst(l.createRegion());
+            content.getChildren().addFirst(l.build());
         } else {
-            content.getChildren().addFirst(Comp.vspacer(0).createRegion());
+            content.getChildren().addFirst(RegionBuilder.vspacer(0).build());
         }
 
         if (!newValue.getButtons().isEmpty()) {
@@ -203,7 +204,7 @@ public class ModalOverlayComp extends SimpleComp {
             buttonBar.setSpacing(10);
             buttonBar.setAlignment(Pos.CENTER_RIGHT);
             for (var o : newValue.getButtons()) {
-                var node = o instanceof ModalButton mb ? toButton(mb) : ((Comp<?>) o).createRegion();
+                var node = o instanceof ModalButton mb ? toButton(mb) : ((AbstractRegionBuilder<?, ?>) o).build();
                 if (o instanceof ModalButton) {
                     node.widthProperty().addListener((observable, oldValue, n) -> {
                         var d = Math.min(Math.max(n.doubleValue(), 70.0), 200.0);

@@ -83,7 +83,9 @@ public class AppSideWindow {
 
     public static Alert createEmptyAlert() {
         Alert alert = new Alert(Alert.AlertType.NONE);
-        if (AppMainWindow.get() != null && AppMainWindow.get().getStage().isShowing() && !AppMainWindow.get().getStage().isIconified()) {
+        if (AppMainWindow.get() != null
+                && AppMainWindow.get().getStage().isShowing()
+                && !AppMainWindow.get().getStage().isIconified()) {
             alert.initOwner(AppMainWindow.get().getStage());
         }
         alert.getDialogPane().getScene().setFill(Color.TRANSPARENT);

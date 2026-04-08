@@ -1,7 +1,7 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
+import io.abc_def.kickstart_fx.comp.RegionStructure;
+import io.abc_def.kickstart_fx.comp.RegionStructureBuilder;
 import io.abc_def.kickstart_fx.core.AppLayoutModel;
 import io.abc_def.kickstart_fx.page.PrefsPageComp;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
@@ -14,18 +14,20 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 
+import org.int4.fx.builders.common.AbstractRegionBuilder;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class AppLayoutComp extends Comp<AppLayoutComp.Structure> {
+public class AppLayoutComp extends RegionStructureBuilder<BorderPane, AppLayoutComp.Structure> {
 
     @Override
     protected Structure createBase() {
         var model = AppLayoutModel.get();
-        Map<Comp<?>, ObservableValue<Boolean>> map = model.getEntries().stream()
+        Map<AbstractRegionBuilder<?, ?>, ObservableValue<Boolean>> map = model.getEntries().stream()
                 .filter(entry -> entry.comp() != null)
                 .collect(Collectors.toMap(
                         entry -> entry.comp(),
@@ -36,14 +38,14 @@ public class AppLayoutComp extends Comp<AppLayoutComp.Structure> {
                                 model.getSelected()),
                         (v1, v2) -> v2,
                         LinkedHashMap::new));
-        var multi = new MultiContentComp(map);
-        multi.styleClass("background");
+        var multi = new MultiContentComp(true, map);
+        multi.style("background");
 
         var pane = new BorderPane();
         var sidebar = new SideMenuBarComp(model.getSelected(), model.getEntries(), model.getQueueEntries());
-        StackPane multiR = (StackPane) multi.createRegion();
+        StackPane multiR = (StackPane) multi.build();
         pane.setCenter(multiR);
-        var sidebarR = sidebar.createRegion();
+        var sidebarR = sidebar.build();
         pane.setLeft(sidebarR);
         model.getSelected().addListener((c, o, n) -> {
             var wasPrefs = o != null && o.comp() instanceof PrefsPageComp;
@@ -56,7 +58,7 @@ public class AppLayoutComp extends Comp<AppLayoutComp.Structure> {
     }
 
     public record Structure(BorderPane pane, StackPane stack, Region sidebar, List<Node> children)
-            implements CompStructure<BorderPane> {
+            implements RegionStructure<BorderPane> {
 
         public void prepareAddition() {
             stack.getChildren().clear();

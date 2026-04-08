@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.prefs;
 
-import io.abc_def.kickstart_fx.comp.Comp;
 import io.abc_def.kickstart_fx.comp.base.ModalOverlay;
 import io.abc_def.kickstart_fx.comp.base.TileButtonComp;
 import io.abc_def.kickstart_fx.core.*;
@@ -16,6 +15,7 @@ import io.abc_def.kickstart_fx.util.ThreadHelper;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.awt.*;
 import java.lang.management.ManagementFactory;
@@ -47,7 +47,7 @@ public class TroubleshootCategory extends AppPrefsCategory {
     }
 
     @Override
-    public Comp<?> create() {
+    public AbstractRegionBuilder<?, ?> create() {
         OptionsBuilder b = new OptionsBuilder()
                 .addTitle("troubleshootingOptions")
                 .spacer(19)

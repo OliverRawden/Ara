@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.prefs;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ButtonComp;
 import io.abc_def.kickstart_fx.comp.base.ChoiceComp;
 import io.abc_def.kickstart_fx.comp.base.HorizontalComp;
@@ -16,12 +16,15 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.Slider;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 import atlantafx.base.controls.ProgressSliderSkin;
 import atlantafx.base.theme.Styles;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.Arrays;
@@ -33,7 +36,7 @@ public class AppearanceCategory extends AppPrefsCategory {
     public static OptionsBuilder themeChoice() {
         var prefs = AppPrefs.get();
         var c = ChoiceComp.ofTranslatable(prefs.theme, AppTheme.Theme.ALL, false)
-                .styleClass("theme-switcher");
+                .style("theme-switcher");
         c.apply(struc -> {
             Supplier<ListCell<AppTheme.Theme>> cell = () -> new ListCell<>() {
                 @Override
@@ -65,8 +68,8 @@ public class AppearanceCategory extends AppPrefsCategory {
                     setGraphicTextGap(8);
                 }
             };
-            struc.get().setButtonCell(cell.get());
-            struc.get().setCellFactory(themeListView -> {
+            struc.setButtonCell(cell.get());
+            struc.setCellFactory(themeListView -> {
                 return cell.get();
             });
         });
@@ -78,13 +81,13 @@ public class AppearanceCategory extends AppPrefsCategory {
         var prefs = AppPrefs.get();
         var c = ChoiceComp.ofTranslatable(prefs.language, Arrays.asList(SupportedLocale.values()), false);
         c.maxWidth(300.0);
-        c.hgrow();
+        c.apply(cb -> HBox.setHgrow(cb, Priority.ALWAYS));
         var visit = new ButtonComp(AppI18n.observable("translate"), new FontIcon("mdi2w-web"), () -> {
             Hyperlinks.open(Hyperlinks.TRANSLATE);
         });
         var h = new HorizontalComp(List.of(c, visit)).apply(struc -> {
-            struc.get().setAlignment(Pos.CENTER_LEFT);
-            struc.get().setSpacing(10);
+            struc.setAlignment(Pos.CENTER_LEFT);
+            struc.setSpacing(10);
         });
         return new OptionsBuilder().pref(prefs.language).addComp(h, prefs.language);
     }
@@ -100,7 +103,7 @@ public class AppearanceCategory extends AppPrefsCategory {
     }
 
     @Override
-    public Comp<?> create() {
+    public AbstractRegionBuilder<?, ?> create() {
         var prefs = AppPrefs.get();
         return new OptionsBuilder()
                 .addTitle("uiOptions")
@@ -112,7 +115,7 @@ public class AppearanceCategory extends AppPrefsCategory {
                         .pref(prefs.uiScale)
                         .addComp(
                                 new IntFieldComp(prefs.uiScale).maxWidth(100).apply(struc -> {
-                                    struc.get().setPromptText("100");
+                                    struc.setPromptText("100");
                                 }),
                                 prefs.uiScale)
                         .hide(new SimpleBooleanProperty(OsType.ofLocal() == OsType.MACOS))
@@ -122,7 +125,7 @@ public class AppearanceCategory extends AppPrefsCategory {
                 .sub(new OptionsBuilder()
                         .pref(prefs.windowOpacity)
                         .addComp(
-                                Comp.of(() -> {
+                                RegionBuilder.of(() -> {
                                             var s = new Slider(0.3, 1.0, prefs.windowOpacity.get());
                                             s.getStyleClass().add(Styles.SMALL);
                                             prefs.windowOpacity.bind(s.valueProperty());

@@ -1,8 +1,6 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
 
@@ -15,7 +13,7 @@ import javafx.scene.control.Label;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-public class LabelComp extends Comp<CompStructure<Label>> {
+public class LabelComp extends RegionBuilder<Label> {
 
     private final ObservableValue<String> text;
     private final ObservableValue<LabelGraphic> graphic;
@@ -33,7 +31,7 @@ public class LabelComp extends Comp<CompStructure<Label>> {
     }
 
     @Override
-    protected CompStructure<Label> createBase() {
+    public Label createSimple() {
         var label = new Label();
         text.subscribe(t -> {
             PlatformThread.runLaterIfNeeded(() -> label.setText(t));
@@ -42,6 +40,6 @@ public class LabelComp extends Comp<CompStructure<Label>> {
             PlatformThread.runLaterIfNeeded(() -> label.setGraphic(t != null ? t.createGraphicNode() : null));
         });
         label.setAlignment(Pos.CENTER);
-        return new SimpleCompStructure<>(label);
+        return label;
     }
 }

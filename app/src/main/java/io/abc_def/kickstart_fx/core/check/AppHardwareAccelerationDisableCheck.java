@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.core.check;
 
-
 import io.abc_def.kickstart_fx.core.AppCache;
 import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 import io.abc_def.kickstart_fx.util.OsType;

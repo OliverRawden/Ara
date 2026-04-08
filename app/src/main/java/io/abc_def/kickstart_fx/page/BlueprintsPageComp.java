@@ -1,12 +1,12 @@
 package io.abc_def.kickstart_fx.page;
 
-import io.abc_def.kickstart_fx.comp.SimpleComp;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 
 import javafx.scene.layout.Region;
 
 import atlantafx.sampler.page.showcase.BlueprintsPage;
 
-public class BlueprintsPageComp extends SimpleComp {
+public class BlueprintsPageComp extends SimpleRegionBuilder {
 
     @Override
     protected Region createSimple() {

@@ -59,9 +59,11 @@ public class AppTheme {
         }
 
         stage.getScene().rootProperty().subscribe(parent -> {
-            applyClasses(parent, AppPrefs.get().theme().getValue(), AppPrefs.get().performanceMode().getValue());
+            applyClasses(
+                    parent,
+                    AppPrefs.get().theme().getValue(),
+                    AppPrefs.get().performanceMode().getValue());
         });
-
 
         // Allow for GC
         var ref = new WeakReference<>(stage);
@@ -94,8 +96,7 @@ public class AppTheme {
             return;
         }
 
-        r.pseudoClassStateChanged(
-                PseudoClass.getPseudoClass(OsType.ofLocal().getId()), true);
+        r.pseudoClassStateChanged(PseudoClass.getPseudoClass(OsType.ofLocal().getId()), true);
 
         if (t != null) {
             Theme.ALL.forEach(theme -> {
@@ -551,8 +552,7 @@ public class AppTheme {
         }
 
         protected String getPlatformPreferencesStylesheet() {
-            var s =
-                    """
+            var s = """
                     * {
                         -color-context-menu: %s;
                         -color-accent-fg: %s;
@@ -560,19 +560,13 @@ public class AppTheme {
                         -color-accent-muted: %s;
                         -color-accent-subtle: %s;
                     }
-                    """
-                            .formatted(
-                                    ColorHelper.toWeb(contextMenuColor.get()),
-                                    ColorHelper.toWeb(emphasisColor.get()),
-                                    ColorHelper.toWeb(emphasisColor.get().darker()),
-                                    ColorHelper.toWeb(emphasisColor.get().desaturate()),
-                                    ColorHelper.toWeb(ColorHelper.withOpacity(
-                                            emphasisColor
-                                                    .get()
-                                                    .darker()
-                                                    .desaturate()
-                                                    .desaturate(),
-                                            0.2)));
+                    """.formatted(
+                            ColorHelper.toWeb(contextMenuColor.get()),
+                            ColorHelper.toWeb(emphasisColor.get()),
+                            ColorHelper.toWeb(emphasisColor.get().darker()),
+                            ColorHelper.toWeb(emphasisColor.get().desaturate()),
+                            ColorHelper.toWeb(ColorHelper.withOpacity(
+                                    emphasisColor.get().darker().desaturate().desaturate(), 0.2)));
             return s;
         }
 

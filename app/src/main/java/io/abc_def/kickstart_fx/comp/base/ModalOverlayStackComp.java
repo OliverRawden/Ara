@@ -1,21 +1,22 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.SimpleComp;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.layout.Region;
 
+import org.int4.fx.builders.common.AbstractRegionBuilder;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ModalOverlayStackComp extends SimpleComp {
+public class ModalOverlayStackComp extends SimpleRegionBuilder {
 
-    private final Comp<?> background;
+    private final AbstractRegionBuilder<?, ?> background;
     private final ObservableList<ModalOverlay> modalOverlay;
 
-    public ModalOverlayStackComp(Comp<?> background, ObservableList<ModalOverlay> modalOverlay) {
+    public ModalOverlayStackComp(AbstractRegionBuilder<?, ?> background, ObservableList<ModalOverlay> modalOverlay) {
         this.background = background;
         this.modalOverlay = modalOverlay;
     }
@@ -26,10 +27,10 @@ public class ModalOverlayStackComp extends SimpleComp {
         for (var i = 0; i < 5; i++) {
             current = buildModalOverlay(current, i);
         }
-        return current.createRegion();
+        return current.build();
     }
 
-    private Comp<?> buildModalOverlay(Comp<?> current, int index) {
+    private AbstractRegionBuilder<?, ?> buildModalOverlay(AbstractRegionBuilder<?, ?> current, int index) {
         AtomicInteger currentIndex = new AtomicInteger(index);
         var prop = new SimpleObjectProperty<>(modalOverlay.size() > index ? modalOverlay.get(index) : null);
         modalOverlay.addListener((ListChangeListener<? super ModalOverlay>) c -> {
@@ -50,7 +51,7 @@ public class ModalOverlayStackComp extends SimpleComp {
             }
         });
         var comp = new ModalOverlayComp(current, prop);
-        comp.styleClass("modal-overlay-stack-element");
+        comp.style("modal-overlay-stack-element");
         return comp;
     }
 }

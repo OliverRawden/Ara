@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.core.window;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ModalButton;
 import io.abc_def.kickstart_fx.comp.base.ModalOverlay;
 import io.abc_def.kickstart_fx.core.AppI18n;
@@ -19,6 +19,7 @@ import javafx.scene.text.Text;
 import javafx.util.Duration;
 
 import lombok.Getter;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -104,12 +105,12 @@ public class AppDialog {
         }
     }
 
-    public static Comp<?> dialogTextKey(String s) {
+    public static AbstractRegionBuilder<?, ?> dialogTextKey(String s) {
         return dialogText(AppI18n.observable(s));
     }
 
-    public static Comp<?> dialogText(String s) {
-        return Comp.of(() -> {
+    public static AbstractRegionBuilder<?, ?> dialogText(String s) {
+        return RegionBuilder.of(() -> {
                     var text = new Text(s);
                     text.getStyleClass().add("dialog-text");
                     var sp = new StackPane(text);
@@ -119,8 +120,8 @@ public class AppDialog {
                 .prefWidth(450);
     }
 
-    public static Comp<?> dialogText(ObservableValue<String> s) {
-        return Comp.of(() -> {
+    public static AbstractRegionBuilder<?, ?> dialogText(ObservableValue<String> s) {
+        return RegionBuilder.of(() -> {
                     var text = new Text();
                     text.getStyleClass().add("dialog-text");
                     text.textProperty().bind(s);

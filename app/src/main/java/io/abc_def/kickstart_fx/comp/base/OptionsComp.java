@@ -1,8 +1,6 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.platform.BindingsHelper;
 
 import javafx.application.Platform;
@@ -17,12 +15,13 @@ import javafx.scene.layout.*;
 
 import atlantafx.base.controls.Spacer;
 import lombok.Getter;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-public class OptionsComp extends Comp<CompStructure<VBox>> {
+public class OptionsComp extends RegionBuilder<VBox> {
 
     private final List<Entry> entries;
 
@@ -31,7 +30,7 @@ public class OptionsComp extends Comp<CompStructure<VBox>> {
     }
 
     @Override
-    protected CompStructure<VBox> createBase() {
+    protected VBox createSimple() {
         VBox pane = new VBox();
         pane.getStyleClass().add("options-comp");
 
@@ -39,7 +38,7 @@ public class OptionsComp extends Comp<CompStructure<VBox>> {
 
         Region firstComp = null;
         for (var entry : getEntries()) {
-            Region compRegion = entry.comp() != null ? entry.comp().createRegion() : new Region();
+            Region compRegion = entry.comp() != null ? entry.comp().build() : new Region();
 
             if (firstComp == null) {
                 compRegion.getStyleClass().add("first");
@@ -174,8 +173,12 @@ public class OptionsComp extends Comp<CompStructure<VBox>> {
             }
         });
 
-        return new SimpleCompStructure<>(pane);
+        return pane;
     }
 
-    public record Entry(String key, ObservableValue<String> description, ObservableValue<String> name, Comp<?> comp) {}
+    public record Entry(
+            String key,
+            ObservableValue<String> description,
+            ObservableValue<String> name,
+            AbstractRegionBuilder<?, ?> comp) {}
 }

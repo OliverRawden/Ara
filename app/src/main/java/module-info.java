@@ -50,6 +50,7 @@ open module io.abc_def.kickstart_fx {
     requires java.net.http;
     requires org.jetbrains.annotations;
     requires org.kohsuke.github;
+    requires org.int4.fx.builders;
 
     // Required runtime modules
     requires jdk.charsets;

@@ -144,7 +144,6 @@ public enum PlatformState {
             }
         }
 
-
         // This issue is now fixed in 27-ea+4
         // The bellsoft JavaFX build for ARM does not contain the fix yet
         if (OsType.ofLocal() == OsType.WINDOWS && !AppProperties.get().getArch().equals("x86_64")) {

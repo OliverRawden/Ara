@@ -4,13 +4,6 @@ import io.abc_def.kickstart_fx.core.mode.AppOperationMode;
 import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 
 import javafx.application.Platform;
-import javafx.beans.InvalidationListener;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
-
-import lombok.NonNull;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;

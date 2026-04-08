@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.issue;
 
-import io.abc_def.kickstart_fx.core.App;
 import io.abc_def.kickstart_fx.core.AppProperties;
 import io.abc_def.kickstart_fx.core.window.AppMainWindow;
 import io.abc_def.kickstart_fx.platform.PlatformInit;

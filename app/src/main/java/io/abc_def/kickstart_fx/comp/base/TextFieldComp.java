@@ -1,8 +1,6 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
 
 import javafx.beans.property.Property;
@@ -12,7 +10,7 @@ import javafx.scene.input.KeyCode;
 
 import java.util.Objects;
 
-public class TextFieldComp extends Comp<CompStructure<TextField>> {
+public class TextFieldComp extends RegionBuilder<TextField> {
 
     private final Property<String> lastAppliedValue;
     private final Property<String> currentValue;
@@ -39,10 +37,10 @@ public class TextFieldComp extends Comp<CompStructure<TextField>> {
     }
 
     @Override
-    protected CompStructure<TextField> createBase() {
-        var text = new TextField(currentValue.getValue() != null ? currentValue.getValue() : null);
+    public TextField createSimple() {
+        var text = new TextField(currentValue.getValue() != null ? currentValue.getValue() : "");
         text.textProperty().addListener((c, o, n) -> {
-            currentValue.setValue(n != null && !n.isEmpty() ? n : null);
+            currentValue.setValue(n != null && n.length() > 0 ? n : null);
         });
         lastAppliedValue.addListener((c, o, n) -> {
             PlatformThread.runLaterIfNeeded(() -> {
@@ -71,7 +69,6 @@ public class TextFieldComp extends Comp<CompStructure<TextField>> {
                 lastAppliedValue.setValue(currentValue.getValue());
             }
         });
-
-        return new SimpleCompStructure<>(text);
+        return text;
     }
 }

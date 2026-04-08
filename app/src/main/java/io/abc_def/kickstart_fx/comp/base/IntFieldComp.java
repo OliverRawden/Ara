@@ -1,8 +1,6 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
 
 import javafx.application.Platform;
@@ -17,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 import java.util.Objects;
 
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-public class IntFieldComp extends Comp<CompStructure<TextField>> {
+public class IntFieldComp extends RegionBuilder<TextField> {
 
     Property<Integer> value;
     int minValue;
@@ -36,7 +34,7 @@ public class IntFieldComp extends Comp<CompStructure<TextField>> {
     }
 
     @Override
-    protected CompStructure<TextField> createBase() {
+    public TextField createSimple() {
         var field = new TextField(value.getValue() != null ? value.getValue().toString() : null);
 
         value.addListener((ChangeListener<Number>) (observableValue, oldValue, newValue) -> {
@@ -101,6 +99,6 @@ public class IntFieldComp extends Comp<CompStructure<TextField>> {
             }
         });
 
-        return new SimpleCompStructure<>(field);
+        return field;
     }
 }

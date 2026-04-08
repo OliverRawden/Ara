@@ -1,8 +1,6 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.core.AppFontSizes;
 import io.abc_def.kickstart_fx.core.AppLayoutModel;
 import io.abc_def.kickstart_fx.core.mode.AppOperationMode;
@@ -26,19 +24,20 @@ import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 import lombok.AllArgsConstructor;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
-public class SideMenuBarComp extends Comp<CompStructure<VBox>> {
+public class SideMenuBarComp extends RegionBuilder<VBox> {
 
     private final Property<AppLayoutModel.Entry> value;
     private final List<AppLayoutModel.Entry> entries;
     private final ObservableList<AppLayoutModel.QueueEntry> queueEntries;
 
     @Override
-    protected CompStructure<VBox> createBase() {
+    protected VBox createSimple() {
         var vbox = new VBox();
         vbox.setFillWidth(true);
 
@@ -56,17 +55,15 @@ public class SideMenuBarComp extends Comp<CompStructure<VBox>> {
 
                 value.setValue(e);
             });
-            b.tooltip(e.name());
 
             var stack = createStyle(e, b);
-            vbox.getChildren().add(stack.createRegion());
+            vbox.getChildren().add(stack.build());
         }
 
         {
             var b = new IconButtonComp("mdi2u-update", () -> UpdateAvailableDialog.showIfNeeded(false));
-            b.tooltipKey("updateAvailableTooltip");
             var stack = createStyle(null, b);
-            stack.hide(Bindings.createBooleanBinding(
+            stack.invisible(Bindings.createBooleanBinding(
                     () -> {
                         return AppDistributionType.get()
                                         .getUpdateHandler()
@@ -75,7 +72,7 @@ public class SideMenuBarComp extends Comp<CompStructure<VBox>> {
                                 == null;
                     },
                     AppDistributionType.get().getUpdateHandler().getLastUpdateCheckResult()));
-            vbox.getChildren().add(stack.createRegion());
+            vbox.getChildren().add(stack.build());
         }
 
         var filler = new Button();
@@ -96,10 +93,10 @@ public class SideMenuBarComp extends Comp<CompStructure<VBox>> {
                     b.apply(struc -> {
                         var tt = TooltipHelper.create(item.getName(), null);
                         tt.setShowDelay(Duration.millis(50));
-                        Tooltip.install(struc.get(), tt);
+                        Tooltip.install(struc, tt);
 
-                        struc.get().setOnAction(e -> {
-                            struc.get().setDisable(true);
+                        struc.setOnAction(e -> {
+                            struc.setDisable(true);
                             ThreadHelper.runAsync(() -> {
                                 try {
                                     item.getAction().run();
@@ -113,7 +110,7 @@ public class SideMenuBarComp extends Comp<CompStructure<VBox>> {
                         });
                     });
                     var stack = createStyle(null, b);
-                    queueButtons.getChildren().add(stack.createRegion());
+                    queueButtons.getChildren().add(stack.build());
                 }
             });
         });
@@ -121,20 +118,20 @@ public class SideMenuBarComp extends Comp<CompStructure<VBox>> {
         vbox.setMinHeight(0);
         vbox.setPrefHeight(0);
 
-        return new SimpleCompStructure<>(vbox);
+        return vbox;
     }
 
-    private Comp<?> createStyle(AppLayoutModel.Entry e, IconButtonComp b) {
+    private AbstractRegionBuilder<?, ?> createStyle(AppLayoutModel.Entry e, IconButtonComp b) {
         var selected = PseudoClass.getPseudoClass("selected");
 
         b.apply(struc -> {
-            AppFontSizes.lg(struc.get());
-            struc.get().setAlignment(Pos.CENTER);
+            AppFontSizes.lg(struc);
+            struc.setAlignment(Pos.CENTER);
 
-            struc.get().pseudoClassStateChanged(selected, value.getValue().equals(e));
+            struc.pseudoClassStateChanged(selected, value.getValue().equals(e));
             value.addListener((c, o, n) -> {
                 PlatformThread.runLaterIfNeeded(() -> {
-                    struc.get().pseudoClassStateChanged(selected, n.equals(e));
+                    struc.pseudoClassStateChanged(selected, n.equals(e));
                 });
             });
         });
@@ -164,12 +161,11 @@ public class SideMenuBarComp extends Comp<CompStructure<VBox>> {
                 },
                 Platform.getPreferences().accentColorProperty());
 
-        var indicator = Comp.empty().styleClass("indicator");
-        var stack =
-                new StackComp(List.of(indicator, b)).apply(struc -> struc.get().setAlignment(Pos.CENTER_LEFT));
+        var indicator = RegionBuilder.empty().style("indicator");
+        var stack = new StackComp(List.of(indicator, b)).apply(struc -> struc.setAlignment(Pos.CENTER_LEFT));
         stack.apply(struc -> {
-            var indicatorRegion = (Region) struc.get().getChildren().getFirst();
-            var buttonRegion = (Region) struc.get().getChildren().get(1);
+            var indicatorRegion = (Region) struc.getChildren().getFirst();
+            var buttonRegion = (Region) struc.getChildren().get(1);
             indicatorRegion.setMaxWidth(7);
             indicatorRegion.prefHeightProperty().bind(buttonRegion.heightProperty());
             indicatorRegion
@@ -180,13 +176,13 @@ public class SideMenuBarComp extends Comp<CompStructure<VBox>> {
                                     return selectedBorder.get();
                                 }
 
-                                if (struc.get().isHover()) {
+                                if (struc.isHover()) {
                                     return hoverBorder.get();
                                 }
 
                                 return noneBorder.get();
                             },
-                            struc.get().hoverProperty(),
+                            struc.hoverProperty(),
                             value,
                             hoverBorder,
                             selectedBorder,

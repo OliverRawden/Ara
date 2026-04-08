@@ -1,7 +1,6 @@
 package io.abc_def.kickstart_fx.page;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.SimpleComp;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.VerticalComp;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
 import io.abc_def.kickstart_fx.prefs.AppPrefs;
@@ -14,7 +13,9 @@ import javafx.geometry.Insets;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
 
-public class PrefsPageComp extends SimpleComp {
+import org.int4.fx.builders.common.AbstractRegionBuilder;
+
+public class PrefsPageComp extends SimpleRegionBuilder {
 
     @Override
     protected Region createSimple() {
@@ -22,19 +23,12 @@ public class PrefsPageComp extends SimpleComp {
                 .filter(appPrefsCategory -> appPrefsCategory.show())
                 .toList();
         var list = categories.stream()
-                .<Comp<?>>map(appPrefsCategory -> {
-                    var r = appPrefsCategory
-                            .create()
-                            .styleClass("prefs-container")
-                            .styleClass(appPrefsCategory.getId());
+                .<AbstractRegionBuilder<?, ?>>map(appPrefsCategory -> {
+                    var r = appPrefsCategory.create().style("prefs-container").style(appPrefsCategory.getId());
                     return r;
                 })
                 .toList();
-        var box = new VerticalComp(list)
-                .maxWidth(850)
-                .styleClass("prefs-box")
-                .createStructure()
-                .get();
+        var box = new VerticalComp(list).maxWidth(850).style("prefs-box").build();
         var scrollPane = new ScrollPane(box);
 
         var externalUpdate = new SimpleBooleanProperty();
@@ -83,7 +77,7 @@ public class PrefsPageComp extends SimpleComp {
         scrollPane.setFitToWidth(true);
         HBox.setHgrow(scrollPane, Priority.ALWAYS);
 
-        var sidebar = new AppPrefsSidebarComp().createRegion();
+        var sidebar = new AppPrefsSidebarComp().build();
         sidebar.setMinWidth(210);
         sidebar.setPrefWidth(210);
         sidebar.setMaxWidth(210);

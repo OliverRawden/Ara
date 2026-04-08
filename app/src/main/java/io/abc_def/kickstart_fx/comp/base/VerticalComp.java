@@ -1,39 +1,41 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
-import io.abc_def.kickstart_fx.platform.PlatformThread;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.layout.VBox;
 
+import org.int4.fx.builders.common.AbstractRegionBuilder;
+
 import java.util.List;
 
-public class VerticalComp extends Comp<CompStructure<VBox>> {
+public class VerticalComp extends RegionBuilder<VBox> {
 
-    private final ObservableList<Comp<?>> entries;
+    private final ObservableList<? extends AbstractRegionBuilder<?, ?>> entries;
 
-    public VerticalComp(List<Comp<?>> comps) {
+    public VerticalComp(List<? extends AbstractRegionBuilder<?, ?>> comps) {
         entries = FXCollections.observableArrayList(List.copyOf(comps));
     }
 
-    public Comp<CompStructure<VBox>> spacing(double spacing) {
-        return apply(struc -> struc.get().setSpacing(spacing));
+    public RegionBuilder<VBox> spacing(double spacing) {
+        return apply(struc -> struc.setSpacing(spacing));
     }
 
     @Override
-    protected CompStructure<VBox> createBase() {
+    public VBox createSimple() {
         VBox b = new VBox();
         b.getStyleClass().add("vertical-comp");
-        entries.addListener((ListChangeListener<? super Comp<?>>) c -> {
-            b.getChildren().setAll(c.getList().stream().map(Comp::createRegion).toList());
+        entries.addListener((ListChangeListener<? super AbstractRegionBuilder<?, ?>>) c -> {
+            b.getChildren()
+                    .setAll(c.getList().stream()
+                            .map(AbstractRegionBuilder::build)
+                            .toList());
         });
         for (var entry : entries) {
-            b.getChildren().add(entry.createRegion());
+            b.getChildren().add(entry.build());
         }
-        return new SimpleCompStructure<>(b);
+        return b;
     }
 }

@@ -1,5 +1,8 @@
 package io.abc_def.kickstart_fx.comp.base;
 
+import io.abc_def.kickstart_fx.core.mode.AppOperationMode;
+
+import javafx.beans.property.Property;
 import javafx.scene.control.Button;
 
 import lombok.Value;
@@ -38,5 +41,30 @@ public class ModalButton {
 
     public static ModalButton cancel(Runnable action) {
         return new ModalButton("cancel", action, true, false);
+    }
+
+    public static ModalButton confirm(Runnable action) {
+        return new ModalButton("confirm", action, true, true);
+    }
+
+    public static ModalButton quit() {
+        return new ModalButton(
+                "quit",
+                () -> {
+                    AppOperationMode.halt(1);
+                },
+                true,
+                false);
+    }
+
+    public static Runnable toggle(Property<Boolean> prop) {
+        return () -> {
+            prop.setValue(true);
+        };
+    }
+
+    public ModalButton augment(Consumer<Button> augment) {
+        this.augment = augment;
+        return this;
     }
 }

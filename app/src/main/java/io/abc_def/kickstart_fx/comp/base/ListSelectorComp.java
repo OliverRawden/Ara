@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.SimpleComp;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 import io.abc_def.kickstart_fx.core.AppI18n;
 import io.abc_def.kickstart_fx.platform.PlatformThread;
 
@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 
 @Value
 @EqualsAndHashCode(callSuper = true)
-public class ListSelectorComp<T> extends SimpleComp {
+public class ListSelectorComp<T> extends SimpleRegionBuilder {
 
     ObservableList<T> values;
     Function<T, String> toString;

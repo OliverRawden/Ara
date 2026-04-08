@@ -1,8 +1,6 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 
 import javafx.beans.binding.Bindings;
 import javafx.scene.control.ScrollBar;
@@ -10,17 +8,19 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.skin.ScrollPaneSkin;
 import javafx.scene.layout.StackPane;
 
-public class ScrollComp extends Comp<CompStructure<ScrollPane>> {
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
-    private final Comp<?> content;
+public class ScrollComp extends RegionBuilder<ScrollPane> {
 
-    public ScrollComp(Comp<?> content) {
+    private final AbstractRegionBuilder<?, ?> content;
+
+    public ScrollComp(AbstractRegionBuilder<?, ?> content) {
         this.content = content;
     }
 
     @Override
-    protected CompStructure<ScrollPane> createBase() {
-        var r = content.createRegion();
+    public ScrollPane createSimple() {
+        var r = content.build();
         var stack = new StackPane(r);
         stack.getStyleClass().add("scroll-comp-content");
 
@@ -45,6 +45,6 @@ public class ScrollComp extends Comp<CompStructure<ScrollPane>> {
         StackPane viewport = (StackPane) sp.lookup(".viewport");
         var child = viewport.getChildren().getFirst();
         child.getStyleClass().add("view");
-        return new SimpleCompStructure<>(sp);
+        return sp;
     }
 }

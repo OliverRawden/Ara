@@ -1,6 +1,6 @@
 package io.abc_def.kickstart_fx.issue;
 
-import io.abc_def.kickstart_fx.comp.Comp;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
 import io.abc_def.kickstart_fx.comp.base.ModalButton;
 import io.abc_def.kickstart_fx.comp.base.ModalOverlay;
 import io.abc_def.kickstart_fx.core.AppFontSizes;
@@ -44,7 +44,7 @@ public class ErrorHandlerDialog {
                 errorModal.addButton(new ModalButton(
                         "stackTrace",
                         () -> {
-                            var detailsModal = ModalOverlay.of("errorDetails", Comp.of(() -> {
+                            var detailsModal = ModalOverlay.of("errorDetails", RegionBuilder.of(() -> {
                                 var content = createStrackTraceContent(event);
                                 content.setPrefWidth(650);
                                 content.setPrefHeight(750);
@@ -66,7 +66,7 @@ public class ErrorHandlerDialog {
                         },
                         false,
                         false));
-                errorModal.addButtonBarComp(Comp.hspacer());
+                errorModal.addButtonBarComp(RegionBuilder.hspacer());
             }
             var hasCustomActions = !event.getCustomActions().isEmpty() || event.getLink() != null;
             var hideOk = hasCustomActions;

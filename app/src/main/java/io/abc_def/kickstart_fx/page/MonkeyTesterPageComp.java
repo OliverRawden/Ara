@@ -1,8 +1,7 @@
 package io.abc_def.kickstart_fx.page;
 
-import io.abc_def.kickstart_fx.comp.SimpleComp;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 
-import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.SplitPane;
@@ -12,7 +11,7 @@ import javafx.scene.layout.StackPane;
 
 import com.oracle.tools.fx.monkey.MainWindow;
 
-public class MonkeyTesterPageComp extends SimpleComp {
+public class MonkeyTesterPageComp extends SimpleRegionBuilder {
 
     @Override
     @SuppressWarnings("unchecked")

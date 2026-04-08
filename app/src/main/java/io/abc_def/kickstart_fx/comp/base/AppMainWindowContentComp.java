@@ -1,7 +1,7 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.SimpleComp;
+import io.abc_def.kickstart_fx.comp.RegionBuilder;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 import io.abc_def.kickstart_fx.core.*;
 import io.abc_def.kickstart_fx.core.window.AppDialog;
 import io.abc_def.kickstart_fx.core.window.AppMainWindow;
@@ -24,7 +24,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
-public class AppMainWindowContentComp extends SimpleComp {
+public class AppMainWindowContentComp extends SimpleRegionBuilder {
 
     private final Stage stage;
 
@@ -37,7 +37,7 @@ public class AppMainWindowContentComp extends SimpleComp {
         var overlay = AppDialog.getModalOverlays();
         var loaded = AppMainWindow.getLoadedContent();
         var sidebarPresent = new SimpleBooleanProperty();
-        var bg = Comp.of(() -> {
+        var bg = RegionBuilder.of(() -> {
             var loadingIcon = new ImageView();
             loadingIcon.setFitWidth(80);
             loadingIcon.setFitHeight(80);
@@ -89,23 +89,23 @@ public class AppMainWindowContentComp extends SimpleComp {
             var version = new LabelComp(
                     (AppNames.ofCurrent().getName()) + " " + AppProperties.get().getVersion());
             version.apply(struc -> {
-                AppFontSizes.apply(struc.get(), appFontSizes -> "15");
-                struc.get().setOpacity(0.65);
+                AppFontSizes.apply(struc, appFontSizes -> "15");
+                struc.setOpacity(0.65);
             });
 
             var text = new LabelComp(AppMainWindow.getLoadingText());
             text.apply(struc -> {
-                struc.get().setOpacity(0.8);
+                struc.setOpacity(0.8);
             });
 
             var loadingVbox = new VBox(
-                    Comp.vspacer().createRegion(),
+                    RegionBuilder.vspacer().build(),
                     loadingIcon,
-                    Comp.vspacer(19).createRegion(),
-                    version.createRegion(),
-                    Comp.vspacer().createRegion(),
-                    text.createRegion(),
-                    Comp.vspacer(20).createRegion());
+                    RegionBuilder.vspacer(19).build(),
+                    version.build(),
+                    RegionBuilder.vspacer().build(),
+                    text.build(),
+                    RegionBuilder.vspacer(20).build());
             loadingVbox.setAlignment(Pos.CENTER);
 
             var pane = new StackPane(loadingVbox);
@@ -146,7 +146,7 @@ public class AppMainWindowContentComp extends SimpleComp {
         });
 
         var modal = new ModalOverlayStackComp(bg, overlay);
-        var r = modal.createRegion();
+        var r = modal.build();
         var p = r.lookupAll(".modal-overlay-stack-element");
         sidebarPresent.subscribe(v -> {
             if (v) {

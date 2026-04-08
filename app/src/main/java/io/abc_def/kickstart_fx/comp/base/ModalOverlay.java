@@ -1,6 +1,5 @@
 package io.abc_def.kickstart_fx.comp.base;
 
-import io.abc_def.kickstart_fx.comp.Comp;
 import io.abc_def.kickstart_fx.core.AppI18n;
 import io.abc_def.kickstart_fx.core.window.AppDialog;
 import io.abc_def.kickstart_fx.platform.LabelGraphic;
@@ -9,6 +8,7 @@ import javafx.beans.value.ObservableValue;
 
 import lombok.*;
 import lombok.experimental.NonFinal;
+import org.int4.fx.builders.common.AbstractRegionBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.List;
 public class ModalOverlay {
 
     ObservableValue<String> title;
-    Comp<?> content;
+    AbstractRegionBuilder<?, ?> content;
     LabelGraphic graphic;
 
     @Singular
@@ -33,19 +33,20 @@ public class ModalOverlay {
     @Setter
     boolean requireCloseButtonForClose;
 
-    public static ModalOverlay of(Comp<?> content) {
+    public static ModalOverlay of(AbstractRegionBuilder<?, ?> content) {
         return of((ObservableValue<String>) null, content, null);
     }
 
-    public static ModalOverlay of(String titleKey, Comp<?> content) {
+    public static ModalOverlay of(String titleKey, AbstractRegionBuilder<?, ?> content) {
         return of(titleKey, content, null);
     }
 
-    public static ModalOverlay of(String titleKey, Comp<?> content, LabelGraphic graphic) {
+    public static ModalOverlay of(String titleKey, AbstractRegionBuilder<?, ?> content, LabelGraphic graphic) {
         return of(titleKey != null ? AppI18n.observable(titleKey) : null, content, graphic);
     }
 
-    public static ModalOverlay of(ObservableValue<String> title, Comp<?> content, LabelGraphic graphic) {
+    public static ModalOverlay of(
+            ObservableValue<String> title, AbstractRegionBuilder<?, ?> content, LabelGraphic graphic) {
         return new ModalOverlay(title, content, graphic, new ArrayList<>(), true, false);
     }
 
@@ -60,7 +61,7 @@ public class ModalOverlay {
         return button;
     }
 
-    public void addButtonBarComp(Comp<?> comp) {
+    public void addButtonBarComp(AbstractRegionBuilder<?, ?> comp) {
         buttons.add(comp);
     }
 

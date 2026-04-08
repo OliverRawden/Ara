@@ -1,17 +1,16 @@
 package io.abc_def.kickstart_fx.prefs;
 
-import io.abc_def.kickstart_fx.comp.Comp;
-import io.abc_def.kickstart_fx.comp.CompStructure;
-import io.abc_def.kickstart_fx.comp.SimpleCompStructure;
+import io.abc_def.kickstart_fx.comp.SimpleRegionBuilder;
 import io.abc_def.kickstart_fx.core.AppFontSizes;
 import io.abc_def.kickstart_fx.util.Hyperlinks;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 
-public class ThirdPartyDependencyListComp extends Comp<CompStructure<?>> {
+public class ThirdPartyDependencyListComp extends SimpleRegionBuilder {
 
     private TitledPane createPane(ThirdPartyDependency t) {
         var tp = new TitledPane();
@@ -45,7 +44,7 @@ public class ThirdPartyDependencyListComp extends Comp<CompStructure<?>> {
     }
 
     @Override
-    protected CompStructure<?> createBase() {
+    public Region createSimple() {
         var tps = ThirdPartyDependency.getAll().stream().map(this::createPane).toArray(TitledPane[]::new);
         var acc = new Accordion(tps);
         acc.getStyleClass().add("third-party-dependency-list-comp");
@@ -53,6 +52,6 @@ public class ThirdPartyDependencyListComp extends Comp<CompStructure<?>> {
         var sp = new ScrollPane(acc);
         sp.setFitToWidth(true);
         sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        return new SimpleCompStructure<>(sp);
+        return sp;
     }
 }

@@ -2,8 +2,8 @@ package io.abc_def.kickstart_fx.core;
 
 import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 import io.abc_def.kickstart_fx.issue.TrackEvent;
-
 import io.abc_def.kickstart_fx.platform.PlatformState;
+
 import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
