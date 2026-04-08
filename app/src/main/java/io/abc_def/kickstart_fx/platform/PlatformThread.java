@@ -15,7 +15,6 @@ import lombok.NonNull;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
-@SuppressWarnings("unchecked")
 public class PlatformThread {
 
     private static boolean canRunPlatform() {

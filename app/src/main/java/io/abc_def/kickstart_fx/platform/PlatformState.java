@@ -1,10 +1,12 @@
 package io.abc_def.kickstart_fx.platform;
 
+import io.abc_def.kickstart_fx.core.AppCache;
 import io.abc_def.kickstart_fx.core.AppProperties;
 import io.abc_def.kickstart_fx.core.AppRestart;
 import io.abc_def.kickstart_fx.core.check.AppSystemFontCheck;
 import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 import io.abc_def.kickstart_fx.prefs.AppPrefs;
+import io.abc_def.kickstart_fx.util.GlobalTimer;
 import io.abc_def.kickstart_fx.util.OsType;
 import io.abc_def.kickstart_fx.util.ThreadHelper;
 
@@ -14,9 +16,9 @@ import javafx.scene.text.Font;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.SystemUtils;
 
 import java.awt.*;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
@@ -31,6 +33,7 @@ public enum PlatformState {
 
     private static Throwable lastError;
     private static boolean expectedError;
+    private static boolean restartQueued;
 
     public static Throwable getLastError() {
         if (expectedError) {
@@ -40,6 +43,10 @@ public enum PlatformState {
     }
 
     public static void reset() {
+        if (current != RUNNING) {
+            return;
+        }
+
         setCurrent(PlatformState.EXITED);
 
         // Give other threads, e.g. windows shutdown hook time to properly signal exit state
@@ -64,7 +71,7 @@ public enum PlatformState {
     }
 
     public static void handleStderrMessage(String msg) {
-        if (current != RUNNING) {
+        if (restartQueued) {
             return;
         }
 
@@ -76,11 +83,19 @@ public enum PlatformState {
                 "java.lang.RuntimeException: Error creating fragment shader",
                 "java.lang.RuntimeException: Error creating shader program"
         );
-        if (AppPrefs.get() != null && !AppPrefs.get().disableHardwareAcceleration().get() && l.stream().anyMatch(msg::contains)) {
-            reset();
-            AppPrefs.get().setFromExternal(AppPrefs.get().disableHardwareAcceleration(), true);
-            AppPrefs.get().save();
-            AppRestart.restart();
+        if (AppPrefs.get() != null && AppPrefs.get().canSave() &&
+                !AppPrefs.get().disableHardwareAcceleration().get() && l.stream().anyMatch(msg::contains)) {
+            restartQueued = true;
+            AppCache.update("hardwareAccelerationDisabled", true);
+            // Delay this to guarantee that the application starts up as much as possible
+            // This is to ensure that any initialization on initial startup is run
+            // It will get stuck at the first dialog if the graphics pipeline does not work
+            GlobalTimer.delay(() -> {
+                reset();
+                AppPrefs.get().disableHardwareAcceleration().set(true);
+                AppPrefs.get().save();
+                AppRestart.restart();
+            }, Duration.ofSeconds(5));
         }
     }
 
