@@ -96,12 +96,13 @@ public class MarkdownComp extends RegionBuilder<StackPane> {
         if (AppPrefs.get() != null) {
             var ref = new WeakReference<>(wv);
             AppPrefs.get().theme().subscribe((v) -> {
-                if (ref.get() != null && v != null) {
+                var refVal = ref.get();
+                if (refVal != null && v != null) {
                     var theme = v.isDark()
                             ? "misc/github-markdown-dark.css"
                             : "misc/github-markdown-light.css";
                     var url = AppResources.getResourceURL(AppResources.MAIN_MODULE, theme).orElseThrow();
-                    wv.getEngine().setUserStyleSheetLocation(url.toString());
+                    refVal.getEngine().setUserStyleSheetLocation(url.toString());
                 }
             });
         }
