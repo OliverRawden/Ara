@@ -133,7 +133,11 @@ public final class AppPrefs {
 
     private AppPrefs() {}
 
-    public ObservableBooleanValue disableHardwareAcceleration() {
+    public boolean canSave() {
+        return globalStorageHandler.isInitialized();
+    }
+
+    public BooleanProperty disableHardwareAcceleration() {
         return disableHardwareAcceleration;
     }
 
