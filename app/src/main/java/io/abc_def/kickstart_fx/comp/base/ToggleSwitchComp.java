@@ -73,14 +73,6 @@ public class ToggleSwitchComp extends RegionBuilder<ToggleSwitch> {
             s.setAlignment(Pos.CENTER);
             s.pseudoClassStateChanged(PseudoClass.getPseudoClass("has-graphic"), true);
         }
-
-        s.setOnKeyPressed(keyEvent -> {
-            if (keyEvent.getCode() == KeyCode.SPACE || keyEvent.getCode() == KeyCode.ENTER) {
-                s.setSelected(!s.isSelected());
-                keyEvent.consume();
-            }
-        });
-
         return s;
     }
 }
