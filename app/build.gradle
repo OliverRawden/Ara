@@ -101,6 +101,7 @@ processResources {
                 jvmArgs += ["--module-path=${configurations.javafx.asFileTree.asPath},", "--add-modules=javafx.graphics"]
                 mainClass = "com.sun.javafx.css.parser.Css2Bin"
                 args css
+                ignoreExitValue = true
             }.result.get()
 
             delete css
