@@ -106,6 +106,8 @@ Alternatively, there are also AppImages available. These can be useful if you ar
 
 ![Demo3](https://kickstartfx.xpipe.io/images/demo3.png)
 
+![Demo5](https://kickstartfx.xpipe.io/images/demo5.png)
+
 ![Demo4](https://kickstartfx.xpipe.io/images/demo4.png)
 
 ## License
