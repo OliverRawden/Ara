@@ -4,6 +4,7 @@ import io.abc_def.kickstart_fx.core.mode.AppOperationMode;
 import io.abc_def.kickstart_fx.issue.ErrorEventFactory;
 import io.abc_def.kickstart_fx.platform.PlatformState;
 import io.abc_def.kickstart_fx.util.OsType;
+import io.abc_def.kickstart_fx.util.ThreadHelper;
 
 import java.awt.*;
 import java.awt.desktop.*;
@@ -57,6 +58,13 @@ public class AppDesktopIntegration {
                     public void appReopened(AppReopenedEvent e) {
                         AppOperationMode.switchToAsync(AppOperationMode.GUI);
                     }
+                });
+
+                Desktop.getDesktop().setQuitHandler((e, response) -> {
+                    response.cancelQuit();
+                    ThreadHelper.runAsync(() -> {
+                        AppOperationMode.externalShutdown();
+                    });
                 });
             }
         } catch (Throwable ex) {

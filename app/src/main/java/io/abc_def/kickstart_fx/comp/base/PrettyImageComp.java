@@ -16,6 +16,7 @@ import javafx.scene.layout.StackPane;
 
 import org.apache.commons.io.FilenameUtils;
 
+import java.lang.ref.WeakReference;
 import java.util.function.Consumer;
 
 public class PrettyImageComp extends SimpleRegionBuilder {
@@ -110,8 +111,12 @@ public class PrettyImageComp extends SimpleRegionBuilder {
 
         value.subscribe(update);
         if (AppPrefs.get() != null) {
+            var ref = new WeakReference<>(update);
             AppPrefs.get().theme().addListener((observable, oldValue, newValue) -> {
-                update.accept(value.getValue());
+                var v = ref.get();
+                if (v != null) {
+                    v.accept(value.getValue());
+                }
             });
         }
 
