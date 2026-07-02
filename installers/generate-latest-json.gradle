@@ -1,0 +1,113 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+/**
+ * Generates installers/latest.json from the root version file and built artifacts in
+ * dist/build/dist/artifacts/. Run after :dist:jpackage (or platform packaging tasks).
+ *
+ * Optional project properties:
+ *   -PreleaseNotes="Fixed …"   custom release notes
+ *   -PreleaseDate=2026-07-15   ISO date (default: today)
+ */
+tasks.register('generateLatestJson') {
+    group = 'distribution'
+    description = 'Generate installers/latest.json from version file and dist artifacts'
+
+    doLast {
+        def versionFile = file("${rootDir}/version")
+        if (!versionFile.exists()) {
+            throw new GradleException("Missing root version file: ${versionFile}")
+        }
+
+        def rawVersion = versionFile.text.strip()
+        def canonical = rawVersion.contains('-') ? rawVersion.split('-')[0] : rawVersion
+        def tag = "v${canonical}"
+        def baseUrl = "https://github.com/OliverRawden/Ara/releases/download/${tag}"
+        def artifactsDir = file("${rootDir}/dist/build/dist/artifacts")
+        def distName = project.ext.distName
+        def downloads = new LinkedHashMap<String, String>()
+
+        if (artifactsDir.exists()) {
+            artifactsDir.eachFile { f ->
+                if (!f.isFile()) {
+                    return
+                }
+                def name = f.name
+                def url = "${baseUrl}/${name}"
+
+                def pkg = (name =~ /${distName}-installer-macos-(.+)\.pkg/)
+                if (pkg.matches()) {
+                    def arch = pkg[0][1]
+                    downloads["macos-pkg-${arch}"] = url
+                    downloads.putIfAbsent('macos-pkg', url)
+                    return
+                }
+
+                def dmg = (name =~ /${distName}-portable-macos-(.+)\.dmg/)
+                if (dmg.matches()) {
+                    def arch = dmg[0][1]
+                    downloads["macos-dmg-${arch}"] = url
+                    downloads.putIfAbsent('macos-dmg', url)
+                    return
+                }
+
+                def msi = (name =~ /${distName}-installer-windows-(.+)\.msi/)
+                if (msi.matches()) {
+                    def arch = msi[0][1]
+                    downloads["windows-msi-${arch}"] = url
+                    downloads.putIfAbsent('windows-msi', url)
+                    return
+                }
+
+                def deb = (name =~ /${distName}-installer-linux-(.+)\.deb/)
+                if (deb.matches()) {
+                    def arch = deb[0][1]
+                    downloads["linux-deb-${arch}"] = url
+                    downloads.putIfAbsent('linux-deb', url)
+                    return
+                }
+
+                def rpm = (name =~ /${distName}-installer-linux-(.+)\.rpm/)
+                if (rpm.matches()) {
+                    def arch = rpm[0][1]
+                    downloads["linux-rpm-${arch}"] = url
+                    downloads.putIfAbsent('linux-rpm', url)
+                }
+            }
+        }
+
+        if (downloads.isEmpty()) {
+            logger.lifecycle("No artifacts in ${artifactsDir} — writing skeleton download URLs.")
+            downloads['macos-pkg-arm64'] = "${baseUrl}/${distName}-installer-macos-arm64.pkg"
+            downloads['macos-pkg-x86_64'] = "${baseUrl}/${distName}-installer-macos-x86_64.pkg"
+            downloads['macos-pkg'] = downloads['macos-pkg-arm64']
+            downloads['macos-dmg-arm64'] = "${baseUrl}/${distName}-portable-macos-arm64.dmg"
+            downloads['macos-dmg-x86_64'] = "${baseUrl}/${distName}-portable-macos-x86_64.dmg"
+            downloads['macos-dmg'] = downloads['macos-dmg-arm64']
+            downloads['windows-msi-x86_64'] = "${baseUrl}/${distName}-installer-windows-x86_64.msi"
+            downloads['windows-msi-arm64'] = "${baseUrl}/${distName}-installer-windows-arm64.msi"
+            downloads['windows-msi'] = downloads['windows-msi-x86_64']
+            downloads['linux-deb-x86_64'] = "${baseUrl}/${distName}-installer-linux-x86_64.deb"
+            downloads['linux-deb-arm64'] = "${baseUrl}/${distName}-installer-linux-arm64.deb"
+            downloads['linux-rpm-x86_64'] = "${baseUrl}/${distName}-installer-linux-x86_64.rpm"
+            downloads['linux-rpm-arm64'] = "${baseUrl}/${distName}-installer-linux-arm64.rpm"
+        }
+
+        def releaseNotes = project.findProperty('releaseNotes')
+                ?: "Ara ${canonical} release. See GitHub Releases for details."
+        def releaseDate = project.findProperty('releaseDate')
+                ?: new Date().format('yyyy-MM-dd')
+
+        def payload = [
+                latestVersion: canonical,
+                releaseDate    : releaseDate,
+                releaseNotes   : releaseNotes,
+                downloads      : downloads
+        ]
+
+        def outFile = file("${rootDir}/installers/latest.json")
+        outFile.parentFile.mkdirs()
+        outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(payload)) + '\n'
+        logger.lifecycle("Wrote ${outFile} (${downloads.size()} download entries, tag ${tag})")
+    }
+}
