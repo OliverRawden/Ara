@@ -215,3 +215,5 @@ if (!devProps.exists()) {
 if (System.getProperty("java.home").contains(" ")) {
     throw new IllegalArgumentException("Your JDK home path contains spaces. This will break several gradle plugins")
 }
+
+apply from: "$rootDir/installers/generate-latest-json.gradle"

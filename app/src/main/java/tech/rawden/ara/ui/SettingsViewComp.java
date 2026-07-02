@@ -1,6 +1,5 @@
 package tech.rawden.ara.ui;
 
-import tech.rawden.ara.Main;
 import tech.rawden.ara.ai.InferenceService;
 import tech.rawden.ara.ai.ModelManager;
 import tech.rawden.ara.comp.RegionBuilder;
@@ -11,6 +10,9 @@ import tech.rawden.ara.core.AraTheme;
 import tech.rawden.ara.model.AppSettings;
 import tech.rawden.ara.model.InferenceConfig;
 import tech.rawden.ara.model.SettingsStorage;
+import tech.rawden.ara.update.AppVersion;
+import tech.rawden.ara.update.UpdateDialog;
+import tech.rawden.ara.update.UpdateService;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -71,6 +73,9 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
     // Context / memory file editor
     private TextArea contextArea;
 
+    // Updates section
+    private Label lastUpdateCheckLabel;
+
     public SettingsViewComp(
             AraModel model,
             ModelManager modelManager,
@@ -118,6 +123,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         root.getChildren().add(createSection("Personality", createPersonalitySection()));
         root.getChildren().add(createSection("Memory (context.md)", createMemorySection()));
         root.getChildren().add(createSection("Privacy & Security", createPrivacySection()));
+        root.getChildren().add(createSection("Updates", createUpdatesSection()));
         root.getChildren().add(createSection("System", createSystemSection()));
         root.getChildren().add(createSection("Reset", createResetSection()));
 
@@ -542,6 +548,101 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         return section;
     }
 
+    private Region createUpdatesSection() {
+        var section = new VBox(12);
+
+        var hint = new Label(
+                "Optional update checks contact GitHub only to read installers/latest.json. "
+                        + "Nothing from your chats, memory, or models is sent. You choose when to download and install.");
+        hint.setFont(Font.font("Inter", 11));
+        hint.setStyle("-fx-fill: -color-fg-subtle;");
+        hint.setWrapText(true);
+
+        var startupToggle = new ToggleSwitchComp("Check for updates automatically on startup");
+        startupToggle.selectedProperty().set(appSettings.isCheckForUpdatesOnStartup());
+        startupToggle.selectedProperty().addListener((obs, old, val) -> {
+            appSettings.setCheckForUpdatesOnStartup(val);
+            settingsStorage.save(appSettings);
+        });
+
+        var currentVersion = new Label("Current version: Ara " + AppVersion.current());
+        currentVersion.setFont(Font.font("Inter", 11));
+        currentVersion.setStyle("-fx-fill: -color-fg-subtle;");
+
+        lastUpdateCheckLabel = new Label(formatLastUpdateCheck());
+        lastUpdateCheckLabel.setFont(Font.font("Inter", 11));
+        lastUpdateCheckLabel.setStyle("-fx-fill: -color-fg-subtle;");
+        lastUpdateCheckLabel.setWrapText(true);
+
+        var checkNowBtn = new Button("Check for updates now");
+        checkNowBtn.getStyleClass().add("ara-action-btn");
+        checkNowBtn.setOnAction(e -> runManualUpdateCheck(checkNowBtn));
+
+        section.getChildren()
+                .addAll(hint, startupToggle.build(), currentVersion, lastUpdateCheckLabel, checkNowBtn);
+        return section;
+    }
+
+    private String formatLastUpdateCheck() {
+        String at = appSettings.getLastUpdateCheckAt();
+        String status = appSettings.getLastUpdateCheckStatus();
+        if (at == null || at.isBlank() || "never".equals(status)) {
+            return "Last checked: never";
+        }
+        return "Last checked: " + at + " (" + status + ")";
+    }
+
+    private void refreshLastUpdateCheckLabel() {
+        if (lastUpdateCheckLabel != null) {
+            lastUpdateCheckLabel.setText(formatLastUpdateCheck());
+        }
+    }
+
+    private void runManualUpdateCheck(Button trigger) {
+        trigger.setDisable(true);
+        trigger.setText("Checking…");
+
+        Thread.startVirtualThread(() -> {
+            var service = new UpdateService();
+            try {
+                var update = service.checkForUpdate();
+                appSettings.setLastUpdateCheckAt(java.time.Instant.now().toString());
+                if (update.isPresent()) {
+                    appSettings.setLastUpdateCheckStatus("update available");
+                    settingsStorage.save(appSettings);
+                    Platform.runLater(() -> {
+                        refreshLastUpdateCheckLabel();
+                        UpdateDialog.showAvailable(update.get(), service);
+                        trigger.setDisable(false);
+                        trigger.setText("Check for updates now");
+                    });
+                } else {
+                    appSettings.setLastUpdateCheckStatus("up to date");
+                    settingsStorage.save(appSettings);
+                    Platform.runLater(() -> {
+                        refreshLastUpdateCheckLabel();
+                        UpdateDialog.showUpToDate(AppVersion.current());
+                        trigger.setDisable(false);
+                        trigger.setText("Check for updates now");
+                    });
+                }
+            } catch (Exception ex) {
+                LOG.fine("Manual update check failed: " + ex.getMessage());
+                appSettings.setLastUpdateCheckAt(java.time.Instant.now().toString());
+                appSettings.setLastUpdateCheckStatus("failed");
+                settingsStorage.save(appSettings);
+                Platform.runLater(() -> {
+                    refreshLastUpdateCheckLabel();
+                    UpdateDialog.showCheckFailed(
+                            "We couldn't reach the update server right now. Please try again later.\n\n"
+                                    + ex.getMessage());
+                    trigger.setDisable(false);
+                    trigger.setText("Check for updates now");
+                });
+            }
+        });
+    }
+
     private Region createSystemSection() {
         var section = new VBox(8);
 
@@ -575,12 +676,8 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
                     + tech.rawden.ara.integration.VexProtocolCatalog.protocols().size() + " protocols)");
         });
 
-        var version = new Label("Ara v" + Main.VERSION);
-        version.setFont(Font.font("Inter", 11));
-        version.setStyle("-fx-fill: -color-fg-subtle;");
-
         section.getChildren()
-                .addAll(modelsDir, settingsFile, chatsFile, toolsFile, inferenceLabel, reloadToolsBtn, version);
+                .addAll(modelsDir, settingsFile, chatsFile, toolsFile, inferenceLabel, reloadToolsBtn);
         return section;
     }
 

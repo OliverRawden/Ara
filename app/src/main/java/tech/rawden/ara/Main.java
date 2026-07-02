@@ -16,6 +16,9 @@ import tech.rawden.ara.model.SettingsStorage;
 import tech.rawden.ara.platform.MacWindow;
 import tech.rawden.ara.tool.ToolCatalog;
 import tech.rawden.ara.ui.MainViewComp;
+import tech.rawden.ara.update.AppVersion;
+import tech.rawden.ara.update.UpdateDialog;
+import tech.rawden.ara.update.UpdateService;
 import tech.rawden.ara.util.OsType;
 
 import javafx.application.Application;
@@ -42,7 +45,7 @@ import java.util.logging.Logger;
  */
 public class Main extends Application {
 
-    public static final String VERSION = "6.0.x";
+    public static final String VERSION = AppVersion.current();
 
     private static final Logger LOG = Logger.getLogger(Main.class.getName());
 
@@ -224,6 +227,9 @@ public class Main extends Application {
         Runnable onSessionReady = () -> {
             loadRealChats.run();
             modelPreloader.schedulePreload(appSettings.getSelectedModel());
+            if (appSettings.isCheckForUpdatesOnStartup()) {
+                scheduleStartupUpdateCheck(appSettings, settingsStorage);
+            }
         };
 
         if (appSettings.isEncryptionEnabled()) {
@@ -352,6 +358,33 @@ public class Main extends Application {
      * On successful unlock, the provided loadRealChats runnable is executed (in its own virtual thread for I/O) to load
      * and decrypt data, then update the UI on the FX thread.
      */
+    /**
+     * Non-blocking startup update check. Runs on a virtual thread after session ready; shows a dialog only when
+     * a newer version is found. Never delays app launch.
+     */
+    private void scheduleStartupUpdateCheck(AppSettings appSettings, SettingsStorage settingsStorage) {
+        Thread.startVirtualThread(() -> {
+            var service = new UpdateService();
+            try {
+                var update = service.checkForUpdate();
+                appSettings.setLastUpdateCheckAt(java.time.Instant.now().toString());
+                if (update.isPresent()) {
+                    appSettings.setLastUpdateCheckStatus("update available");
+                    settingsStorage.save(appSettings);
+                    Platform.runLater(() -> UpdateDialog.showAvailable(update.get(), service));
+                } else {
+                    appSettings.setLastUpdateCheckStatus("up to date");
+                    settingsStorage.save(appSettings);
+                }
+            } catch (Exception ex) {
+                LOG.fine("Startup update check failed: " + ex.getMessage());
+                appSettings.setLastUpdateCheckAt(java.time.Instant.now().toString());
+                appSettings.setLastUpdateCheckStatus("failed");
+                settingsStorage.save(appSettings);
+            }
+        });
+    }
+
     private void showUnlockDialogNonBlocking(
             AppSettings appSettings, SettingsStorage settingsStorage, Runnable onUnlockedLoad) {
         var dialog = new javafx.stage.Stage();

@@ -79,6 +79,16 @@ Vex defines protocols and ara-tool schemas; Ara auto-loads them into every syste
 
 Outputs land in `dist/build/dist/`.
 
+### Downloads & updates
+
+Stable installers are published as [GitHub Releases](https://github.com/OliverRawden/Ara/releases). The app reads public update metadata from:
+
+`https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json`
+
+See [`installers/README.md`](installers/README.md) for the release workflow (`./gradlew :dist:jpackage` → attach assets to a Release → `./gradlew generateLatestJson`).
+
+In the app, open **Settings → Updates** to optionally check for newer versions. Checks are **off by default** and only contact GitHub for that JSON file — nothing from your chats, memory, or models is sent. When an update is available, **Download & Install** fetches the platform installer (`.pkg` preferred on macOS, `.msi` on Windows) and opens it for you to complete.
+
 ---
 
 ## Recommended models
