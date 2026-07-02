@@ -49,4 +49,4 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## Contact
 
-For licensing inquiries: o.rawden@proton.me
+For licensing inquiries: contact-rawden@pm.me
