@@ -1,0 +1,84 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+apply from: "$rootDir/gradle/gradle_scripts/java.gradle"
+apply from: "$rootDir/gradle/gradle_scripts/javafx.gradle"
+apply from: "$rootDir/gradle/gradle_scripts/jna.gradle"
+apply from: "$rootDir/gradle/gradle_scripts/lombok.gradle"
+
+configurations {
+    implementation.extendsFrom(javafx)
+    implementation.extendsFrom(jna)
+}
+
+dependencies {
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.20.0"
+    implementation 'de.kherud:llama:4.1.0'
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.0"
+    implementation "org.kordamp.ikonli:ikonli-material2-pack:12.4.0"
+    implementation "org.kordamp.ikonli:ikonli-materialdesign2-pack:12.4.0"
+    implementation "org.kordamp.ikonli:ikonli-javafx:12.4.0"
+    implementation "org.slf4j:slf4j-api:2.0.17"
+    implementation "org.slf4j:slf4j-jdk-platform-logging:2.0.17"
+    implementation 'io.github.mkpaz:atlantafx-base:2.1.0'
+    implementation "org.int4.fx:fx-values:0.5"
+    implementation "org.int4.fx:fx-builders:0.5"
+}
+
+application {
+    mainModule = 'tech.rawden.ara'
+    mainClass = 'tech.rawden.ara.Main'
+    applicationDefaultJvmArgs = jvmRunArgs
+}
+
+run {
+    systemProperty propertyName('useVirtualThreads'), 'false'
+    systemProperty propertyName('writeLogs'), "true"
+    systemProperty propertyName('writeSysOut'), "true"
+    systemProperty propertyName('logLevel'), "trace"
+
+    for (final def e in System.getProperties().entrySet()) {
+        if (e.getKey().toString().contains(snakeProductName)) {
+            systemProperty e.getKey().toString(), e.getValue()
+        }
+    }
+
+    workingDir = rootDir
+    jvmArgs += ['-XX:+EnableDynamicAgentLoading']
+}
+
+processResources {
+    doLast {
+        def pkg = groupName.replaceAll("\\.", "/") + "/" + artifactName.replaceAll("\\.", "/")
+        def cssFiles = fileTree(dir: "$sourceSets.main.output.resourcesDir/$pkg/resources/style")
+        cssFiles.include "**/*.css"
+        cssFiles.exclude "**/ara.css"
+        cssFiles.each { css ->
+            providers.javaexec {
+                workingDir = projectDir
+                jvmArgs += ["--module-path=${configurations.javafx.asFileTree.asPath},", "--add-modules=javafx.graphics"]
+                mainClass = "com.sun.javafx.css.parser.Css2Bin"
+                args css
+                ignoreExitValue = true
+            }.result.get()
+            delete css
+        }
+    }
+}
+
+distTar {
+    enabled = false
+}
+
+distZip {
+    enabled = false
+}
+
+assembleDist {
+    enabled = false
+}

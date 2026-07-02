@@ -1,0 +1,54 @@
+name: Linux Build
+
+on: workflow_call
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          # TODO: Configure your own GitHub runner with a custom runner name to run Ubuntu ARM
+          # If you don't want to build on that platform, just remove this entry
+          # - ubuntu-arm
+    runs-on: ${{ matrix.os }}
+    permissions:
+      actions: none
+      attestations: none
+      checks: none
+      contents: read
+      deployments: none
+      id-token: none
+      issues: none
+      discussions: none
+      packages: none
+      pages: none
+      pull-requests: none
+      repository-projects: none
+      security-events: none
+      statuses: none
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25.0.2'
+          distribution: 'zulu'
+          java-package: jdk
+          cache: gradle
+
+      - name: Execute dist build
+        run: ./gradlew clean dist --stacktrace
+        env:
+          RELEASE: ${{ contains(github.event.head_commit.message, '[release]') == true }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-artifacts
+          retention-days: 1
+          compression-level: 1
+          path: dist/build/dist/artifacts/*

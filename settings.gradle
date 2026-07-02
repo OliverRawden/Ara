@@ -1,0 +1,4 @@
+rootProject.name = 'ara'
+
+include 'app'
+include 'dist'

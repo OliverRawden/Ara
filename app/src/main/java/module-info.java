@@ -1,0 +1,38 @@
+open module tech.rawden.ara {
+    exports tech.rawden.ara;
+    exports tech.rawden.ara.core;
+    exports tech.rawden.ara.ui;
+    exports tech.rawden.ara.model;
+    exports tech.rawden.ara.ai;
+    exports tech.rawden.ara.comp;
+    exports tech.rawden.ara.comp.base;
+    exports tech.rawden.ara.platform;
+    exports tech.rawden.ara.util;
+
+    requires static lombok;
+    requires com.sun.jna;
+    requires com.sun.jna.platform;
+    requires org.slf4j;
+    requires java.logging;
+    requires atlantafx.base;
+    requires javafx.base;
+    requires javafx.controls;
+    requires javafx.media;
+    requires javafx.web;
+    requires javafx.graphics;
+    requires org.kordamp.ikonli.core;
+    requires org.kordamp.ikonli.javafx;
+    requires com.fasterxml.jackson.databind;
+    requires com.fasterxml.jackson.datatype.jsr310;
+    requires java.net.http;
+    requires org.int4.fx.builders;
+    requires jdk.charsets;
+    requires jdk.crypto.cryptoki;
+    requires jdk.localedata;
+    requires jdk.accessibility;
+    requires org.kordamp.ikonli.material2;
+    requires org.kordamp.ikonli.materialdesign2;
+    requires jdk.zipfs;
+    requires jdk.management;
+    requires de.kherud.llama;
+}

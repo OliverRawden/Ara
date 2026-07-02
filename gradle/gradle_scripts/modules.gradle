@@ -1,0 +1,4 @@
+// Module info for dependencies that don't have module-info.class
+extraJavaModuleInfo {
+    automaticModule("de.kherud:llama", "de.kherud.llama")
+}

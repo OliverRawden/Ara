@@ -1,0 +1,217 @@
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+
+import java.lang.module.ModuleFinder
+import java.util.stream.Stream
+
+plugins {
+    id 'org.gradlex.extra-java-module-info' version '1.13.1' apply false
+    id("com.diffplug.spotless") version "8.1.0" apply false
+    id 'de.undercouch.download' version '5.6.0'
+}
+
+allprojects { subproject ->
+    apply plugin: 'org.gradlex.extra-java-module-info'
+    extraJavaModuleInfo {
+        failOnMissingModuleInfo.set(true)
+    }
+    apply from: "$rootDir/gradle/gradle_scripts/modules.gradle"
+
+    tasks.withType(AbstractArchiveTask).configureEach {
+        reproducibleFileOrder = false
+        preserveFileTimestamps = true
+        useFileSystemPermissions()
+    }
+}
+
+subprojects {subproject ->
+    if (subproject.name == 'dist') {
+        return
+    }
+
+    apply plugin: 'com.diffplug.spotless'
+    spotless {
+        java {
+            palantirJavaFormat()
+            trimTrailingWhitespace()
+            endWithNewline()
+            importOrder(groupName, 'javafx', '', 'java', '\\#')
+        }
+    }
+}
+
+static def getArchName() {
+    var arch = System.getProperty("os.arch").toLowerCase(Locale.ROOT)
+    if (arch == 'amd64' || arch == 'x86_64') {
+        return 'x86_64'
+    }
+    if (arch == 'arm' || arch == 'aarch64') {
+        return 'arm64'
+    }
+    if (arch == 'x86') {
+        return 'x86'
+    }
+    return arch
+}
+
+def getJvmArgs() {
+    def os = DefaultNativePlatform.currentOperatingSystem
+    def jvmRunArgs = [
+            "-Dvisualvm.display.name=$productName",
+            "-Djdk.virtualThreadScheduler.parallelism=8"
+    ]
+
+    if (os.isWindows() && arch == "arm64") {
+        jvmRunArgs += [
+                "-D" + propertyName("useVirtualThreads") + "=false"
+        ]
+    }
+
+    jvmRunArgs += [
+            "--enable-native-access=com.sun.jna",
+            "--enable-native-access=javafx.graphics",
+            "--enable-native-access=javafx.web",
+            "--enable-native-access=javafx.media",
+            "--enable-native-access=de.kherud.llama"
+    ]
+
+    def appPackage = packageName(null)
+    jvmRunArgs += [
+            "--add-exports", "javafx.graphics/com.sun.javafx.tk=$appPackage",
+            "--add-opens", "javafx.graphics/com.sun.glass.ui=$appPackage",
+            "--add-opens", "javafx.graphics/javafx.stage=$appPackage",
+            "--add-opens", "javafx.graphics/com.sun.javafx.tk=$appPackage",
+            "--add-opens", "javafx.graphics/com.sun.javafx.tk.quantum=$appPackage"
+    ]
+
+    jvmRunArgs += ['-XX:+UseStringDeduplication']
+
+    jvmRunArgs += ['-XX:+UseG1GC',
+                   '-Xms300m',
+                   '-Xmx4G',
+                   '-XX:MinHeapFreeRatio=20',
+                   '-XX:MaxHeapFreeRatio=30',
+                   '-XX:GCTimeRatio=9',
+                   '-XX:G1HeapRegionSize=4m'
+    ]
+
+    jvmRunArgs += ["-Djavafx.enablePreview=true"]
+
+    if (os.isMacOsX()) {
+        jvmRunArgs += ["-Dapple.awt.application.appearance=system"]
+    }
+
+    if (os.isMacOsX()) {
+        jvmRunArgs += "-Xdock:name=$productName"
+    }
+
+    if (os.isLinux()) {
+        jvmRunArgs += ["-Dquantum.multithreaded=false"]
+    }
+
+    jvmRunArgs += [
+            '-Djava.net.useSystemProxies=true'
+    ]
+
+    return jvmRunArgs
+}
+
+def getWindowsSchemaCanonicalVersion() {
+    def v = canonicalVersionString
+    def last = 0
+    if (v.split("\\.").length == 2) {
+        v = v + ".0"
+    }
+    return v + "." + last
+}
+
+interface InjectedExecOps {
+    @javax.inject.Inject
+    ExecOperations getExecOps()
+}
+
+project.ext {
+    isFullRelease = Boolean.parseBoolean(System.getenv('RELEASE'))
+    ci = System.getenv('CI') != null
+    enableAot = ci
+
+    productName = 'Ara'
+    kebapProductName = 'ara'
+    snakeProductName = 'ara'
+    groupName = 'tech.rawden'
+    artifactName = 'ara'
+    distName = "ara"
+
+    rawVersion = file('version').text.strip()
+    versionString = rawVersion + (isFullRelease ? '' : '-SNAPSHOT')
+    versionReleaseNumber = rawVersion.split('-').length == 2 ? Integer.parseInt(rawVersion.split('-')[1]) : 1
+    canonicalVersionString = rawVersion.split('-').length == 2 ? rawVersion.split('-')[0] : rawVersion
+    buildId = UUID.nameUUIDFromBytes(versionString.getBytes())
+    windowsSchemaCanonicalVersion = getWindowsSchemaCanonicalVersion()
+
+    signingEnabled = true
+    signingKeyId = System.getenv('GPG_KEY_ID') != null ? System.getenv('GPG_KEY_ID') : ""
+    signingKey = System.getenv('GPG_KEY') != null ? System.getenv('GPG_KEY') : ""
+    signingPassword =System.getenv('GPG_KEY_PASSWORD') != null ? System.getenv('GPG_KEY_PASSWORD') : ""
+
+    os = org.gradle.internal.os.OperatingSystem.current()
+    arch = getArchName()
+    jvmRunArgs = getJvmArgs()
+
+    jpackageExecutableName = distName
+    jpackageMacOsBundleName = "${groupName.replaceAll("_", "-")}.${artifactName.replaceAll("_", "-")}"
+    jpackageReleaseArguments = jvmRunArgs + [
+            "-D" + propertyName("version") + "=" + versionString,
+            "-D" + propertyName("build") + "=$versionString/${new Date().format('yyyy-MM-dd-HH-mm')}",
+            "-D" + propertyName("buildId") + "=" + buildId
+            ]
+
+    jpackageReleaseArguments += [
+            '-Djna.nosys=false',
+            '-Djna.nounpack=true',
+            '-Djna.noclasspath=true'
+    ]
+    if (isFullRelease) {
+        jpackageReleaseArguments += "-XX:+DisableAttachMechanism"
+    }
+
+    devJavafxVersion = '27-ea+16'
+    productionJavafxVersion = '27-ea+16'
+    jdkHasBundledJavaFx = ModuleFinder.ofSystem().find("javafx.base").isPresent()
+
+    customJavaFxLibsPath = null
+    customJavaFxJmodsPath = null
+
+    def injected = project.objects.newInstance(InjectedExecOps)
+    execOps = injected.execOps;
+}
+
+group = groupName
+version = versionString
+
+def propertyName(String s) {
+    return groupName + "." + artifactName + "." + s
+}
+
+def packageName(String s) {
+    return groupName + "." + artifactName + (s != null ? "." + s : "")
+}
+
+def replaceVariablesInFile(String f, Map<String, String> replacements) {
+    def fileName = file(f).getName()
+    def text = file(f).text
+    def replaced = text.replace(replacements)
+    def build = "${project.layout.buildDirectory.get()}/${UUID.randomUUID()}"
+    file(build).mkdirs()
+    def temp = "$build/$fileName"
+    file(temp).text = replaced
+    return file(temp)
+}
+
+var devProps = file("$rootDir/app/dev.properties")
+if (!devProps.exists()) {
+    devProps.text = file("$rootDir/gradle/gradle_scripts/dev_default.properties").text
+}
+
+if (System.getProperty("java.home").contains(" ")) {
+    throw new IllegalArgumentException("Your JDK home path contains spaces. This will break several gradle plugins")
+}
