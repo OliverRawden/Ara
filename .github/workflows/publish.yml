@@ -101,7 +101,7 @@ jobs:
           echo "VERSION=$VER" >> $GITHUB_ENV
 
       - name: Create version tag
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         continue-on-error: true
         with:
           github-token: ${{ secrets.GH_PAT }}
