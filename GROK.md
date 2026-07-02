@@ -29,24 +29,41 @@ Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **A
 
 ---
 
-## Current Repository State (July 2026)
+## Current Repository State (2 July 2026)
 
 | Item | Status |
 |------|--------|
-| `develop` pushed | `98face2` — auto-update system, Settings → Updates, `installers/` generators |
-| `main` pushed | `ff486ff` — `installers/latest.json`, `generateLatestJson` Gradle task |
-| GitHub Release **v5.6** | https://github.com/OliverRawden/Ara/releases/tag/v5.6 |
-| Release assets (macOS arm64) | `ara-installer-macos-arm64.pkg`, `ara-portable-macos-arm64.dmg` |
-| Update metadata URL | `https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json` |
-| Repo visibility | **Public** — `latest.json` and release assets fetch without authentication |
-| Auto-update code on `main` | **Not merged yet** — only on `develop` |
-| v5.6 release binary version | **Mismatch** — uploaded `.pkg` reports `5.5.0-SNAPSHOT` (built before release alignment). Rebuild from `main` with `RELEASE=true` before next public release. |
+| **`develop` tip** | `68a4d2a` — auto-update system (public repo, no token field) |
+| **`main` tip** | `ec93139` — `installers/latest.json`, generators, synced docs |
+| **`develop` version** | `5.5.0` (`version` file) |
+| **`main` version** | `5.6` (`version` file — stable line; metadata may differ for testing) |
+| **Repo visibility** | **Public** — no GitHub token required for update checks or downloads |
+| **Update metadata** | `installers/latest.json` on `main` → `latestVersion: 5.5.1` (test bump for develop update flow) |
+| **Metadata URL** | https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json |
+| **Auto-update code** | On **`develop` only** — not merged to `main` yet |
+| **GitHub Releases** | [v5.6](https://github.com/OliverRawden/Ara/releases/tag/v5.6) (first upload) + [v5.5.1](https://github.com/OliverRawden/Ara/releases/tag/v5.5.1) (test prerelease, current update target) |
+| **Release assets** | macOS arm64 only: `ara-installer-macos-arm64.pkg`, `ara-portable-macos-arm64.dmg` |
+
+**Known gaps (next release housekeeping)**
+
+- v5.6 `.pkg` internally reports `5.5.0-SNAPSHOT` — rebuild from `main` with `RELEASE=true` when cutting a real stable release.
+- Merge `develop` → `main` so shipped installers include Settings → Updates.
+- Align `latest.json` `latestVersion` with `main` `version` file after testing (currently `5.5.1` for update-flow test).
 
 **Local paths**
 
 - Project: `/Users/rawden/Developer/IdeaProjects/Ara`
 - Built artifacts: `dist/build/dist/artifacts/`
 - Runtime data: `~/Documents/Ara/`
+
+### What was built today (Grok session summary)
+
+1. **`tech.rawden.ara.update` package** — `UpdateService`, `AppVersion`, `VersionComparer`, `PlatformInstallerKey`, `UpdateDialog`; optional checks; macOS prefers `.pkg`.
+2. **Settings → Updates** — startup toggle (default off), manual check, last-checked status, download + launch installer.
+3. **`installers/`** — `latest.json`, README, `generateLatestJson` Gradle task + shell script.
+4. **GitHub Releases** — uploaded macOS arm64 binaries; v5.5.1 prerelease for testing update detection (`5.5.0` → `5.5.1`).
+5. **Private-repo token field** — added briefly, then **removed** after repo was made public.
+6. **Docs** — GROK.md, README.md, Obsidian inbox notes; synced across `develop`, `main`, `master`.
 
 ---
 
@@ -79,7 +96,7 @@ develop branch (git)
 5. Downloads platform installer to temp → launches via `open` / `start` / `xdg-open`.
 6. macOS prefers `macos-pkg-arm64` → `macos-pkg` → `macos-dmg*` keys in JSON.
 
-**Privacy:** No telemetry. Network only on explicit or opted-in startup check. Only metadata until user downloads.
+**Privacy:** No telemetry. Network only on explicit or opted-in startup check. Only metadata until user downloads. Repository is **public** — unauthenticated fetch of `latest.json` and release assets.
 
 ### Cutting a stable release (full checklist)
 
