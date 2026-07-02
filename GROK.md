@@ -19,8 +19,114 @@ Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **A
 
 ## Branch Strategy
 
-- **`main`:** Stable current version (5.6). Production-ready, default branch, source for releases and tags.
-- **`develop`:** Unstable branch for in-development work. New features and Grok-driven changes land here first.
+| Branch | `version` file | Role |
+|--------|----------------|------|
+| **`main`** | `5.6` | Stable. Default branch. GitHub Releases and tags are cut from here. Holds `installers/latest.json` (update metadata). |
+| **`develop`** | `5.5.0` | Unstable. All active development and Grok build sessions land here first. Includes auto-update client code (`tech.rawden.ara.update`). |
+| **`master`** | (legacy) | Tracks older default; prefer `main` / `develop`. Keep `GROK.md` in sync when touched. |
+
+**Rule:** Never commit installer binaries (`.pkg`, `.dmg`, `.msi`) to git. They live only as GitHub Release assets.
+
+---
+
+## Current Repository State (July 2026)
+
+| Item | Status |
+|------|--------|
+| `develop` pushed | `98face2` — auto-update system, Settings → Updates, `installers/` generators |
+| `main` pushed | `ff486ff` — `installers/latest.json`, `generateLatestJson` Gradle task |
+| GitHub Release **v5.6** | https://github.com/OliverRawden/Ara/releases/tag/v5.6 |
+| Release assets (macOS arm64) | `ara-installer-macos-arm64.pkg`, `ara-portable-macos-arm64.dmg` |
+| Update metadata URL | `https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json` |
+| Repo visibility | **Private** — raw JSON and release assets require GitHub access |
+| Auto-update code on `main` | **Not merged yet** — only on `develop` |
+| v5.6 release binary version | **Mismatch** — uploaded `.pkg` reports `5.5.0-SNAPSHOT` (built before release alignment). Rebuild from `main` with `RELEASE=true` before next public release. |
+
+**Local paths**
+
+- Project: `/Users/rawden/Developer/IdeaProjects/Ara`
+- Built artifacts: `dist/build/dist/artifacts/`
+- Runtime data: `~/Documents/Ara/`
+
+---
+
+## Release & Update System
+
+### What lives where
+
+```
+main branch (git)          GitHub Release v5.6 (assets, not in git)
+├── version → 5.6          ├── ara-installer-macos-arm64.pkg
+├── installers/            └── ara-portable-macos-arm64.dmg
+│   ├── latest.json  ──────────► app fetches this URL at runtime
+│   ├── README.md
+│   ├── generate-latest-json.gradle
+│   └── generate-latest-json.sh
+└── (stable app code; update UI merges from develop later)
+
+develop branch (git)
+├── version → 5.5.0
+├── tech.rawden.ara.update/   ← client-side update checks
+└── Settings → Updates section
+```
+
+### Update flow (user)
+
+1. User enables **Settings → Updates → Check for updates automatically on startup** (default **off**).
+2. App fetches `installers/latest.json` from `main` (HttpClient + Jackson).
+3. Compares `latestVersion` vs `AppVersion.current()` (`VersionComparer`).
+4. If newer → dialog with release notes → **Download & Install**.
+5. Downloads platform installer to temp → launches via `open` / `start` / `xdg-open`.
+6. macOS prefers `macos-pkg-arm64` → `macos-pkg` → `macos-dmg*` keys in JSON.
+
+**Privacy:** No telemetry. Network only on explicit or opted-in startup check. Only metadata until user downloads.
+
+### Cutting a stable release (full checklist)
+
+Work on **`main`** unless preparing a develop-only experiment.
+
+```bash
+# 1. Bump version on main
+echo "5.7" > version
+git add version && git commit -m "Bump version to 5.7"
+
+# 2. Build release installers (per platform; macOS example)
+RELEASE=true ./gradlew :dist:jpackage
+# Outputs: dist/build/dist/artifacts/
+#   ara-installer-macos-arm64.pkg      (preferred on macOS)
+#   ara-portable-macos-arm64.dmg
+#   ara-installer-windows-x86_64.msi  (Windows CI/machine)
+#   ara-installer-linux-*.deb / .rpm    (Linux CI/machine)
+
+# 3. Verify embedded version matches tag (macOS)
+#    pkgutil / PackageInfo should show 5.7, not *-SNAPSHOT
+
+# 4. Create GitHub Release
+#    Tag: v5.7  Target: main  Attach all built artifacts from artifacts/
+
+# 5. Generate latest.json (only include URLs for assets you actually uploaded)
+./gradlew generateLatestJson -PreleaseNotes="Release notes here"
+# Or: RELEASE_NOTES="..." ./installers/generate-latest-json.sh
+
+# 6. Commit metadata to main
+git add installers/latest.json
+git commit -m "Release v5.7: update latest.json"
+git push origin main
+
+# 7. Merge develop → main when stable features (e.g. auto-update) should ship in the .pkg
+```
+
+### Artifact filename patterns
+
+| Key in `latest.json` | File pattern |
+|----------------------|--------------|
+| `macos-pkg-arm64` | `ara-installer-macos-arm64.pkg` |
+| `macos-dmg-arm64` | `ara-portable-macos-arm64.dmg` |
+| `windows-msi-x86_64` | `ara-installer-windows-x86_64.msi` |
+| `linux-deb-x86_64` | `ara-installer-linux-x86_64.deb` |
+| `linux-rpm-arm64` | `ara-installer-linux-arm64.rpm` |
+
+Download URLs: `https://github.com/OliverRawden/Ara/releases/download/vX.Y/<filename>`
 
 ---
 
@@ -289,9 +395,9 @@ IntelliJ: open `Ara/`, trust Gradle, run **run app** configuration.
 
 ## Grok / AI Assistant Workflow
 
-Use this loop when an AI agent is asked to implement changes from the TODO list below.
+Use this loop when an AI agent ("grok build") implements changes from the TODO list or a user chat session.
 
-### 1. Clone and sync
+### 1. Clone and sync (always `develop`)
 
 ```bash
 git clone https://github.com/OliverRawden/Ara.git
@@ -305,22 +411,22 @@ Local dev copy: `/Users/rawden/Developer/IdeaProjects/Ara` (sibling to Vex).
 
 ### 2. Read context
 
-1. Read **`GROK.md`** (this file) — architecture, tools, data paths, open TODOs.
-2. Skim **`README.md`** for user-facing docs.
-3. If the task touches Vex protocols, also read **`../Vex/GROK.md`**.
+1. **`GROK.md`** (this file) — architecture, branches, release/update workflow, TODOs.
+2. **`README.md`** — user-facing summary.
+3. **`installers/README.md`** — if touching releases or `latest.json`.
+4. **`../Vex/GROK.md`** — if touching Vex protocols or tools.
 
-### 3. Implement TODO items
+### 3. Implement
 
-Work through unchecked items in the **TODO** section below. Prefer code changes over doc-only updates. Items that need secrets (GPG keys, Apple certs, Azure Key Vault) are already wired in Gradle/CI — mark done in docs once verified, do not commit secrets.
+Work through TODO items or the user's request. Prefer code over doc-only changes.
 
 | Area | Key paths |
 |------|-----------|
 | Inference / chat | `app/.../ai/`, `app/.../ui/ChatViewComp.java` |
+| Auto-update | `app/.../update/`, `SettingsViewComp.java`, `installers/` |
 | Vex tools | `app/.../integration/`, `app/.../tool/` |
-| Packaging | `dist/linux_packages.gradle`, `dist/jpackage.gradle`, `dist/msi/` |
+| Packaging | `dist/jpackage.gradle`, `dist/pkg/`, `dist/msi/` |
 | CI | `.github/workflows/` |
-
-Compile check before commit:
 
 ```bash
 ./gradlew :app:compileJava
@@ -328,13 +434,11 @@ Compile check before commit:
 
 ### 4. Update GROK.md
 
-After implementing work:
+- Check off completed TODOs (`[x]`).
+- Update **Current Repository State** if versions, releases, or branch tips changed.
+- Extend workflow sections if the process changes.
 
-- Check off completed TODO items (`[x]`).
-- Add notes under **Performance**, **Vex integration**, or **Rebranding** if behaviour changed.
-- Extend this workflow section if the process changes.
-
-### 5. Commit and push
+### 5. Commit and push to `develop`
 
 ```bash
 git add -A
@@ -342,18 +446,28 @@ git commit -m "Short imperative summary of what changed"
 git push origin develop
 ```
 
-### 6. Cutting a stable release (update metadata)
+If `GROK.md` workflow or branch strategy changed, sync the same `GROK.md` to `main` and `master` (content should be identical across branches).
 
-On `main`:
+### 6. Finish with a report
 
-1. Bump root `version` file (e.g. `5.7`).
-2. Build installers per platform: `./gradlew :dist:jpackage` → artifacts in `dist/build/dist/artifacts/`.
-3. Create GitHub Release tag `v5.7`, attach `.pkg` (macOS preferred), `.dmg`, `.msi`, `.deb`/`.rpm`.
-4. Generate metadata: `./gradlew generateLatestJson -PreleaseNotes="…"` or `./installers/generate-latest-json.sh`.
-5. Commit and push `installers/latest.json` (+ `version`) to `main`.
-6. App fetches `https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json` — users with update checks enabled see the new version on next check.
+- What was accomplished.
+- Errors or follow-ups.
+- TODO status.
+- Whether a `main` release or `latest.json` update is needed.
 
-### 7. Release-only checklist (human)
+### 7. Cutting a stable release (on `main`, human or agent)
+
+See **Release & Update System → Cutting a stable release** above. Summary:
+
+1. Bump `version` on `main`.
+2. `RELEASE=true ./gradlew :dist:jpackage` on each target platform.
+3. Verify binary version matches tag (not `-SNAPSHOT`).
+4. GitHub Release `vX.Y` + attach artifacts from `dist/build/dist/artifacts/`.
+5. `./gradlew generateLatestJson -PreleaseNotes="…"`.
+6. Commit + push `installers/latest.json` to `main`.
+7. Merge `develop` → `main` when new features (e.g. auto-update) should ship in the installer.
+
+### 8. Release-only checklist (signing / CI secrets)
 
 Signing and notarization require CI secrets — not for local agent runs:
 
@@ -375,10 +489,20 @@ Signing and notarization require CI secrets — not for local agent runs:
 - [x] Linux DEB/RPM metadata (`dist/linux_packages.gradle`) — Oliver Rawden vendor/maintainer
 - [x] jpackage vendor set to Oliver Rawden (`dist/jpackage.gradle`)
 
+#### Auto-update & release metadata
+- [x] `tech.rawden.ara.update` package on `develop` (optional checks, Settings UI, startup hook)
+- [x] `installers/latest.json` + generators on `main`
+- [x] GitHub Release v5.6 with macOS arm64 `.pkg` + `.dmg`
+- [ ] Rebuild v5.6+ installers from `main` with `RELEASE=true` (fix 5.5.0-SNAPSHOT mismatch)
+- [ ] Merge auto-update from `develop` → `main`
+- [ ] Trim `latest.json` to only uploaded assets (or add Windows/Linux builds)
+- [ ] Make repo public or host `latest.json` on a fully public URL
+
 #### Documentation
 - [x] README.md — cleaned up, correct package path
 - [x] CONTRIBUTING.md — proprietary contribution policy
 - [x] LICENSE / LICENSE.md — proprietary license (KickstartFX attribution retained)
+- [x] `installers/README.md` — release workflow
 
 #### Signing / distribution
 - [x] GPG signing keys wired (`build.gradle` — needs CI secrets at release)
