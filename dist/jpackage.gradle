@@ -83,8 +83,7 @@ jlink {
             appVersion = macVersion
             imageOptions = ["--mac-package-identifier", jpackageMacOsBundleName]
         }
-        // TODO: Change vendor for signed releases
-        vendor = 'Ara'
+        vendor = 'Oliver Rawden'
         skipInstaller = true
     }
 }

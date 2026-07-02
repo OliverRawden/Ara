@@ -11,9 +11,11 @@ public class InferenceConfig {
                     + "Use read_memory (104), write_memory (105), append_memory (106) for ~/Documents/Ara/context.md — never shell cat/echo/tee.";
 
     public static final int DEFAULT_MAX_TOKENS = 4096;
+    public static final int DEFAULT_MAX_CONTEXT_CHARS = 28_000;
 
     private volatile float temperature = 0.7f;
     private volatile int maxTokens = DEFAULT_MAX_TOKENS;
+    private volatile int maxContextChars = DEFAULT_MAX_CONTEXT_CHARS;
     private volatile int topK = 40;
     private volatile boolean webSearchEnabled = true;
     private volatile boolean terminalEnabled = true;
@@ -39,6 +41,14 @@ public class InferenceConfig {
 
     public void setMaxTokens(int maxTokens) {
         this.maxTokens = maxTokens;
+    }
+
+    public int maxContextChars() {
+        return maxContextChars;
+    }
+
+    public void setMaxContextChars(int maxContextChars) {
+        this.maxContextChars = maxContextChars;
     }
 
     public int topK() {

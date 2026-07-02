@@ -40,6 +40,7 @@ public class LlamaCppInferenceService implements InferenceService {
 
     private volatile String cachedSystemBlock;
     private volatile int cachedSystemBlockKey;
+    private volatile boolean cancelRequested;
 
     @Override
     public Status status() {
@@ -125,6 +126,11 @@ public class LlamaCppInferenceService implements InferenceService {
                 runGenerationJob(userMessage, config, history, true, onToken, onComplete, onError, onToolCall));
     }
 
+    @Override
+    public void cancelGeneration() {
+        cancelRequested = true;
+    }
+
     private void runGenerationJob(
             String userMessage,
             InferenceConfig config,
@@ -134,17 +140,22 @@ public class LlamaCppInferenceService implements InferenceService {
             Runnable onComplete,
             Consumer<Throwable> onError,
             Consumer<ToolCall> onToolCall) {
+        cancelRequested = false;
         try {
             if (model == null) {
                 onError.accept(new IllegalStateException("No model loaded"));
                 return;
             }
             long buildStart = System.nanoTime();
-            var prompt = buildPrompt(userMessage, config, history, withTools);
+            var limited = PromptContextLimiter.limit(history, config.maxContextChars());
+            if (limited.droppedMessages() > 0) {
+                LOG.info("Context truncated: dropped " + limited.droppedMessages() + " oldest messages");
+            }
+            var prompt = buildPrompt(userMessage, config, limited.history(), withTools, limited.droppedMessages());
             long buildMs = (System.nanoTime() - buildStart) / 1_000_000;
             LOG.info(String.format(
-                    "Inference job: promptChars=%d, historyMsgs=%d, buildMs=%d, tools=%s",
-                    prompt.length(), history.size(), buildMs, withTools));
+                    "Inference job: promptChars=%d, historyMsgs=%d, dropped=%d, buildMs=%d, tools=%s",
+                    prompt.length(), history.size(), limited.droppedMessages(), buildMs, withTools));
             runInference(prompt, config, onToken, onComplete, onError, onToolCall);
         } catch (Exception e) {
             LOG.warning("Generation failed: " + e.getMessage());
@@ -176,9 +187,13 @@ public class LlamaCppInferenceService implements InferenceService {
     }
 
     private String buildPrompt(
-            String userMessage, InferenceConfig config, List<ChatMessage> history, boolean withTools) {
+            String userMessage,
+            InferenceConfig config,
+            List<ChatMessage> history,
+            boolean withTools,
+            int droppedMessages) {
         var now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy 'at' HH:mm"));
-        var system = buildSystemBlock(config, withTools, now);
+        var system = buildSystemBlock(config, withTools, now, droppedMessages);
 
         var sb = new StringBuilder();
         sb.append("<|im_start|>system\n").append(system).append("<|im_end|>\n");
@@ -202,7 +217,7 @@ public class LlamaCppInferenceService implements InferenceService {
         return sb.toString();
     }
 
-    private String buildSystemBlock(InferenceConfig config, boolean withTools, String now) {
+    private String buildSystemBlock(InferenceConfig config, boolean withTools, String now, int droppedMessages) {
         int key = systemBlockKey(config, withTools);
         String base;
         if (cachedSystemBlock != null && cachedSystemBlockKey == key) {
@@ -213,7 +228,12 @@ public class LlamaCppInferenceService implements InferenceService {
             cachedSystemBlockKey = key;
         }
 
-        return base + "\n\nThe current date and time is " + now + ".";
+        var block = base + "\n\nThe current date and time is " + now + ".";
+        if (droppedMessages > 0) {
+            block += "\n\n[Context note: " + droppedMessages
+                    + " older messages were omitted from this prompt to stay within the context budget.]";
+        }
+        return block;
     }
 
     private static String buildStaticSystemContent(InferenceConfig config, boolean withTools) {
@@ -275,6 +295,11 @@ public class LlamaCppInferenceService implements InferenceService {
             boolean toolCallFound = false;
 
             while (iter.hasNext()) {
+                if (cancelRequested) {
+                    cancelRequested = false;
+                    onError.accept(new java.util.concurrent.CancellationException("Generation stopped"));
+                    return;
+                }
                 var token = iter.next().toString();
                 tokenCount++;
                 if (firstTokenMs < 0) {

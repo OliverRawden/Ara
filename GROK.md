@@ -256,24 +256,98 @@ IntelliJ: open `Ara/`, trust Gradle, run **run app** configuration.
 
 ---
 
+## Grok / AI Assistant Workflow
+
+Use this loop when an AI agent is asked to implement changes from the TODO list below.
+
+### 1. Clone and sync
+
+```bash
+git clone https://github.com/OliverRawden/Ara.git
+cd Ara
+git fetch origin
+git checkout master   # or main — both track the same codebase
+git pull origin master
+```
+
+Local dev copy: `/Users/rawden/Developer/IdeaProjects/Ara` (sibling to Vex).
+
+### 2. Read context
+
+1. Read **`GROK.md`** (this file) — architecture, tools, data paths, open TODOs.
+2. Skim **`README.md`** for user-facing docs.
+3. If the task touches Vex protocols, also read **`../Vex/GROK.md`**.
+
+### 3. Implement TODO items
+
+Work through unchecked items in the **TODO** section below. Prefer code changes over doc-only updates. Items that need secrets (GPG keys, Apple certs, Azure Key Vault) are already wired in Gradle/CI — mark done in docs once verified, do not commit secrets.
+
+| Area | Key paths |
+|------|-----------|
+| Inference / chat | `app/.../ai/`, `app/.../ui/ChatViewComp.java` |
+| Vex tools | `app/.../integration/`, `app/.../tool/` |
+| Packaging | `dist/linux_packages.gradle`, `dist/jpackage.gradle`, `dist/msi/` |
+| CI | `.github/workflows/` |
+
+Compile check before commit:
+
+```bash
+./gradlew :app:compileJava
+```
+
+### 4. Update GROK.md
+
+After implementing work:
+
+- Check off completed TODO items (`[x]`).
+- Add notes under **Performance**, **Vex integration**, or **Rebranding** if behaviour changed.
+- Extend this workflow section if the process changes.
+
+### 5. Commit and push
+
+```bash
+git add -A
+git commit -m "Short imperative summary of what changed"
+git push origin master
+```
+
+If `main` is the default branch on GitHub, merge or push to both as needed:
+
+```bash
+git push origin master:main
+```
+
+### 6. Release-only checklist (human)
+
+Signing and notarization require CI secrets — not for local agent runs:
+
+| Variable | Purpose |
+|----------|---------|
+| `RELEASE=true` | Non-SNAPSHOT build |
+| `GPG_KEY_ID`, `GPG_KEY`, `GPG_PASSWORD` | DEB/RPM signing (`build.gradle`) |
+| `MACOS_DEVELOPER_ID_*`, `MACOS_NOTARIZATION_*` | macOS sign + notarize (`dist/mac_app/`, `dist/pkg/`) |
+| `AZURE_KEY_VAULT_URI` + Azure client vars | Windows Authenticode (`dist/tools/sign.bat`) |
+
+---
+
 ## TODO
 
 ### Rebranding / Distribution
 
 #### Installer & package metadata
 - [x] MSI installer links (`dist/msi/Product.wxs`) — updated to Ara GitHub
-- [ ] Linux DEB/RPM metadata (`dist/linux_packages.gradle`) — vendor/maintainer for real releases
-- [x] jpackage vendor set to `Ara` (`dist/jpackage.gradle`)
+- [x] Linux DEB/RPM metadata (`dist/linux_packages.gradle`) — Oliver Rawden vendor/maintainer
+- [x] jpackage vendor set to Oliver Rawden (`dist/jpackage.gradle`)
 
 #### Documentation
 - [x] README.md — cleaned up, correct package path
-- [ ] CONTRIBUTING.md — deleted in rebrand; decide if needed
-- [ ] LICENSE.md — KickstartFX license text; decide final licensing
+- [x] CONTRIBUTING.md — proprietary contribution policy
+- [x] LICENSE / LICENSE.md — proprietary license (KickstartFX attribution retained)
 
 #### Signing / distribution
-- [ ] GPG signing keys (env vars in gradle scripts)
-- [ ] macOS notarization (Apple Developer certs)
-- [ ] Windows code signing (Azure Key Vault for production MSI)
+- [x] GPG signing keys wired (`build.gradle` — needs CI secrets at release)
+- [x] macOS notarization scripts wired (`dist/mac_app/`, `dist/pkg/` — needs Apple certs in CI)
+- [x] Windows code signing wired (`dist/tools/sign.bat`, `dist/msi/msi.gradle` — needs Azure KV in CI)
 
 #### Third-party license files
 - `dist/licenses/kickstartfx.properties` — keep for template attribution
@@ -327,7 +401,7 @@ IntelliJ: open `Ara/`, trust Gradle, run **run app** configuration.
 
 - [x] Background model preload after unlock (`ModelPreloader`) — first-message latency
 - [x] KV cache quantization (Q8_0 K / Q4_0 V) in `LlamaCppInferenceService`
-- [ ] Prompt/context truncation or summarization for long chats (quadratic prefill cost)
+- [x] Prompt/context truncation for long chats (`PromptContextLimiter`, `InferenceConfig.maxContextChars`)
 - [ ] Speculative decoding / draft model via llama.cpp when available
 - [ ] Profile & lazy-load non-critical resources at launch
 - [ ] Adaptive: pause model load on low battery / thermal
@@ -340,5 +414,11 @@ IntelliJ: open `Ara/`, trust Gradle, run **run app** configuration.
 
 - [x] Auto-reload protocol catalog when Vex protocol files change (mtime snapshot)
 - [x] Full Vex Protocol Catalog injected into every Ara system prompt
-- [ ] Execute custom user-added ara-tool protocols beyond built-in executors
-- [ ] Shared design doc for protocol 10 kill semantics in Ara agent cancellation flow
+- [x] Execute custom user-added ara-tool protocols (`CustomToolExecutor` — terminal/web/core/target groups)
+- [x] Protocol 10 kill analogue — Stop button + `InferenceService.cancelGeneration()` during streaming
+
+**Protocol 10 kill semantics (Ara mapping)**
+
+Vex protocol 10 is a `kill` modifier: standalone `10` stops active subprocesses; piped `left | 10` aborts the left pipeline before it runs (see `../Vex/GROK.md`).
+
+In Ara, the chat **Stop** button (send icon → stop while generating) calls `cancelGeneration()` on the active inference job. Partial assistant text is kept with a `[Stopped]` suffix; audit logs `GENERATION_STOPPED`. This mirrors abort semantics for the on-device agent loop (distinct from terminal `execute_command` confirmation).

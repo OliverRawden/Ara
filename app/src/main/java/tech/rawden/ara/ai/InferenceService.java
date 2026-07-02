@@ -59,5 +59,8 @@ public interface InferenceService {
     /** Optional one-token warmup after load to avoid a cold first user inference. */
     default void warmup() {}
 
+    /** Request cancellation of the active generation (Vex protocol 10 kill analogue). */
+    default void cancelGeneration() {}
+
     void shutdown();
 }

@@ -10,6 +10,7 @@ import tech.rawden.ara.model.AuditLogStorage;
 import tech.rawden.ara.model.ChatMessage;
 import tech.rawden.ara.model.ChatSession;
 import tech.rawden.ara.model.InferenceConfig;
+import tech.rawden.ara.tool.CustomToolExecutor;
 import tech.rawden.ara.tool.TerminalExecutor;
 import tech.rawden.ara.tool.ToolCall;
 import tech.rawden.ara.tool.ToolCallDisplay;
@@ -71,6 +72,8 @@ public class ChatViewComp extends RegionBuilder<VBox> {
     private VBox messageContainer;
     private TextField inputField;
     private Button sendButton;
+    private FontIcon sendButtonIcon;
+    private boolean generating;
 
     private final Set<String> executedToolCalls = ConcurrentHashMap.newKeySet();
     private final AuditLogStorage auditLogStorage = new AuditLogStorage();
@@ -576,11 +579,17 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         });
 
         sendButton = new Button();
-        var sendIcon = new FontIcon("mdi2s-send");
-        sendIcon.setIconSize(18);
-        sendButton.setGraphic(sendIcon);
+        sendButtonIcon = new FontIcon("mdi2s-send");
+        sendButtonIcon.setIconSize(18);
+        sendButton.setGraphic(sendButtonIcon);
         sendButton.getStyleClass().add("ara-send-btn");
-        sendButton.setOnAction(e -> sendMessage());
+        sendButton.setOnAction(e -> {
+            if (generating) {
+                stopGeneration();
+            } else {
+                sendMessage();
+            }
+        });
 
         var inputBar = new HBox(8, inputField, sendButton);
         inputBar.setPadding(new Insets(12, 20, 16, 20));
@@ -596,7 +605,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         if (text == null || text.isBlank()) return;
 
         inputField.clear();
-        sendButton.setDisable(true);
+        setGenerating(true);
 
         // Always show the user bubble immediately for instant feedback.
         // Model load (if needed) happens in background; response comes after.
@@ -622,9 +631,25 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     () -> Platform.runLater(startInference),
                     error -> Platform.runLater(() -> {
                         LOG.warning("Model not ready: " + error.getMessage());
-                        sendButton.setDisable(false);
+                        setGenerating(false);
                     }));
         }
+    }
+
+    private void setGenerating(boolean active) {
+        generating = active;
+        sendButton.setDisable(false);
+        sendButtonIcon.setIconLiteral(active ? "mdi2s-stop" : "mdi2s-send");
+        if (active) {
+            sendButton.getStyleClass().add("ara-stop-btn");
+        } else {
+            sendButton.getStyleClass().remove("ara-stop-btn");
+        }
+    }
+
+    private void stopGeneration() {
+        inferenceService.cancelGeneration();
+        audit("GENERATION_STOPPED", "User stopped inference (protocol 10 kill analogue)", 1);
     }
 
     private void updateStreamingBubble(Region bubble, VBox contentBox, String displayText) {
@@ -662,7 +687,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
 
     private void generateResponse(String userMessage, int toolRound) {
         if (toolRound >= MAX_TOOL_ROUNDS) {
-            sendButton.setDisable(false);
+            setGenerating(false);
             maybeGenerateTitle();
             return;
         }
@@ -701,16 +726,25 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                             session.id(), ToolCallDisplay.forDisplay(sb.toString()));
                     session.addMessage(complete);
                     rebuildMessages();
-                    sendButton.setDisable(false);
+                    setGenerating(false);
                     onSessionUpdated.run();
                     maybeGenerateTitle();
                 }),
                 error -> Platform.runLater(() -> {
-                    sendButton.setDisable(false);
+                    setGenerating(false);
                     var msgs = session.messages();
                     var last = msgs.get(msgs.size() - 1);
                     msgs.remove(last);
-                    var errMsg = ChatMessage.assistantMessage(session.id(), "Error: " + error.getMessage());
+                    String content;
+                    if (error instanceof java.util.concurrent.CancellationException) {
+                        var partial = ToolCallDisplay.forDisplay(sb.toString());
+                        content = partial.isBlank()
+                                ? "[Stopped]"
+                                : partial + "\n\n[Stopped]";
+                    } else {
+                        content = "Error: " + error.getMessage();
+                    }
+                    var errMsg = ChatMessage.assistantMessage(session.id(), content);
                     session.addMessage(errMsg);
                     onSessionUpdated.run();
                     maybeGenerateTitle();
@@ -752,7 +786,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             audit("TOOL_CALL", "get_current_datetime", 0);
             rebuildMessages();
             scrollToBottom();
-            sendButton.setDisable(true);
+            setGenerating(true);
             generateResponse("", toolRound + 1);
             return;
         }
@@ -768,7 +802,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             session.addMessage(searchMsg);
             rebuildMessages();
             scrollToBottom();
-            sendButton.setDisable(true);
+            setGenerating(true);
 
             Thread.startVirtualThread(() -> {
                 var result = WebSearchService.search(query);
@@ -799,7 +833,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             session.addMessage(resultMsg);
             rebuildMessages();
             scrollToBottom();
-            sendButton.setDisable(true);
+            setGenerating(true);
             generateResponse("", toolRound + 1);
             return;
         }
@@ -815,7 +849,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             session.addMessage(resultMsg);
             rebuildMessages();
             scrollToBottom();
-            sendButton.setDisable(true);
+            setGenerating(true);
             generateResponse("", toolRound + 1);
             return;
         }
@@ -839,11 +873,17 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                 session.addMessage(resultMsg);
                 rebuildMessages();
                 scrollToBottom();
-                sendButton.setDisable(true);
+                setGenerating(true);
                 generateResponse("", toolRound + 1);
             } catch (Exception e) {
                 LOG.warning("Failed to parse append_memory: " + e);
             }
+            return;
+        }
+
+        var customPlan = CustomToolExecutor.plan(toolCall, config);
+        if (customPlan.isPresent()) {
+            handleCustomTool(customPlan.get(), toolCall, toolRound);
             return;
         }
 
@@ -876,9 +916,57 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         // The confirmation will happen in executeToolCall
     }
 
+    private void handleCustomTool(CustomToolExecutor.Plan plan, ToolCall toolCall, int toolRound) {
+        switch (plan) {
+            case CustomToolExecutor.Plan.Immediate(var result) -> {
+                audit("TOOL_CALL", "custom: " + toolCall.name(), 1);
+                var resultMsg = ChatMessage.toolMessage(session.id(), toolCall.name() + " result:\n\n" + result);
+                executedToolCalls.add(resultMsg.id());
+                session.addMessage(resultMsg);
+                rebuildMessages();
+                scrollToBottom();
+                setGenerating(true);
+                generateResponse("", toolRound + 1);
+            }
+            case CustomToolExecutor.Plan.Terminal(var command) -> {
+                audit("TOOL_CALL", "custom terminal: " + toolCall.name(), 2);
+                var toolMsg = ChatMessage.toolMessage(session.id(), command);
+                session.addMessage(toolMsg);
+                rebuildMessages();
+                scrollToBottom();
+            }
+            case CustomToolExecutor.Plan.AsyncWeb(var query) -> {
+                audit("TOOL_CALL", "custom web_search: " + query, 1);
+                var searchMsg = ChatMessage.toolMessage(session.id(), "web_search: " + query);
+                session.addMessage(searchMsg);
+                rebuildMessages();
+                scrollToBottom();
+                setGenerating(true);
+                Thread.startVirtualThread(() -> {
+                    var result = WebSearchService.search(query);
+                    Platform.runLater(() -> {
+                        executedToolCalls.add(searchMsg.id());
+                        var displayText = CustomToolExecutor.formatWebResult(query, result);
+                        var messages = session.messages();
+                        for (int i = 0; i < messages.size(); i++) {
+                            if (messages.get(i).id().equals(searchMsg.id())) {
+                                messages.set(
+                                        i, ChatMessage.toolMessage(session.id(), displayText));
+                                break;
+                            }
+                        }
+                        rebuildMessages();
+                        scrollToBottom();
+                        generateResponse("", toolRound + 1);
+                    });
+                });
+            }
+        }
+    }
+
     private void executeToolCall(ChatMessage toolMsg, int toolRound) {
         var command = toolMsg.content();
-        sendButton.setDisable(true);
+        setGenerating(true);
 
         // === PRIVACY / SECURITY: Explicit confirmation for consequential terminal actions ===
         boolean needsConfirm = config.requireTerminalConfirmation();
@@ -950,7 +1038,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     scrollToBottom();
                     generateResponse("", toolRound + 1);
                 });
-                sendButton.setDisable(false);
+                setGenerating(false);
                 return;
             }
         }

@@ -1,6 +1,5 @@
 ﻿<WixLocalization Culture="en-us" xmlns="http://wixtoolset.org/schemas/v4/wxl">
-    <!-- TODO: Update real company / signing details for release -->
-	<String Id="Company" Value="Ara" />
+	<String Id="Company" Value="Oliver Rawden" />
 	<String Id="Language" Value="1033" />
 
 	<String Id="CoreName" Value="Ara Core" />

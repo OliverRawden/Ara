@@ -23,9 +23,9 @@
 		
 		<Property Id="ARPPRODUCTICON" Value="Icon" />
 		<!-- TODO: Put your own links here, they will show up in the control panel -->
-		<Property Id="ARPHELPLINK" Value="https://github.com/rawden/ara" />
-		<Property Id="ARPURLINFOABOUT" Value="https://github.com/rawden/ara" />
-		<Property Id="ARPURLUPDATEINFO" Value="https://github.com/rawden/ara" />
+		<Property Id="ARPHELPLINK" Value="https://github.com/OliverRawden/Ara" />
+		<Property Id="ARPURLINFOABOUT" Value="https://github.com/OliverRawden/Ara" />
+		<Property Id="ARPURLUPDATEINFO" Value="https://github.com/OliverRawden/Ara" />
 		
 		<SetProperty Id="ARPINSTALLLOCATION" Value="[APPLICATIONFOLDER]" After="CostFinalize" />
 

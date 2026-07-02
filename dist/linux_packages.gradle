@@ -2,17 +2,16 @@ def pkgName = kebapProductName
 def targetDir = "/opt/$pkgName"
 
 ospackage {
-    // TODO: Change package information
-    packager = "crschnick"
-    vendor = "XPipe UG (haftungsbeschränkt) <hello@xpipe.io>"
+    packager = "Oliver Rawden"
+    vendor = "Oliver Rawden <contact-rawden@pm.me>"
     packageName = pkgName
     packageGroup = 'default'
     version = project.canonicalVersionString
     release = versionReleaseNumber
     packageDescription = 'Ara - On-device AI chat'
-    url = 'https://github.com/rawden/ara'
+    url = 'https://github.com/OliverRawden/Ara'
     user = 'root'
-    maintainer = 'Christopher Schnick <crschnick@xpipe.io>'
+    maintainer = 'Oliver Rawden <contact-rawden@pm.me>'
 
     def desktopSource = replaceVariablesInFile("$projectDir/linux_packages/app.desktop", Map.of(
             '__NAME__', productName,
