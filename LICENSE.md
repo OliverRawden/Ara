@@ -1,15 +1,50 @@
-## Copyleft community license
+# Proprietary Software License
 
-By default, the source code in this repository is licensed under the [GNU General Public License](/LICENSE-GPL.md).
+Copyright (c) 2026 Oliver Rawden. All rights reserved.
 
-## Permissive community license
+This software and associated documentation files (the "Software") are the
+proprietary and confidential property of Oliver Rawden.
 
-If this license is incompatible with your project, you can request to instead license the source code under the [Apache License](/LICENSE-APL.md) if you are creating an open source project with a publicly visible repository.
+## Grant of License
 
-You can contact [crschnick@xpipe.io](mailto:crschnick@xpipe.io) to request this permissive license for your open source project free of charge. There are no strings attached with this. All dependencies that are included with KickstartFX are compatible with the Apache License as well. While there is no prioritized support with this, this repository will still see timely fixes and improvements for any issues that are reported.
+No license is granted to any person or entity to use, copy, modify, merge,
+publish, distribute, sublicense, sell, or otherwise exploit the Software, in
+whole or in part, without prior written permission from the copyright holder.
 
-## Permissive enterprise license
+## Restrictions
 
-If this license is incompatible with your enterprise project, you can request to instead license the source code under the [Apache License](/LICENSE-APL.md). This license is best suited for individuals and organizations looking for key functionalities for application development while fully retaining their intellectual property rights. All dependencies that are included with KickstartFX are compatible with the Apache License as well.
+You may not:
 
-You can contact [crschnick@xpipe.io](mailto:crschnick@xpipe.io) to get a quote for your use case of your enterprise. This can can optionally also include prioritized support.
+- Copy, reproduce, or distribute the Software or any portion thereof
+- Modify, adapt, translate, or create derivative works based on the Software
+- Reverse engineer, decompile, or disassemble the Software, except where
+  expressly permitted by applicable law notwithstanding this limitation
+- Remove or alter any proprietary notices, labels, or marks on the Software
+- Use the Software for any purpose not expressly authorized in writing by the
+  copyright holder
+
+## Third-Party Components
+
+The Software may include or depend on third-party open-source libraries. Those
+components remain subject to their respective licenses. See `dist/licenses/` for
+attribution and license details of bundled dependencies.
+
+## Template Attribution
+
+Ara was bootstrapped from the KickstartFX project template
+(https://github.com/xpipe-io/kickstartfx). KickstartFX-derived scaffolding is
+used under separate terms from the upstream project; the Ara application code,
+branding, and customizations in this repository are proprietary to Oliver Rawden.
+
+## Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Contact
+
+For licensing inquiries: o.rawden@proton.me

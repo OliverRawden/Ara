@@ -1,18 +1,18 @@
 ﻿<WixLocalization Culture="en-us" xmlns="http://wixtoolset.org/schemas/v4/wxl">
-    <!-- TODO: Change names for msi installer -->
-	<String Id="Company" Value="XPipe UG (haftungsbeschränkt)" />
+    <!-- TODO: Update real company / signing details for release -->
+	<String Id="Company" Value="Ara" />
 	<String Id="Language" Value="1033" />
 
-	<String Id="CoreName" Value="KickstartFX Core" />
+	<String Id="CoreName" Value="Ara Core" />
 	<String Id="DesktopName" Value="Desktop Shortcut" />
 	<String Id="StartMenuName" Value="Start Menu Shortcut" />
 
-	<String Id="CoreDesc" Value="The essential KickstartFX component files." />
+	<String Id="CoreDesc" Value="The essential Ara component files." />
 	<String Id="DesktopDesc" Value="Creates a desktop shortcut." />
 	<String Id="StartMenuDesc" Value="Creates a start menu shortcut." />
 
 	<String Id="NewerVersionInstalled" Value="A newer version is already installed." />
-	<String Id="DesktopShortcutDescription" Value="Starts KickstartFX" />
-	<String Id="Description" Value="An installer for the KickstartFX desktop application" />
+	<String Id="DesktopShortcutDescription" Value="Starts Ara" />
+	<String Id="Description" Value="An installer for the Ara desktop AI assistant" />
 	<String Id="Keywords" Value="application,installer,msi" />
 </WixLocalization>

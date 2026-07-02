@@ -16,7 +16,6 @@ allprojects { subproject ->
     }
     apply from: "$rootDir/gradle/gradle_scripts/modules.gradle"
 
-    // https://docs.gradle.org/9.0.0/userguide/upgrading_major_version_9.html#reproducible_archives_by_default
     tasks.withType(AbstractArchiveTask).configureEach {
         reproducibleFileOrder = false
         preserveFileTimestamps = true
@@ -40,22 +39,17 @@ subprojects {subproject ->
     }
 }
 
-// Project variable functions
-
 static def getArchName() {
     var arch = System.getProperty("os.arch").toLowerCase(Locale.ROOT)
     if (arch == 'amd64' || arch == 'x86_64') {
         return 'x86_64'
     }
-
     if (arch == 'arm' || arch == 'aarch64') {
         return 'arm64'
     }
-
     if (arch == 'x86') {
         return 'x86'
     }
-
     return arch
 }
 
@@ -63,61 +57,45 @@ def getJvmArgs() {
     def os = DefaultNativePlatform.currentOperatingSystem
     def jvmRunArgs = [
             "-Dvisualvm.display.name=$productName",
-            "-Djavafx.preloader=" + packageName("core.AppPreloader"),
             "-Djdk.virtualThreadScheduler.parallelism=8"
     ]
 
-    // Virtual threads cause crashes on Windows ARM with Liberica
     if (os.isWindows() && arch == "arm64") {
         jvmRunArgs += [
                 "-D" + propertyName("useVirtualThreads") + "=false"
         ]
     }
 
-    // Disable JDK24+ warnings
     jvmRunArgs += [
             "--enable-native-access=com.sun.jna",
             "--enable-native-access=javafx.graphics",
             "--enable-native-access=javafx.web",
-            "--sun-misc-unsafe-memory-access=allow",
-            "--enable-native-access=javafx.media"
+            "--enable-native-access=javafx.media",
+            "--enable-native-access=de.kherud.llama"
     ]
 
-    // Module access fixes
     def appPackage = packageName(null)
     jvmRunArgs += [
             "--add-exports", "javafx.graphics/com.sun.javafx.tk=$appPackage",
-            "--add-exports", "jdk.zipfs/jdk.nio.zipfs=io.xpipe.modulefs",
             "--add-opens", "javafx.graphics/com.sun.glass.ui=$appPackage",
             "--add-opens", "javafx.graphics/javafx.stage=$appPackage",
             "--add-opens", "javafx.graphics/com.sun.javafx.tk=$appPackage",
             "--add-opens", "javafx.graphics/com.sun.javafx.tk.quantum=$appPackage"
     ]
 
-    // Use project liliput
-    jvmRunArgs += ['-XX:+UseCompactObjectHeaders']
-
-    // Reduce heap usage with deduplication
     jvmRunArgs += ['-XX:+UseStringDeduplication']
 
-    // GC config
     jvmRunArgs += ['-XX:+UseG1GC',
                    '-Xms300m',
                    '-Xmx4G',
                    '-XX:MinHeapFreeRatio=20',
                    '-XX:MaxHeapFreeRatio=30',
                    '-XX:GCTimeRatio=9',
-                   // The default makes GC pauses longer for some reason
-                   // on older Windows systems
                    '-XX:G1HeapRegionSize=4m'
     ]
 
-    // Enable preview features
-    jvmRunArgs += [
-            "-Djavafx.enablePreview=true"
-    ]
+    jvmRunArgs += ["-Djavafx.enablePreview=true"]
 
-    // Fix platform theme detection on macOS
     if (os.isMacOsX()) {
         jvmRunArgs += ["-Dapple.awt.application.appearance=system"]
     }
@@ -126,13 +104,10 @@ def getJvmArgs() {
         jvmRunArgs += "-Xdock:name=$productName"
     }
 
-    // Fix uncontrolled animation framerate issues on Linux, see https://bugs.openjdk.org/browse/JDK-8210547
     if (os.isLinux()) {
         jvmRunArgs += ["-Dquantum.multithreaded=false"]
     }
 
-    // Why is this not on by default? ...
-    // https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/doc-files/net-properties.html
     jvmRunArgs += [
             '-Djava.net.useSystemProxies=true'
     ]
@@ -149,33 +124,23 @@ def getWindowsSchemaCanonicalVersion() {
     return v + "." + last
 }
 
-// https://stackoverflow.com/questions/79720795/replacing-deprecated-projectexec-in-dofirst-dolast
 interface InjectedExecOps {
     @javax.inject.Inject
     ExecOperations getExecOps()
 }
 
-// Project variables
-
 project.ext {
-    // Enable release pipeline if variable is present
     isFullRelease = Boolean.parseBoolean(System.getenv('RELEASE'))
-    // Check if in build pipeline
     ci = System.getenv('CI') != null
-    // Create AOT cache for runtime image only in build pipeline
     enableAot = ci
 
-    // Names of your app
-    productName = 'Kickstart FX'
-    kebapProductName = 'kickstart-fx'
-    snakeProductName = 'kickstart_fx'
-    // The names of your packages
-    groupName = 'io.abc_def'
-    artifactName = 'kickstart_fx'
-    // The base name of the generated packages
-    distName = "kickstartfx"
+    productName = 'Ara'
+    kebapProductName = 'ara'
+    snakeProductName = 'ara'
+    groupName = 'tech.rawden'
+    artifactName = 'ara'
+    distName = "ara"
 
-    // Version info
     rawVersion = file('version').text.strip()
     versionString = rawVersion + (isFullRelease ? '' : '-SNAPSHOT')
     versionReleaseNumber = rawVersion.split('-').length == 2 ? Integer.parseInt(rawVersion.split('-')[1]) : 1
@@ -183,19 +148,15 @@ project.ext {
     buildId = UUID.nameUUIDFromBytes(versionString.getBytes())
     windowsSchemaCanonicalVersion = getWindowsSchemaCanonicalVersion()
 
-    // GPG signing config
-    // TODO: Enable if all the environment variables are configured in the workflow
     signingEnabled = true
     signingKeyId = System.getenv('GPG_KEY_ID') != null ? System.getenv('GPG_KEY_ID') : ""
     signingKey = System.getenv('GPG_KEY') != null ? System.getenv('GPG_KEY') : ""
     signingPassword =System.getenv('GPG_KEY_PASSWORD') != null ? System.getenv('GPG_KEY_PASSWORD') : ""
 
-    // Build config
     os = org.gradle.internal.os.OperatingSystem.current()
     arch = getArchName()
     jvmRunArgs = getJvmArgs()
 
-    // JPackage config
     jpackageExecutableName = distName
     jpackageMacOsBundleName = "${groupName.replaceAll("_", "-")}.${artifactName.replaceAll("_", "-")}"
     jpackageReleaseArguments = jvmRunArgs + [
@@ -204,35 +165,21 @@ project.ext {
             "-D" + propertyName("buildId") + "=" + buildId
             ]
 
-    // Make sure that the dynamic library from jna is loaded without any extraction
     jpackageReleaseArguments += [
             '-Djna.nosys=false',
             '-Djna.nounpack=true',
             '-Djna.noclasspath=true'
     ]
     if (isFullRelease) {
-        // Prevent debugger attach in production release
         jpackageReleaseArguments += "-XX:+DisableAttachMechanism"
     }
 
-    // JavaFX config
-    // Development and production javafx versions can be different
-    // Dev uses the maven dependencies and production uses jmods
-    // unless jdkHasBundledJavaFx or customJavaFxJmodsPath is set
     devJavafxVersion = '27-ea+16'
     productionJavafxVersion = '27-ea+16'
     jdkHasBundledJavaFx = ModuleFinder.ofSystem().find("javafx.base").isPresent()
 
-    // Define a custom JavaFX SDK location to use custom JavaFX jars instead of the default one
-    customJavaFxLibsPath = null // file("C:\\Projects\\jfx-sandbox\\build\\sdk\\lib")
-    customJavaFxJmodsPath = null // file("C:\\Projects\\jfx-sandbox\\build\\jmods")
-
-    // TODO: Set your own Sentry DSN. If you don't want to use Sentry, set this to null
-    // This value is not a secret
-    sentryUrl = "https://546869d72f781857d77d45ec610181bc@o1084459.ingest.us.sentry.io/4509999907405824"
-    if (sentryUrl != null) {
-        jpackageReleaseArguments += "-D" + propertyName("sentryUrl") + "=" + sentryUrl
-    }
+    customJavaFxLibsPath = null
+    customJavaFxJmodsPath = null
 
     def injected = project.objects.newInstance(InjectedExecOps)
     execOps = injected.execOps;
@@ -240,8 +187,6 @@ project.ext {
 
 group = groupName
 version = versionString
-
-// Global helper functions
 
 def propertyName(String s) {
     return groupName + "." + artifactName + "." + s
@@ -262,14 +207,10 @@ def replaceVariablesInFile(String f, Map<String, String> replacements) {
     return file(temp)
 }
 
-// Developer config file setup
-
 var devProps = file("$rootDir/app/dev.properties")
 if (!devProps.exists()) {
     devProps.text = file("$rootDir/gradle/gradle_scripts/dev_default.properties").text
 }
-
-// Checks
 
 if (System.getProperty("java.home").contains(" ")) {
     throw new IllegalArgumentException("Your JDK home path contains spaces. This will break several gradle plugins")

@@ -13,7 +13,7 @@ tasks.register('appImage', DefaultTask) {
                 '__NAME__', productName,
                 '__EXECUTABLE__', jpackageExecutableName,
                 '__ICON__', pkgName,
-                '__DESCRIPTION__', 'Kickstart your JavaFX application'
+                '__DESCRIPTION__', 'Ara - On-device AI assistant'
         ))
         copy {
             from(desktopSource)

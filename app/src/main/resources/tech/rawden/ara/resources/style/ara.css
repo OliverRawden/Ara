@@ -1,0 +1,507 @@
+/* Ara Main Stylesheet */
+
+/* ===== Root ===== */
+.root:light {
+    -fx-background-color: transparent;
+}
+
+.root:dark {
+    -fx-background-color: #262626;
+}
+
+.root:macos {
+    -fx-background-color: -color-bg-default;
+}
+
+.root:windows .text {
+    -fx-font-smoothing-type: gray;
+}
+
+.root:linux .text {
+    -fx-font-smoothing-type: lcd;
+}
+
+.ikonli-font-icon {
+    -fx-icon-color: -color-fg-default;
+    -fx-fill: -color-fg-default;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.text-field:focused {
+    -fx-prompt-text-fill: -color-fg-subtle;
+}
+
+/* ===== Root Layout ===== */
+.ara-root {
+    -fx-background-color: -color-bg-default;
+    -fx-border-width: 1px 0 0 0;
+    -fx-border-color: #404040;
+}
+
+/* ===== Sidebar ===== */
+.ara-sidebar {
+    -fx-background-color: #1E1E1E;
+    -fx-border-width: 0 1px 0 0;
+    -fx-border-color: #404040;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 1, 0);
+}
+
+.ara-chat-list {
+    -fx-spacing: 3;
+}
+
+/* ===== New Chat Button ===== */
+.ara-new-chat-btn {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-text-fill: -color-button-fg;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+}
+
+.ara-new-chat-btn:hover {
+    -fx-opacity: 0.9;
+}
+
+.ara-new-chat-btn .ikonli-font-icon {
+    -fx-icon-color: -color-button-fg;
+}
+
+/* ===== Chat List ===== */
+.ara-chat-item {
+    -fx-background-radius: 6;
+    -fx-background-color: #303030;
+    -fx-border-color: #454545;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-padding: 0;
+}
+
+.ara-chat-item:hover {
+    -fx-background-color: -color-accent-subtle;
+    -fx-border-color: -color-accent-emphasis;
+}
+
+.ara-chat-item-selected {
+    -fx-background-color: -color-accent-subtle;
+    -fx-border-color: -color-accent-emphasis;
+    -fx-border-width: 1.5;
+}
+
+.ara-chat-scroll {
+    -fx-background-color: transparent;
+}
+
+.ara-chat-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+/* ===== Settings Button ===== */
+.ara-settings-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-font-size: 13px;
+    -fx-text-fill: -color-fg-default;
+    -fx-cursor: hand;
+    -fx-border-width: 1px 0 0 0;
+    -fx-border-color: #404040;
+}
+
+.ara-settings-btn:hover {
+    -fx-background-color: -color-accent-subtle;
+}
+
+.ara-settings-btn .ikonli-font-icon {
+    -fx-icon-color: -color-fg-default;
+}
+
+/* ===== Content Area ===== */
+.ara-content-area,
+.ara-chat-view,
+.ara-settings-view,
+.ara-empty-chat-view,
+.ara-chat-wrapper,
+.ara-settings-wrapper {
+    -fx-background-color: #151515;
+}
+
+.ara-empty-chat-text {
+    -fx-fill: -color-fg-subtle;
+}
+
+.ara-message-scroll {
+    -fx-background-color: transparent;
+}
+
+.ara-message-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+/* ===== Message Bubbles ===== */
+.ara-message-container {
+    -fx-background-color: transparent;
+}
+
+.ara-message-user {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-background-radius: 16 16 4 16;
+    -fx-text-fill: -color-button-fg;
+}
+
+.ara-message-user .text {
+    -fx-fill: -color-button-fg;
+}
+
+.ara-message-assistant {
+    -fx-background-color: #2A2A2A;
+    -fx-background-radius: 16 16 16 4;
+    -fx-text-fill: -color-fg-default;
+}
+
+.ara-message-assistant .text {
+    -fx-fill: -color-fg-default;
+}
+
+/* ===== Input Bar ===== */
+.ara-input-bar {
+    -fx-background-color: #202020;
+    -fx-border-width: 1px 0 0 0;
+    -fx-border-color: #333333;
+}
+
+.ara-input-field {
+    -fx-background-color: #2E2E2E;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: #333333;
+    -fx-border-width: 1;
+    -fx-padding: 10 16;
+    -fx-font-size: 14px;
+    -fx-prompt-text-fill: -color-fg-subtle;
+}
+
+.ara-input-field:focused {
+    -fx-border-color: -color-accent-emphasis;
+}
+
+.ara-send-btn {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-background-radius: 12;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-cursor: hand;
+}
+
+.ara-send-btn:hover {
+    -fx-opacity: 0.9;
+}
+
+.ara-send-btn .ikonli-font-icon {
+    -fx-icon-color: -color-button-fg;
+}
+
+/* ===== Copy Button ===== */
+.ara-copy-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 4;
+    -fx-min-width: 24;
+    -fx-min-height: 24;
+    -fx-padding: 4;
+    -fx-cursor: hand;
+}
+
+.ara-copy-btn:hover {
+    -fx-background-color: -color-accent-subtle;
+}
+
+.ara-copy-btn .ikonli-font-icon {
+    -fx-icon-color: -color-fg-muted;
+    -fx-icon-size: 12;
+}
+
+/* ===== Code Block ===== */
+.ara-code-block {
+    -fx-background-color: #111111;
+    -fx-border-color: #333333;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-margin: 8 14;
+}
+
+.ara-code-copy-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 4;
+    -fx-min-width: 24;
+    -fx-min-height: 24;
+    -fx-padding: 4;
+    -fx-cursor: hand;
+}
+
+.ara-code-copy-btn:hover {
+    -fx-background-color: -color-accent-subtle;
+}
+
+.ara-code-copy-btn .ikonli-font-icon {
+    -fx-icon-color: -color-fg-muted;
+    -fx-icon-size: 12;
+}
+
+/* ===== Tool Call Bubble ===== */
+.ara-tool-bubble {
+    -fx-background-color: #252525;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: #3D3D3D;
+    -fx-border-width: 1;
+}
+
+.ara-tool-header {
+    -fx-fill: -color-fg-muted;
+}
+
+.ara-tool-run-btn {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-text-fill: -color-button-fg;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 6 14;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+    -fx-max-width: 100;
+}
+
+.ara-tool-run-btn:hover {
+    -fx-opacity: 0.9;
+}
+
+.ara-tool-run-btn .ikonli-font-icon {
+    -fx-icon-color: -color-button-fg;
+    -fx-icon-size: 12;
+}
+
+/* ===== Settings View ===== */
+.ara-settings-scroll {
+    -fx-background-color: transparent;
+}
+
+.ara-settings-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.ara-settings-section {
+    -fx-background-color: #252525;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: #3D3D3D;
+    -fx-border-width: 1;
+    -fx-padding: 20;
+}
+
+.ara-section-title {
+    -fx-fill: -color-fg-default;
+    -fx-padding: 0 0 4 0;
+}
+
+.ara-back-btn {
+    -fx-background-radius: 8;
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-min-width: 36;
+    -fx-min-height: 36;
+}
+
+.ara-back-btn:hover {
+    -fx-background-color: -color-accent-subtle;
+}
+
+.ara-action-btn {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-text-fill: -color-button-fg;
+    -fx-font-size: 13px;
+    -fx-background-radius: 8;
+    -fx-padding: 10 20;
+    -fx-cursor: hand;
+    -fx-max-width: 400;
+}
+
+.ara-action-btn:hover {
+    -fx-opacity: 0.9;
+}
+
+.ara-danger-action-btn {
+    -fx-background-color: -color-danger-emphasis;
+}
+
+.ara-theme-toggle {
+    -fx-background-radius: 8;
+    -fx-padding: 10 20;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+    -fx-max-width: 200;
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-text-fill: -color-fg-default;
+}
+
+.ara-theme-toggle:selected {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-text-fill: -color-button-fg;
+    -fx-border-color: -color-accent-emphasis;
+}
+
+/* ===== Toggle Switch ===== */
+.toggle-switch-comp {
+    -fx-font-size: 13px;
+}
+
+.toggle-switch-comp > .thumb-area {
+    -fx-padding: 0.65em 1.5em;
+}
+
+.toggle-switch-comp > .thumb {
+    -fx-background-insets: 0.15em;
+    -fx-background-radius: 1em;
+    -fx-padding: 0.7em 1.0em 0.7em 1.0em;
+}
+
+.root:light .toggle-switch-comp > .thumb {
+    -fx-background-color: -color-fg-emphasis;
+}
+
+.root:light .toggle-switch-comp > .thumb-area {
+    -fx-border-radius: 1em;
+    -fx-border-width: 1;
+    -fx-border-color: derive(-color-border-default, -5%);
+    -fx-background-color: derive(-color-neutral-muted, -8%);
+}
+
+.root:light .toggle-switch-comp:selected > .thumb {
+    -fx-background-color: -color-accent-emphasis, -color-fg-emphasis;
+    -fx-opacity: 1;
+}
+
+.root:light .toggle-switch-comp:selected > .thumb-area {
+    -fx-background-color: -color-accent-emphasis, -color-accent-emphasis;
+}
+
+.toggle-switch-comp .label-container {
+    -fx-padding: -0.2em 0 0 0;
+}
+
+/* ===== Settings: Model Selector ===== */
+.ara-model-selector {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 4 8;
+}
+
+.ara-chat-delete-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-min-width: 24;
+    -fx-min-height: 24;
+    -fx-padding: 2;
+    -fx-alignment: center;
+}
+
+.ara-chat-delete-btn:hover {
+    -fx-background-color: -color-danger-emphasis;
+}
+
+.ara-chat-delete-btn:hover .ikonli-font-icon {
+    -fx-icon-color: -color-button-fg;
+}
+
+.ara-chat-delete-btn .ikonli-font-icon {
+    -fx-icon-color: -color-fg-muted;
+}
+
+/* ===== Settings: Admin ===== */
+.ara-admin-unlocked {
+    -fx-background-color: derive(-color-success-emphasis, 90%);
+    -fx-background-radius: 8;
+    -fx-padding: 12;
+}
+
+/* ===== Settings: Model List ===== */
+.ara-model-row {
+    -fx-border-color: transparent transparent -color-border-default transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+/* ===== Settings: Prompt Editor ===== */
+.ara-prompt-area {
+    -fx-background-color: #2E2E2E;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #333333;
+    -fx-border-width: 1;
+    -fx-padding: 10;
+    -fx-font-size: 13px;
+    -fx-text-fill: -color-fg-default;
+}
+
+.ara-prompt-area:focused {
+    -fx-border-color: -color-accent-emphasis;
+}
+
+.ara-model-load-btn {
+    -fx-background-color: -color-accent-subtle;
+    -fx-text-fill: -color-accent-fg;
+    -fx-font-size: 11px;
+    -fx-background-radius: 6;
+    -fx-padding: 4 12;
+}
+
+.ara-model-load-btn:hover {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-text-fill: -color-button-fg;
+}
+
+.ara-model-delete-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-min-width: 30;
+    -fx-min-height: 30;
+}
+
+.ara-model-delete-btn:hover {
+    -fx-background-color: -color-danger-emphasis;
+}
+
+.ara-model-delete-btn:hover .ikonli-font-icon {
+    -fx-icon-color: -color-button-fg;
+}
+
+.ara-progress-bar {
+    -fx-max-width: Infinity;
+    -fx-pref-height: 6;
+}
+
+.ara-download-status {
+    -fx-font-size: 11px;
+}
+
+/* ===== Slider ===== */
+.slider.progress-slider > .progress {
+    -fx-background-color: transparent, -color-accent-emphasis;
+}
+
+.slider.progress-slider:horizontal > .progress {
+    -fx-background-insets: 0, 6px 0 6px 0;
+    -fx-background-radius: 6px 0 0 6px;
+}
+
+.slider.progress-slider:vertical > .progress {
+    -fx-background-insets: 0, 0 6px 0 6px;
+    -fx-background-radius: 0 0 6px 6px;
+}

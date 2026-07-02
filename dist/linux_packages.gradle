@@ -9,15 +9,15 @@ ospackage {
     packageGroup = 'default'
     version = project.canonicalVersionString
     release = versionReleaseNumber
-    packageDescription = 'Kickstart your JavaFX application'
-    url = 'https://kickstartfx.xpipe.io'
+    packageDescription = 'Ara - On-device AI chat'
+    url = 'https://github.com/rawden/ara'
     user = 'root'
     maintainer = 'Christopher Schnick <crschnick@xpipe.io>'
 
     def desktopSource = replaceVariablesInFile("$projectDir/linux_packages/app.desktop", Map.of(
             '__NAME__', productName,
             '__TARGET__', targetDir,
-            '__DESCRIPTION__', 'Kickstart your JavaFX application',
+            '__DESCRIPTION__', 'Ara - On-device AI assistant',
             '__ICON__', pkgName,
             '__EXECUTABLE_NAME__', jpackageExecutableName
     ))
