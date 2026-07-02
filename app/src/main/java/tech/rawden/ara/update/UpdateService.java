@@ -1,7 +1,6 @@
 package tech.rawden.ara.update;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import tech.rawden.ara.model.AppSettings;
 import tech.rawden.ara.util.OsType;
 
 import java.io.IOException;
@@ -19,13 +18,12 @@ import java.util.logging.Logger;
 /**
  * Optional, privacy-respecting update checks against {@code installers/latest.json}.
  * Network access only occurs when the user enables checks or taps "Check for updates now".
- * For private GitHub repositories, pass a personal access token via {@link AppSettings}.
  */
 public class UpdateService {
 
     private static final Logger LOG = Logger.getLogger(UpdateService.class.getName());
 
-    /** Raw GitHub URL for {@code installers/latest.json} on the main branch. */
+    /** Public raw GitHub URL for {@code installers/latest.json} on the main branch. */
     public static final String DEFAULT_METADATA_URL =
             "https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json";
 
@@ -36,30 +34,17 @@ public class UpdateService {
 
     private final HttpClient httpClient;
     private final String metadataUrl;
-    private final String githubAccessToken;
 
     public UpdateService() {
-        this(DEFAULT_METADATA_URL, null);
+        this(DEFAULT_METADATA_URL);
     }
 
-    public static UpdateService forSettings(AppSettings settings) {
-        if (settings == null) {
-            return new UpdateService();
-        }
-        return new UpdateService(DEFAULT_METADATA_URL, settings.getGithubAccessToken());
-    }
-
-    public UpdateService(String metadataUrl, String githubAccessToken) {
+    public UpdateService(String metadataUrl) {
         this.metadataUrl = metadataUrl;
-        this.githubAccessToken = normalizeToken(githubAccessToken);
         this.httpClient = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(METADATA_TIMEOUT)
                 .build();
-    }
-
-    public boolean usesPrivateRepoAuth() {
-        return githubAccessToken != null;
     }
 
     /**
@@ -116,19 +101,19 @@ public class UpdateService {
 
         LOG.info("Downloading update installer from " + url);
 
-        HttpRequest request = authorize(HttpRequest.newBuilder()
-                        .uri(uri)
-                        .header("User-Agent", USER_AGENT)
-                        .header("Accept", "application/octet-stream")
-                        .GET()
-                        .timeout(DOWNLOAD_TIMEOUT))
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("User-Agent", USER_AGENT)
+                .header("Accept", "application/octet-stream")
+                .GET()
+                .timeout(DOWNLOAD_TIMEOUT)
                 .build();
 
         Path tempFile = target.resolveSibling(fileName + ".part");
         try {
             HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw downloadFailure(response.statusCode());
+                throw new IOException("Download failed with HTTP " + response.statusCode());
             }
 
             long total = response.headers().firstValueAsLong("Content-Length").orElse(-1);
@@ -157,57 +142,22 @@ public class UpdateService {
     }
 
     private ReleaseMetadata fetchMetadata() throws IOException, InterruptedException {
-        HttpRequest request = authorize(HttpRequest.newBuilder()
-                        .uri(URI.create(metadataUrl))
-                        .header("Accept", "application/json")
-                        .header("User-Agent", USER_AGENT)
-                        .GET()
-                        .timeout(METADATA_TIMEOUT))
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(metadataUrl))
+                .header("Accept", "application/json")
+                .header("User-Agent", USER_AGENT)
+                .GET()
+                .timeout(METADATA_TIMEOUT)
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw metadataFailure(response.statusCode());
+            throw new IOException("Could not fetch update metadata (HTTP " + response.statusCode() + ")");
         }
 
         ReleaseMetadata metadata = MAPPER.readValue(response.body(), ReleaseMetadata.class);
         LOG.fine("Fetched update metadata: latest=" + metadata.latestVersion);
         return metadata;
-    }
-
-    private HttpRequest.Builder authorize(HttpRequest.Builder builder) {
-        if (githubAccessToken != null) {
-            builder.header("Authorization", "Bearer " + githubAccessToken);
-        }
-        return builder;
-    }
-
-    private IOException metadataFailure(int status) {
-        String hint = authHint(status);
-        return new IOException("Could not fetch update metadata (HTTP " + status + ")." + hint);
-    }
-
-    private IOException downloadFailure(int status) {
-        String hint = authHint(status);
-        return new IOException("Download failed with HTTP " + status + "." + hint);
-    }
-
-    private String authHint(int status) {
-        if (status != 401 && status != 403 && status != 404) {
-            return "";
-        }
-        if (githubAccessToken != null) {
-            return " Check that your GitHub token has the 'repo' scope and access to OliverRawden/Ara.";
-        }
-        return " This repository may be private — add a GitHub personal access token in Settings → Updates.";
-    }
-
-    private static String normalizeToken(String token) {
-        if (token == null) {
-            return null;
-        }
-        String trimmed = token.strip();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private static void launchInstaller(Path file) throws IOException {

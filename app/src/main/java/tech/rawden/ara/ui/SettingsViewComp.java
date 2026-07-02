@@ -552,35 +552,12 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         var section = new VBox(12);
 
         var hint = new Label(
-                "Optional update checks contact GitHub only to read installers/latest.json and download release "
-                        + "installers when you choose. Nothing from your chats, memory, or models is sent.");
+                "Optional update checks fetch public release metadata from GitHub (installers/latest.json). "
+                        + "Installers download only when you tap Download & Install. "
+                        + "Nothing from your chats, memory, or models is sent.");
         hint.setFont(Font.font("Inter", 11));
         hint.setStyle("-fx-fill: -color-fg-subtle;");
         hint.setWrapText(true);
-
-        var privateHint = new Label(
-                "Private repository: paste a GitHub personal access token below (classic PAT with 'repo' scope). "
-                        + "Stored only in your local settings.json on this machine.");
-        privateHint.setFont(Font.font("Inter", 10));
-        privateHint.setStyle("-fx-fill: -color-fg-subtle;");
-        privateHint.setWrapText(true);
-
-        var tokenLabel = new Label("GitHub access token (private repo)");
-        tokenLabel.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 12));
-
-        var tokenField = new PasswordField();
-        tokenField.setPromptText("ghp_… or github_pat_…");
-        tokenField.setText(appSettings.getGithubAccessToken());
-        tokenField.getStyleClass().add("ara-input-field");
-        tokenField.setPrefWidth(400);
-        tokenField.textProperty().addListener((obs, old, val) -> {
-            appSettings.setGithubAccessToken(val);
-            settingsStorage.save(appSettings);
-        });
-
-        var tokenStatus = new Label(appSettings.hasGithubAccessToken() ? "Token saved locally" : "No token set");
-        tokenStatus.setFont(Font.font("Inter", 10));
-        tokenStatus.setStyle("-fx-fill: -color-fg-subtle;");
 
         var startupToggle = new ToggleSwitchComp("Check for updates automatically on startup");
         startupToggle.selectedProperty().set(appSettings.isCheckForUpdatesOnStartup());
@@ -603,21 +580,8 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         checkNowBtn.setOnAction(e -> runManualUpdateCheck(checkNowBtn));
 
         section.getChildren()
-                .addAll(
-                        hint,
-                        privateHint,
-                        tokenLabel,
-                        tokenField,
-                        tokenStatus,
-                        startupToggle.build(),
-                        currentVersion,
-                        lastUpdateCheckLabel,
-                        checkNowBtn);
+                .addAll(hint, startupToggle.build(), currentVersion, lastUpdateCheckLabel, checkNowBtn);
         return section;
-    }
-
-    private UpdateService updateService() {
-        return UpdateService.forSettings(appSettings);
     }
 
     private String formatLastUpdateCheck() {
@@ -640,7 +604,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         trigger.setText("Checking…");
 
         Thread.startVirtualThread(() -> {
-            var service = updateService();
+            var service = new UpdateService();
             try {
                 var update = service.checkForUpdate();
                 appSettings.setLastUpdateCheckAt(java.time.Instant.now().toString());

@@ -364,7 +364,7 @@ public class Main extends Application {
      */
     private void scheduleStartupUpdateCheck(AppSettings appSettings, SettingsStorage settingsStorage) {
         Thread.startVirtualThread(() -> {
-            var service = UpdateService.forSettings(appSettings);
+            var service = new UpdateService();
             try {
                 var update = service.checkForUpdate();
                 appSettings.setLastUpdateCheckAt(java.time.Instant.now().toString());

@@ -38,7 +38,7 @@ Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **A
 | GitHub Release **v5.6** | https://github.com/OliverRawden/Ara/releases/tag/v5.6 |
 | Release assets (macOS arm64) | `ara-installer-macos-arm64.pkg`, `ara-portable-macos-arm64.dmg` |
 | Update metadata URL | `https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json` |
-| Repo visibility | **Private** — raw JSON and release assets require GitHub access |
+| Repo visibility | **Public** — `latest.json` and release assets fetch without authentication |
 | Auto-update code on `main` | **Not merged yet** — only on `develop` |
 | v5.6 release binary version | **Mismatch** — uploaded `.pkg` reports `5.5.0-SNAPSHOT` (built before release alignment). Rebuild from `main` with `RELEASE=true` before next public release. |
 
@@ -496,7 +496,7 @@ Signing and notarization require CI secrets — not for local agent runs:
 - [ ] Rebuild v5.6+ installers from `main` with `RELEASE=true` (fix 5.5.0-SNAPSHOT mismatch)
 - [ ] Merge auto-update from `develop` → `main`
 - [ ] Trim `latest.json` to only uploaded assets (or add Windows/Linux builds)
-- [ ] Make repo public or host `latest.json` on a fully public URL
+- [x] Repository is public — update checks work without a GitHub token
 
 #### Documentation
 - [x] README.md — cleaned up, correct package path
