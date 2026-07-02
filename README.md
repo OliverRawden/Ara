@@ -117,4 +117,4 @@ tech.rawden.ara/
 
 Proprietary and confidential. All rights reserved. Third-party library attributions are in `dist/licenses/`.
 
-For licensing enquiries: o.rawden@proton.me
+For licensing enquiries: contact-rawden@pm.me
