@@ -1,20 +1,11 @@
 {
-  "latestVersion": "5.6",
+  "latestVersion": "5.5.1",
   "releaseDate": "2026-07-02",
-  "releaseNotes": "Stable release. See GitHub Releases for full changelog. Regenerate with ./gradlew generateLatestJson after building installers.",
+  "releaseNotes": "Test update build from develop (auto-update + GitHub token support). Version bumped slightly ahead of 5.5.0 for update-flow testing only.",
   "downloads": {
-    "macos-pkg": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-installer-macos-arm64.pkg",
-    "macos-pkg-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-installer-macos-arm64.pkg",
-    "macos-pkg-x86_64": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-installer-macos-x86_64.pkg",
-    "macos-dmg": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-portable-macos-arm64.dmg",
-    "macos-dmg-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-portable-macos-arm64.dmg",
-    "macos-dmg-x86_64": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-portable-macos-x86_64.dmg",
-    "windows-msi": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-installer-windows-x86_64.msi",
-    "windows-msi-x86_64": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-installer-windows-x86_64.msi",
-    "windows-msi-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-installer-windows-arm64.msi",
-    "linux-deb-x86_64": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-installer-linux-x86_64.deb",
-    "linux-deb-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-installer-linux-arm64.deb",
-    "linux-rpm-x86_64": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-installer-linux-x86_64.rpm",
-    "linux-rpm-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.6/ara-installer-linux-arm64.rpm"
+    "macos-pkg": "https://github.com/OliverRawden/Ara/releases/download/v5.5.1/ara-installer-macos-arm64.pkg",
+    "macos-pkg-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.5.1/ara-installer-macos-arm64.pkg",
+    "macos-dmg": "https://github.com/OliverRawden/Ara/releases/download/v5.5.1/ara-portable-macos-arm64.dmg",
+    "macos-dmg-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.5.1/ara-portable-macos-arm64.dmg"
   }
 }
