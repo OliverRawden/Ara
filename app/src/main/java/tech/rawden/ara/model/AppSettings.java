@@ -23,6 +23,12 @@ public class AppSettings {
     /** Short status from the last check, e.g. "up to date", "update available", "failed". */
     private String lastUpdateCheckStatus = "never";
 
+    /**
+     * Optional GitHub personal access token for private-repo update checks and installer downloads.
+     * Stored locally in settings.json only; never sent anywhere except github.com.
+     */
+    private String githubAccessToken = "";
+
     public float getTemperature() {
         return temperature;
     }
@@ -133,5 +139,17 @@ public class AppSettings {
 
     public void setLastUpdateCheckStatus(String lastUpdateCheckStatus) {
         this.lastUpdateCheckStatus = lastUpdateCheckStatus;
+    }
+
+    public String getGithubAccessToken() {
+        return githubAccessToken;
+    }
+
+    public void setGithubAccessToken(String githubAccessToken) {
+        this.githubAccessToken = githubAccessToken != null ? githubAccessToken : "";
+    }
+
+    public boolean hasGithubAccessToken() {
+        return githubAccessToken != null && !githubAccessToken.isBlank();
     }
 }
