@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "defaultModel": {
+    "id": "qwen2.5-7b-instruct-q4_k_m",
+    "filename": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "displayName": "Qwen2.5-7B-Instruct Q4_K_M",
+    "sizeBytes": 4683074240,
+    "sha256": "65b8fcd92af6b4fefa935c625d1ac27ea29dcb6ee14589c55a8f115ceaaa1423",
+    "downloadUrl": null,
+    "parts": [
+      {
+        "filename": "Qwen2.5-7B-Instruct-Q4_K_M.gguf.part0",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part0",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-7B-Instruct-Q4_K_M.gguf.part1",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part1",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-7B-Instruct-Q4_K_M.gguf.part2",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part2",
+        "sizeBytes": 488770240
+      }
+    ]
+  }
+}
