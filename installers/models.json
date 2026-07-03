@@ -11,17 +11,17 @@
       {
         "filename": "Qwen2.5-7B-Instruct-Q4_K_M.gguf.part0",
         "url": "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part0",
-        "sizeBytes": 2147483648
+        "sizeBytes": 2097152000
       },
       {
         "filename": "Qwen2.5-7B-Instruct-Q4_K_M.gguf.part1",
         "url": "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part1",
-        "sizeBytes": 2147483648
+        "sizeBytes": 2097152000
       },
       {
         "filename": "Qwen2.5-7B-Instruct-Q4_K_M.gguf.part2",
         "url": "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part2",
-        "sizeBytes": 388106944
+        "sizeBytes": 488770240
       }
     ]
   }

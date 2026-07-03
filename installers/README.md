@@ -21,7 +21,7 @@ Model binaries are **not** committed to git (too large for a single GitHub Relea
 | Item | Value |
 |------|--------|
 | Release tag | `models-v1` |
-| Asset pattern | `Qwen2.5-7B-Instruct-Q4_K_M.gguf.part0` … `.part2` (each part &lt; 2 GiB) |
+| Asset pattern | `Qwen2.5-7B-Instruct-Q4_K_M.gguf.part0` … `.part2` (2000 MiB chunks — strictly under GitHub's 2 GiB cap) |
 | Upload script | `./installers/split-and-upload-model.sh` |
 
 After uploading parts, commit `installers/models.json` to **`main`** (same policy as `latest.json`).

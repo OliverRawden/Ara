@@ -75,17 +75,17 @@ public final class ModelCatalog {
         model.downloadUrl = null;
         var part0 = new ModelRelease.Part();
         part0.filename = model.filename + ".part0";
-        part0.sizeBytes = 2_147_483_648L;
+        part0.sizeBytes = 2_097_152_000L;
         part0.url =
                 "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part0";
         var part1 = new ModelRelease.Part();
         part1.filename = model.filename + ".part1";
-        part1.sizeBytes = 2_147_483_648L;
+        part1.sizeBytes = 2_097_152_000L;
         part1.url =
                 "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part1";
         var part2 = new ModelRelease.Part();
         part2.filename = model.filename + ".part2";
-        part2.sizeBytes = 388_106_944L;
+        part2.sizeBytes = 488_770_240L;
         part2.url =
                 "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part2";
         model.parts = java.util.List.of(part0, part1, part2);
