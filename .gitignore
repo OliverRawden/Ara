@@ -22,5 +22,6 @@ i18n.gradle
 dist/javafx/**
 dist/appimage/appimagetool-*
 dist/model-upload/
+dist/model-upload-heavy/
 gradle.properties
 hs_err_*
