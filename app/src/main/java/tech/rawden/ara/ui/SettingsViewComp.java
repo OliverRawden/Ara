@@ -67,12 +67,9 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
     private VBox modelListContainer;
     private ProgressBar downloadProgress;
     private Label downloadStatusLabel;
-    private Button downloadBtn;
+    private Button downloadLightBtn;
     private Button downloadHeavyBtn;
-    private ProgressBar downloadHeavyProgress;
-    private Label downloadHeavyStatusLabel;
     private Label statusLabel;
-    private Label modelNameLabel;
     private TextField lightModelField;
     private TextField heavyModelField;
     private javafx.scene.control.ComboBox<RoutingMode> routingModeCombo;
@@ -207,50 +204,23 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
     }
 
     private Region createModelSection() {
-        var section = new VBox(12);
+        var section = new VBox(10);
 
-        // ---- Active Model ----
-        var statusHeader = new Text("Active Model");
-        statusHeader.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 13));
+        var hint = new Label(
+                "Light (~7B) stays hot for chat. Heavy (~30B) loads on demand for code and complex tasks. All local.");
+        hint.setFont(Font.font("Inter", 11));
+        hint.setStyle("-fx-fill: -color-fg-subtle;");
+        hint.setWrapText(true);
 
-        statusLabel = new Label("Status: " + inferenceService.status());
-        statusLabel.setFont(Font.font("Inter", 12));
-
-        modelNameLabel = new Label(inferenceService.modelName());
-        modelNameLabel.setFont(Font.font("Inter", 12));
-        modelNameLabel.setStyle("-fx-fill: -color-fg-subtle;");
-
-        section.getChildren().addAll(statusHeader, statusLabel, modelNameLabel);
-
-        // ---- Multi-model routing ----
-        var routingHeader = new Text("Model Routing");
-        routingHeader.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 13));
-
-        var routingDesc = new Label(
-                "Light (~7B) stays hot for chat and fast routing. Heavy (~30B) loads on demand for complex reasoning, code, and tool calling. Fully local.");
-        routingDesc.setFont(Font.font("Inter", 11));
-        routingDesc.setStyle("-fx-fill: -color-fg-subtle;");
-        routingDesc.setWrapText(true);
-
-        lightModelField = new TextField(appSettings.getLightModel());
-        lightModelField.setPromptText(modelManager.defaultModelFilename());
-        lightModelField.getStyleClass().add("ara-input-field");
-        lightModelField.textProperty().addListener((obs, old, val) -> {
-            appSettings.setLightModel(val != null ? val.trim() : "");
-            settingsStorage.save(appSettings);
-        });
-
-        heavyModelField = new TextField(appSettings.getHeavyModel());
-        heavyModelField.setPromptText(modelManager.heavyModelFilename());
-        heavyModelField.getStyleClass().add("ara-input-field");
-        heavyModelField.textProperty().addListener((obs, old, val) -> {
-            appSettings.setHeavyModel(val != null ? val.trim() : "");
-            settingsStorage.save(appSettings);
-        });
+        statusLabel = new Label(formatModelStatus());
+        statusLabel.setFont(Font.font("Inter", 11));
+        statusLabel.setStyle("-fx-fill: -color-fg-subtle;");
+        statusLabel.setWrapText(true);
 
         routingModeCombo = new javafx.scene.control.ComboBox<>();
         routingModeCombo.getItems().addAll(RoutingMode.AUTO, RoutingMode.LIGHT_ONLY, RoutingMode.HEAVY_ONLY);
         routingModeCombo.setValue(appSettings.getRoutingMode());
+        routingModeCombo.setMaxWidth(160);
         routingModeCombo.setOnAction(e -> {
             var mode = routingModeCombo.getValue();
             if (mode != null) {
@@ -259,89 +229,110 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
                 if (modelRouter != null) {
                     modelRouter.setUserOverride(mode);
                 }
+                statusLabel.setText(formatModelStatus());
             }
         });
 
-        var lightRow = labeledField("Light model (filename)", lightModelField);
-        var heavyRow = labeledField("Heavy model (filename)", heavyModelField);
-        var modeRow = labeledField("Routing mode", routingModeCombo);
+        var routingRow = new HBox(10);
+        var routingLbl = new Label("Routing");
+        routingLbl.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 11));
+        routingRow.getChildren().addAll(routingLbl, routingModeCombo);
+        routingRow.setAlignment(Pos.CENTER_LEFT);
 
-        downloadHeavyProgress = new ProgressBar(0);
-        downloadHeavyProgress.setMaxWidth(Double.MAX_VALUE);
-        downloadHeavyProgress.setVisible(false);
-        downloadHeavyProgress.getStyleClass().add("ara-progress-bar");
+        downloadLightBtn = new Button("Download Light");
+        downloadLightBtn.getStyleClass().add("ara-action-btn");
+        downloadLightBtn.setOnAction(e -> startModelDownload(false));
 
-        downloadHeavyStatusLabel = new Label("");
-        downloadHeavyStatusLabel.setFont(Font.font("Inter", 11));
-        downloadHeavyStatusLabel.setStyle("-fx-fill: -color-fg-subtle;");
-        downloadHeavyStatusLabel.setVisible(false);
-
-        downloadHeavyBtn = new Button("Download Heavy Model");
+        downloadHeavyBtn = new Button("Download Heavy");
         downloadHeavyBtn.getStyleClass().add("ara-action-btn");
         if (!modelManager.isHeavyDownloadAvailable()) {
-            downloadHeavyBtn.setText("Heavy model — manual install");
             downloadHeavyBtn.setDisable(true);
+            downloadHeavyBtn.setTooltip(new javafx.scene.control.Tooltip(
+                    "Heavy model not in manifest — place a GGUF in " + modelManager.modelsDirectory()));
         }
-        downloadHeavyBtn.setOnAction(e -> startHeavyDownload());
+        downloadHeavyBtn.setOnAction(e -> startModelDownload(true));
 
-        section.getChildren()
-                .addAll(
-                        routingHeader,
-                        routingDesc,
-                        lightRow,
-                        heavyRow,
-                        modeRow,
-                        downloadHeavyProgress,
-                        downloadHeavyStatusLabel,
-                        downloadHeavyBtn);
+        var lightDlHint = new Label("Qwen2.5-7B · ~4.5 GB");
+        lightDlHint.setFont(Font.font("Inter", 10));
+        lightDlHint.setStyle("-fx-fill: -color-fg-subtle;");
+        var heavyDlHint = new Label("Qwen2.5-Coder-32B · ~18.5 GB");
+        heavyDlHint.setFont(Font.font("Inter", 10));
+        heavyDlHint.setStyle("-fx-fill: -color-fg-subtle;");
 
-        // ---- Local GGUF Files ----
-        var sep1 = new Separator();
-        sep1.setPadding(new Insets(4, 0, 4, 0));
-
-        var filesHeader = new Text("Local Models (GGUF Files)");
-        filesHeader.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 13));
-
-        var filesDesc = new Label("Models are stored in " + modelManager.modelsDirectory()
-                + ". Click Load Model to switch the active inference engine.");
-        filesDesc.setFont(Font.font("Inter", 11));
-        filesDesc.setStyle("-fx-fill: -color-fg-subtle;");
-        filesDesc.setWrapText(true);
-
-        modelListContainer = new VBox(6);
-        modelListContainer.getStyleClass().add("ara-model-list");
-        refreshModelList();
-
-        section.getChildren().addAll(sep1, filesHeader, filesDesc, modelListContainer);
-
-        // ---- Download New Model ----
-        var downloadHeader = new Text("Download Recommended Model");
-        downloadHeader.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 13));
-
-        var downloadDesc = new Label(
-                "Downloads the recommended Qwen2.5-7B-Instruct (Q4_K_M, ~4.5 GB) from the Ara GitHub repository and places it in your models folder.");
-        downloadDesc.setFont(Font.font("Inter", 11));
-        downloadDesc.setStyle("-fx-fill: -color-fg-subtle;");
-        downloadDesc.setWrapText(true);
+        var lightCol = new VBox(4, downloadLightBtn, lightDlHint);
+        var heavyCol = new VBox(4, downloadHeavyBtn, heavyDlHint);
+        HBox.setHgrow(lightCol, Priority.ALWAYS);
+        HBox.setHgrow(heavyCol, Priority.ALWAYS);
+        var downloadRow = new HBox(10, lightCol, heavyCol);
 
         downloadProgress = new ProgressBar(0);
         downloadProgress.setMaxWidth(Double.MAX_VALUE);
         downloadProgress.setVisible(false);
+        downloadProgress.setPrefHeight(4);
         downloadProgress.getStyleClass().add("ara-progress-bar");
 
         downloadStatusLabel = new Label("");
-        downloadStatusLabel.setFont(Font.font("Inter", 11));
+        downloadStatusLabel.setFont(Font.font("Inter", 10));
         downloadStatusLabel.setStyle("-fx-fill: -color-fg-subtle;");
         downloadStatusLabel.setVisible(false);
-        downloadStatusLabel.getStyleClass().add("ara-download-status");
+        downloadStatusLabel.setWrapText(true);
 
-        downloadBtn = new Button("Download Qwen 2.5 7B (Q4_K_M)");
-        downloadBtn.getStyleClass().add("ara-action-btn");
-        downloadBtn.setOnAction(e -> startDownload());
+        lightModelField = new TextField(appSettings.getLightModel());
+        lightModelField.setPromptText(modelManager.defaultModelFilename());
+        lightModelField.getStyleClass().add("ara-input-field");
+        lightModelField.setPrefHeight(28);
+        lightModelField.textProperty().addListener((obs, old, val) -> {
+            appSettings.setLightModel(val != null ? val.trim() : "");
+            settingsStorage.save(appSettings);
+        });
 
-        section.getChildren().addAll(downloadHeader, downloadDesc, downloadProgress, downloadStatusLabel, downloadBtn);
+        heavyModelField = new TextField(appSettings.getHeavyModel());
+        heavyModelField.setPromptText(modelManager.heavyModelFilename());
+        heavyModelField.getStyleClass().add("ara-input-field");
+        heavyModelField.setPrefHeight(28);
+        heavyModelField.textProperty().addListener((obs, old, val) -> {
+            appSettings.setHeavyModel(val != null ? val.trim() : "");
+            settingsStorage.save(appSettings);
+        });
+
+        var pathsRow = new HBox(10);
+        var lightPathCol = labeledField("Light file", lightModelField);
+        var heavyPathCol = labeledField("Heavy file", heavyModelField);
+        HBox.setHgrow(lightPathCol, Priority.ALWAYS);
+        HBox.setHgrow(heavyPathCol, Priority.ALWAYS);
+        pathsRow.getChildren().addAll(lightPathCol, heavyPathCol);
+
+        var sep = new Separator();
+        sep.setPadding(new Insets(2, 0, 2, 0));
+
+        modelListContainer = new VBox(4);
+        modelListContainer.getStyleClass().add("ara-model-list");
+        refreshModelList();
+
+        var localHint = new Label("Installed in " + modelManager.modelsDirectory());
+        localHint.setFont(Font.font("Inter", 10));
+        localHint.setStyle("-fx-fill: -color-fg-subtle;");
+        localHint.setWrapText(true);
+
+        section.getChildren()
+                .addAll(
+                        hint,
+                        statusLabel,
+                        routingRow,
+                        downloadRow,
+                        downloadProgress,
+                        downloadStatusLabel,
+                        pathsRow,
+                        sep,
+                        localHint,
+                        modelListContainer);
 
         return section;
+    }
+
+    private String formatModelStatus() {
+        String tier = modelRouter != null ? " · " + modelRouter.getActiveTier().badgeLabel() : "";
+        return inferenceService.status() + " · " + inferenceService.modelName() + tier;
     }
 
     private Region labeledField(String label, javafx.scene.Node control) {
@@ -352,103 +343,88 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
     }
 
     private void refreshStatus() {
-        statusLabel.setText("Status: " + inferenceService.status());
-        String tier = modelRouter != null ? " (" + modelRouter.getActiveTier().badgeLabel() + ")" : "";
-        modelNameLabel.setText(inferenceService.modelName() + tier);
+        if (statusLabel != null) {
+            statusLabel.setText(formatModelStatus());
+        }
     }
 
-    private void startHeavyDownload() {
+    private void startModelDownload(boolean heavy) {
+        downloadLightBtn.setDisable(true);
         downloadHeavyBtn.setDisable(true);
-        downloadHeavyBtn.setText("Downloading heavy model...");
-        downloadHeavyProgress.setVisible(true);
-        downloadHeavyProgress.setProgress(-1);
-        downloadHeavyStatusLabel.setVisible(true);
-        downloadHeavyStatusLabel.setText("Starting download...");
+        downloadProgress.setVisible(true);
+        downloadProgress.setProgress(-1);
+        downloadStatusLabel.setVisible(true);
+        downloadStatusLabel.setText("Starting " + (heavy ? "heavy" : "light") + " download...");
 
         Thread.startVirtualThread(() -> {
             try {
-                modelManager.downloadHeavyModel((downloaded, total) -> Platform.runLater(() -> {
-                    downloadHeavyProgress.setVisible(true);
-                    downloadHeavyStatusLabel.setVisible(true);
+                ModelManager.ProgressCallback progress = (downloaded, total) -> Platform.runLater(() -> {
+                    downloadProgress.setVisible(true);
+                    downloadStatusLabel.setVisible(true);
                     if (total > 0) {
-                        downloadHeavyProgress.setProgress((double) downloaded / total);
-                        downloadHeavyStatusLabel.setText(String.format(
-                                "%d / %d MB", downloaded / (1024 * 1024), total / (1024 * 1024)));
+                        downloadProgress.setProgress((double) downloaded / total);
+                        downloadStatusLabel.setText(String.format(
+                                "%s: %d / %d MB",
+                                heavy ? "Heavy" : "Light",
+                                downloaded / (1024 * 1024),
+                                total / (1024 * 1024)));
                     } else {
-                        downloadHeavyProgress.setProgress(-1);
-                        downloadHeavyStatusLabel.setText(formatBytes(downloaded) + " downloaded");
+                        downloadProgress.setProgress(-1);
+                        downloadStatusLabel.setText(formatBytes(downloaded) + " downloaded");
                     }
-                }));
+                });
+
+                if (heavy) {
+                    modelManager.downloadHeavyModel(progress);
+                } else {
+                    modelManager.downloadDefaultModel(progress);
+                }
+
                 Platform.runLater(() -> {
-                    downloadHeavyProgress.setProgress(1);
-                    downloadHeavyStatusLabel.setText("Heavy model download complete");
-                    downloadHeavyBtn.setText("Download Complete");
-                    if (heavyModelField != null) {
+                    downloadProgress.setProgress(1);
+                    downloadStatusLabel.setText((heavy ? "Heavy" : "Light") + " download complete");
+                    downloadLightBtn.setDisable(false);
+                    downloadHeavyBtn.setDisable(!modelManager.isHeavyDownloadAvailable());
+
+                    if (heavy && heavyModelField != null) {
                         heavyModelField.setText(appSettings.getHeavyModel().isBlank()
                                 ? modelManager.heavyModelFilename()
                                 : appSettings.getHeavyModel());
                     }
-                    refreshModelList();
-                });
-            } catch (Exception ex) {
-                Platform.runLater(() -> {
-                    downloadHeavyProgress.setVisible(false);
-                    downloadHeavyStatusLabel.setText(ex.getMessage());
-                    downloadHeavyBtn.setText("Download Failed — Retry");
-                    downloadHeavyBtn.setDisable(false);
-                });
-                LOG.warning("Heavy model download failed: " + ex.getMessage());
-            }
-        });
-    }
+                    if (!heavy && lightModelField != null) {
+                        lightModelField.setText(appSettings.getLightModel().isBlank()
+                                ? modelManager.defaultModelFilename()
+                                : appSettings.getLightModel());
+                    }
 
-    private void startDownload() {
-        downloadBtn.setDisable(true);
-        downloadBtn.setText("Downloading...");
-        downloadProgress.setVisible(true);
-        downloadProgress.setProgress(-1);
-        downloadStatusLabel.setVisible(true);
-        downloadStatusLabel.setText("Starting download...");
-
-        Thread.startVirtualThread(() -> {
-            try {
-                modelManager.downloadDefaultModel((downloaded, total) -> {
-                    Platform.runLater(() -> {
-                        downloadProgress.setVisible(true);
-                        downloadStatusLabel.setVisible(true);
-                        if (total > 0) {
-                            downloadProgress.setProgress((double) downloaded / total);
-                            downloadStatusLabel.setText(
-                                    String.format("%d / %d MB", downloaded / (1024 * 1024), total / (1024 * 1024)));
-                        } else {
-                            downloadProgress.setProgress(-1);
-                            downloadStatusLabel.setText(formatBytes(downloaded) + " downloaded");
-                        }
-                    });
-                });
-                Platform.runLater(() -> {
-                    downloadProgress.setProgress(1);
-                    downloadStatusLabel.setText("Download complete");
-                    downloadBtn.setText("Download Complete");
                     refreshModelList();
-                    var modelPath = modelManager.defaultModelPath();
-                    try {
-                        inferenceService.preparePromptCache(config);
-                        inferenceService.loadModel(modelPath);
-                        inferenceService.warmup(config);
-                        refreshStatus();
-                    } catch (Exception ex) {
-                        LOG.warning("Could not load model: " + ex.getMessage());
+
+                    if (!heavy) {
+                        Thread.startVirtualThread(() -> {
+                            try {
+                                if (modelRouter != null) {
+                                    modelRouter.ensureLightModel();
+                                } else {
+                                    var modelPath = modelManager.defaultModelPath();
+                                    inferenceService.preparePromptCache(config);
+                                    inferenceService.loadModel(modelPath);
+                                    inferenceService.warmup(config);
+                                }
+                                Platform.runLater(this::refreshStatus);
+                            } catch (Exception ex) {
+                                LOG.warning("Could not load light model: " + ex.getMessage());
+                            }
+                        });
                     }
                 });
             } catch (Exception ex) {
                 Platform.runLater(() -> {
                     downloadProgress.setVisible(false);
-                    downloadStatusLabel.setVisible(false);
-                    downloadBtn.setText("Download Failed \u2014 Retry");
-                    downloadBtn.setDisable(false);
+                    downloadStatusLabel.setText(ex.getMessage());
+                    downloadLightBtn.setDisable(false);
+                    downloadHeavyBtn.setDisable(!modelManager.isHeavyDownloadAvailable());
                 });
-                LOG.warning("Download failed: " + ex.getMessage());
+                LOG.warning("Model download failed: " + ex.getMessage());
             }
         });
     }
