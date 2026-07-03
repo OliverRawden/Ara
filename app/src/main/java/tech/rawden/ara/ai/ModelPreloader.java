@@ -1,5 +1,7 @@
 package tech.rawden.ara.ai;
 
+import tech.rawden.ara.model.InferenceConfig;
+
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -10,7 +12,7 @@ import java.util.logging.Logger;
 /**
  * Background GGUF model preloader.
  *
- * <p>Started once after the main window is visible and any encryption unlock has completed.
+ * <p>Started as soon as the inference service exists (before encryption unlock / chat decrypt).
  * Runs on a dedicated virtual thread ({@code ara-model-preloader}) so tensor mmap / GPU init
  * never blocks the JavaFX thread or competes with PBKDF2 / chat deserialization.
  *
@@ -24,14 +26,19 @@ public final class ModelPreloader {
 
     private final InferenceService inferenceService;
     private final ModelManager modelManager;
+    private final InferenceConfig inferenceConfig;
 
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
+    private final AtomicBoolean warmupScheduled = new AtomicBoolean(false);
     private volatile CompletableFuture<Void> loadTask = CompletableFuture.completedFuture(null);
+    private volatile CompletableFuture<Void> warmupTask = CompletableFuture.completedFuture(null);
     private volatile String preferredModelFilename = "";
 
-    public ModelPreloader(InferenceService inferenceService, ModelManager modelManager) {
+    public ModelPreloader(
+            InferenceService inferenceService, ModelManager modelManager, InferenceConfig inferenceConfig) {
         this.inferenceService = inferenceService;
         this.modelManager = modelManager;
+        this.inferenceConfig = inferenceConfig;
     }
 
     /**
@@ -41,17 +48,17 @@ public final class ModelPreloader {
     public void schedulePreload(String preferredModelFilename) {
         if (inferenceService.status() == InferenceService.Status.READY) {
             scheduled.set(true);
+            scheduleWarmup();
             return;
         }
         if (!scheduled.compareAndSet(false, true)) {
             return;
         }
-        this.preferredModelFilename =
-                preferredModelFilename != null ? preferredModelFilename : "";
+        this.preferredModelFilename = preferredModelFilename != null ? preferredModelFilename : "";
 
-        loadTask = CompletableFuture.runAsync(this::runPreload, runnable -> Thread.ofVirtual()
-                .name("ara-model-preloader")
-                .start(runnable));
+        loadTask = CompletableFuture.runAsync(
+                this::runPreload,
+                runnable -> Thread.ofVirtual().name("ara-model-preloader").start(runnable));
         LOG.info("Scheduled background model preload");
     }
 
@@ -68,21 +75,37 @@ public final class ModelPreloader {
         if (!scheduled.get()) {
             schedulePreload(preferredModelFilename);
         }
-        loadTask.whenComplete((ignored, err) -> {
-            if (err != null) {
-                onError.accept(err instanceof java.util.concurrent.CompletionException
-                                && err.getCause() != null
-                        ? err.getCause()
-                        : err);
-                return;
-            }
-            if (inferenceService.status() == InferenceService.Status.READY) {
-                onReady.run();
-            } else {
-                onError.accept(new IllegalStateException(
-                        "No local GGUF model available. Download one in Settings → Model."));
-            }
-        });
+        loadTask.whenComplete((ignored, err) -> handleTaskComplete(err, onReady, onError));
+    }
+
+    /**
+     * Waits for model load <em>and</em> KV-cache warmup before the first token. Warmup primes the
+     * static system prompt so chat TTFT is ~1s instead of re-prefilling ~500 tokens cold.
+     */
+    public void whenInferenceReady(Runnable onReady, Consumer<Throwable> onError) {
+        Runnable afterWarmup =
+                () -> warmupTask.whenComplete((ignored, err) -> handleTaskComplete(err, onReady, onError));
+        if (inferenceService.status() == InferenceService.Status.READY) {
+            afterWarmup.run();
+        } else {
+            whenReady(afterWarmup, onError);
+        }
+    }
+
+    private void handleTaskComplete(Throwable err, Runnable onReady, Consumer<Throwable> onError) {
+        if (err != null) {
+            onError.accept(
+                    err instanceof java.util.concurrent.CompletionException && err.getCause() != null
+                            ? err.getCause()
+                            : err);
+            return;
+        }
+        if (inferenceService.status() == InferenceService.Status.READY) {
+            onReady.run();
+        } else {
+            onError.accept(
+                    new IllegalStateException("No local GGUF model available. Download one in Settings → Model."));
+        }
     }
 
     public boolean isScheduled() {
@@ -100,12 +123,26 @@ public final class ModelPreloader {
                 return;
             }
             LOG.info("Background preloading model: " + model.get().getFileName());
+            long t0 = System.nanoTime();
+            inferenceService.preparePromptCache(inferenceConfig);
             inferenceService.loadModel(model.get());
-            inferenceService.warmup();
-            LOG.info("Background model preload + warmup complete");
+            LOG.info("Background model load complete in " + (System.nanoTime() - t0) / 1_000_000 + "ms");
+            scheduleWarmup();
         } catch (Exception e) {
             LOG.warning("Background model preload failed: " + e.getMessage());
             throw new java.util.concurrent.CompletionException(e);
         }
+    }
+
+    private void scheduleWarmup() {
+        if (!warmupScheduled.compareAndSet(false, true)) {
+            return;
+        }
+        warmupTask = CompletableFuture.runAsync(
+                () -> {
+                    inferenceService.warmup(inferenceConfig);
+                    LOG.info("Background KV-cache warmup complete");
+                },
+                runnable -> Thread.ofVirtual().name("ara-model-warmup").start(runnable));
     }
 }

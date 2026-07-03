@@ -103,7 +103,10 @@ public class Main extends Application {
 
         inferenceService = new LlamaCppInferenceService();
         var modelManager = new ModelManager();
-        var modelPreloader = new ModelPreloader(inferenceService, modelManager);
+        var modelPreloader = new ModelPreloader(inferenceService, modelManager, config);
+
+        // Start GGUF mmap/GPU init immediately — does not need encryption unlock or chat data.
+        modelPreloader.schedulePreload(appSettings.getSelectedModel());
 
         var mainView = new MainViewComp(
                 AraModel.get(),
@@ -215,18 +218,18 @@ public class Main extends Application {
             Platform.runLater(() -> MacWindow.applyModernStyle(stage));
         }
 
-        Runnable loadRealChats = () -> Thread.ofVirtual().name("ara-data-loader").start(() -> {
-            try {
-                ChatHistory realHistory = chatStorage.load();
-                Platform.runLater(() -> mainView.updateChatHistory(realHistory));
-            } catch (Exception ex) {
-                LOG.warning("Data load failed: " + ex.getMessage());
-            }
-        });
+        Runnable loadRealChats =
+                () -> Thread.ofVirtual().name("ara-data-loader").start(() -> {
+                    try {
+                        ChatHistory realHistory = chatStorage.load();
+                        Platform.runLater(() -> mainView.updateChatHistory(realHistory));
+                    } catch (Exception ex) {
+                        LOG.warning("Data load failed: " + ex.getMessage());
+                    }
+                });
 
         Runnable onSessionReady = () -> {
             loadRealChats.run();
-            modelPreloader.schedulePreload(appSettings.getSelectedModel());
             if (appSettings.isCheckForUpdatesOnStartup()) {
                 scheduleStartupUpdateCheck(appSettings, settingsStorage);
             }

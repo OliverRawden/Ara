@@ -50,6 +50,14 @@ public final class VexProtocolCatalog {
     }
 
     public static String formatCatalogSection() {
+        return formatCompactCatalogSection();
+    }
+
+    /**
+     * Token-efficient catalog for inference prompts. Full protocol detail lives in Vex; the model only
+     * needs IDs, ara-tool names, and one-line hints — not multi-hundred-character descriptions every turn.
+     */
+    public static String formatCompactCatalogSection() {
         var list = protocols();
         if (list.isEmpty()) {
             return "\n\n## Vex Protocol Catalog\n(empty — launch Vex once to seed ~/Documents/Vex/Protocols/)\n";
@@ -57,15 +65,36 @@ public final class VexProtocolCatalog {
 
         var sb = new StringBuilder();
         sb.append("\n\n## Vex Protocol Catalog\n");
-        sb.append("Auto-loaded from ~/Documents/Vex/Protocols/ (updates when files change).\n");
-        sb.append("Console syntax: run by ID, e.g. `1`, `2 | 9`, `16 {4}`, `10` to kill.\n");
-        sb.append("Agent tools: invoke via <|tool_call|> using the **ara-tool** name (not the protocol ID).\n\n");
+        sb.append("Source: ~/Documents/Vex/Protocols/. Console: run by ID (`1`, `2|9`, `10` kill). ");
+        sb.append("Agent: <|tool_call|> with ara-tool name (not protocol ID).\n");
 
-        for (var protocol : list) {
-            sb.append(formatLine(protocol)).append('\n');
+        var console = list.stream().filter(p -> !p.isAraTool()).toList();
+        if (!console.isEmpty()) {
+            sb.append("Console: ");
+            for (int i = 0; i < console.size(); i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                var p = console.get(i);
+                sb.append(p.id()).append('=').append(p.name());
+            }
+            sb.append('\n');
         }
 
-        sb.append("\nPipe: `left | right` — modifier on the right runs first (9=overdrive, 10=kill aborts left).\n");
+        var ara = list.stream().filter(VexProtocol::isAraTool).toList();
+        if (!ara.isEmpty()) {
+            sb.append("Ara-tools: ");
+            for (int i = 0; i < ara.size(); i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                var p = ara.get(i);
+                sb.append(p.id()).append('=').append(p.araTool());
+            }
+            sb.append('\n');
+        }
+
+        sb.append("Pipe: left|right (right modifier first; 10 aborts left).\n");
         return sb.toString();
     }
 

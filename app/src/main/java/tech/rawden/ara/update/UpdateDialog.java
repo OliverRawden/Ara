@@ -5,7 +5,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextArea;
@@ -112,8 +111,8 @@ public final class UpdateDialog {
         var buttons = new HBox(10, downloadBtn, laterBtn);
         buttons.setAlignment(Pos.CENTER_LEFT);
 
-        var privacy = new Label(
-                "Update checks only contact GitHub for version metadata. Nothing is sent from your device.");
+        var privacy =
+                new Label("Update checks only contact GitHub for version metadata. Nothing is sent from your device.");
         privacy.setFont(Font.font("Inter", 10));
         privacy.setStyle("-fx-text-fill: -color-fg-subtle;");
         privacy.setWrapText(true);

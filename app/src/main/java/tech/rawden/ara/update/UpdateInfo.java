@@ -10,8 +10,4 @@ package tech.rawden.ara.update;
  * @param currentVersion running app version at check time
  */
 public record UpdateInfo(
-        String latestVersion,
-        String releaseDate,
-        String releaseNotes,
-        String downloadUrl,
-        String currentVersion) {}
+        String latestVersion, String releaseDate, String releaseNotes, String downloadUrl, String currentVersion) {}

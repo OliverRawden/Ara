@@ -325,5 +325,4 @@ public class MainViewComp extends RegionBuilder<HBox> {
             dragging[0] = false;
         });
     }
-
 }

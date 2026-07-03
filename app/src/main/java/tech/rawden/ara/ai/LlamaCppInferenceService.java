@@ -31,6 +31,20 @@ public class LlamaCppInferenceService implements InferenceService {
 
     private static final Logger LOG = Logger.getLogger(LlamaCppInferenceService.class.getName());
 
+    /** Matches {@link tech.rawden.ara.model.InferenceConfig#DEFAULT_MAX_CONTEXT_CHARS} in token headroom. */
+    private static final int CTX_SIZE = 16_384;
+
+    private static final int BATCH_SIZE = 4096;
+    private static final int UBATCH_SIZE = 2048;
+
+    private static final DateTimeFormatter CLOCK_FORMAT = DateTimeFormatter.ofPattern("EEE d MMM yyyy HH:mm");
+
+    private static final String TOOL_POLICY =
+            "Tool policy: reply directly to greetings, thanks, and small talk — call no tools. "
+                    + "Use tools only when the user clearly needs an action or data you lack. "
+                    + "Never call get_current_datetime unless they ask about date or time. "
+                    + "Never call read_memory on a simple hello.";
+
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final Object loadLock = new Object();
 
@@ -40,6 +54,7 @@ public class LlamaCppInferenceService implements InferenceService {
 
     private volatile String cachedSystemBlock;
     private volatile int cachedSystemBlockKey;
+    private volatile int cachedSystemPrefixTokens;
     private volatile boolean cancelRequested;
 
     @Override
@@ -64,18 +79,11 @@ public class LlamaCppInferenceService implements InferenceService {
             }
 
             try {
-                var modelParams = new ModelParameters()
-                        .setModel(modelPath.toAbsolutePath().toString())
-                        .setGpuLayers(99)
-                        .setThreads(Math.max(4, Runtime.getRuntime().availableProcessors() - 2))
-                        .enableFlashAttn()
-                        .setCacheTypeK(CacheType.Q8_0)
-                        .setCacheTypeV(CacheType.Q4_0)
-                        .setNuma(NumaStrategy.DISTRIBUTE)
-                        .skipWarmup();
-                model = new LlamaModel(modelParams);
+                long loadStart = System.nanoTime();
+                model = new LlamaModel(buildModelParams(modelPath));
+                cachedSystemPrefixTokens = 0;
                 status = Status.READY;
-                LOG.info("Model loaded: " + modelName);
+                LOG.info("Model loaded in " + (System.nanoTime() - loadStart) / 1_000_000 + "ms: " + modelName);
             } catch (Exception e) {
                 status = Status.ERROR;
                 modelName = "None";
@@ -83,13 +91,64 @@ public class LlamaCppInferenceService implements InferenceService {
             }
         }
 
+        var loadedName = modelName;
+        executor.execute(() -> {
+            try {
+                var auditStore = new tech.rawden.ara.model.AuditLogStorage();
+                var log = auditStore.load();
+                log.addEntry(
+                        new tech.rawden.ara.model.AuditLogEntry("MODEL_LOAD", "Loaded model: " + loadedName, null, 1));
+                auditStore.save(log);
+            } catch (Exception ignored) {
+            }
+        });
+    }
+
+    private static ModelParameters buildModelParams(Path modelPath) {
+        int cores = Runtime.getRuntime().availableProcessors();
+        int threads = Math.max(4, cores - 1);
+        int threadsBatch = Math.max(threads, cores);
+
+        var params = new ModelParameters()
+                .setModel(modelPath.toAbsolutePath().toString())
+                .setGpuLayers(99)
+                .setThreads(threads)
+                .setThreadsBatch(threadsBatch)
+                .setCtxSize(CTX_SIZE)
+                .setBatchSize(BATCH_SIZE)
+                .setUbatchSize(UBATCH_SIZE)
+                .enableFlashAttn()
+                .setCacheTypeK(CacheType.Q8_0)
+                .setCacheTypeV(CacheType.Q4_0)
+                .setCacheReuse(256)
+                .setPriority(2)
+                .skipWarmup()
+                .disablePerf();
+
+        if (shouldMlock()) {
+            params.enableMlock();
+        }
+        if (shouldUseNuma()) {
+            params.setNuma(NumaStrategy.DISTRIBUTE);
+        }
+        return params;
+    }
+
+    private static boolean shouldMlock() {
         try {
-            var auditStore = new tech.rawden.ara.model.AuditLogStorage();
-            var log = auditStore.load();
-            log.addEntry(new tech.rawden.ara.model.AuditLogEntry("MODEL_LOAD", "Loaded model: " + modelName, null, 1));
-            auditStore.save(log);
+            var os = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+            if (os instanceof com.sun.management.OperatingSystemMXBean sun) {
+                long free = sun.getFreeMemorySize();
+                return free > 6L * 1024 * 1024 * 1024;
+            }
         } catch (Exception ignored) {
         }
+        return false;
+    }
+
+    private static boolean shouldUseNuma() {
+        var osName = System.getProperty("os.name", "").toLowerCase();
+        return !osName.contains("mac") && !osName.contains("darwin");
     }
 
     @Override
@@ -110,7 +169,8 @@ public class LlamaCppInferenceService implements InferenceService {
             Consumer<String> onToken,
             Runnable onComplete,
             Consumer<Throwable> onError) {
-        executor.execute(() -> runGenerationJob(userMessage, config, history, false, onToken, onComplete, onError, null));
+        executor.execute(
+                () -> runGenerationJob(userMessage, config, history, false, onToken, onComplete, onError, null));
     }
 
     @Override
@@ -122,8 +182,8 @@ public class LlamaCppInferenceService implements InferenceService {
             Runnable onComplete,
             Consumer<Throwable> onError,
             Consumer<ToolCall> onToolCall) {
-        executor.execute(() ->
-                runGenerationJob(userMessage, config, history, true, onToken, onComplete, onError, onToolCall));
+        executor.execute(
+                () -> runGenerationJob(userMessage, config, history, true, onToken, onComplete, onError, onToolCall));
     }
 
     @Override
@@ -165,25 +225,44 @@ public class LlamaCppInferenceService implements InferenceService {
 
     @Override
     public void warmup() {
+        warmup(InferenceConfig.defaults());
+    }
+
+    @Override
+    public void warmup(InferenceConfig config) {
+        var cfg = config != null ? config : InferenceConfig.defaults();
+        preparePromptCache(cfg);
         synchronized (loadLock) {
             if (model == null) {
                 return;
             }
             try {
                 long t0 = System.nanoTime();
-                var params = new InferenceParameters(
-                                "<|im_start|>user\nping<|im_end|>\n<|im_start|>assistant\n")
-                        .setNPredict(1)
-                        .setTemperature(0f)
-                        .setCachePrompt(true);
+                var prefix = cachedSystemPrefix(cfg, true, 0);
+                refreshSystemPrefixTokens(prefix);
+                var warmupPrompt = prefix + "<|im_start|>user\nping<|im_end|>\n<|im_start|>assistant\n";
+                var params = inferenceParams(warmupPrompt, cfg).setNPredict(1).setTemperature(0f);
+                if (cachedSystemPrefixTokens > 0) {
+                    params.setNKeep(cachedSystemPrefixTokens);
+                }
                 for (LlamaOutput ignored : model.generate(params)) {
                     break;
                 }
-                LOG.info("Model warmup (1 token) in " + (System.nanoTime() - t0) / 1_000_000 + "ms");
+                LOG.info("Model warmup (system KV + 1 token, prefixTokens="
+                        + cachedSystemPrefixTokens
+                        + ") in "
+                        + (System.nanoTime() - t0) / 1_000_000
+                        + "ms");
             } catch (Exception e) {
                 LOG.warning("Model warmup failed: " + e.getMessage());
             }
         }
+    }
+
+    @Override
+    public void preparePromptCache(InferenceConfig config) {
+        var cfg = config != null ? config : InferenceConfig.defaults();
+        buildStaticSystemContent(cfg, true);
     }
 
     private String buildPrompt(
@@ -192,11 +271,8 @@ public class LlamaCppInferenceService implements InferenceService {
             List<ChatMessage> history,
             boolean withTools,
             int droppedMessages) {
-        var now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy 'at' HH:mm"));
-        var system = buildSystemBlock(config, withTools, now, droppedMessages);
-
         var sb = new StringBuilder();
-        sb.append("<|im_start|>system\n").append(system).append("<|im_end|>\n");
+        sb.append(cachedSystemPrefix(config, withTools, droppedMessages));
         for (var msg : history) {
             var role =
                     switch (msg.role()) {
@@ -217,7 +293,24 @@ public class LlamaCppInferenceService implements InferenceService {
         return sb.toString();
     }
 
-    private String buildSystemBlock(InferenceConfig config, boolean withTools, String now, int droppedMessages) {
+    private String cachedSystemPrefix(InferenceConfig config, boolean withTools, int droppedMessages) {
+        return "<|im_start|>system\n" + buildSystemBlock(config, withTools, droppedMessages) + "<|im_end|>\n";
+    }
+
+    private void refreshSystemPrefixTokens(String systemPrefix) {
+        if (model == null) {
+            return;
+        }
+        try {
+            cachedSystemPrefixTokens = model.encode(systemPrefix).length;
+            LOG.info("Static system prefix: " + cachedSystemPrefixTokens + " tokens, " + systemPrefix.length()
+                    + " chars");
+        } catch (Exception e) {
+            LOG.warning("Could not tokenize system prefix: " + e.getMessage());
+        }
+    }
+
+    private String buildSystemBlock(InferenceConfig config, boolean withTools, int droppedMessages) {
         int key = systemBlockKey(config, withTools);
         String base;
         if (cachedSystemBlock != null && cachedSystemBlockKey == key) {
@@ -226,14 +319,15 @@ public class LlamaCppInferenceService implements InferenceService {
             base = buildStaticSystemContent(config, withTools);
             cachedSystemBlock = base;
             cachedSystemBlockKey = key;
+            cachedSystemPrefixTokens = 0;
         }
 
-        var block = base + "\n\nThe current date and time is " + now + ".";
         if (droppedMessages > 0) {
-            block += "\n\n[Context note: " + droppedMessages
+            base += "\n\n[Context note: " + droppedMessages
                     + " older messages were omitted from this prompt to stay within the context budget.]";
         }
-        return block;
+        base += "\n\nCurrent date/time: " + LocalDateTime.now().format(CLOCK_FORMAT) + ".";
+        return base;
     }
 
     private static String buildStaticSystemContent(InferenceConfig config, boolean withTools) {
@@ -244,32 +338,38 @@ public class LlamaCppInferenceService implements InferenceService {
         system += VexProtocolCatalog.formatCatalogSection();
 
         if (withTools) {
-            system +=
-                    "\n\nYou have access to the following agent tools (each maps to a Vex ara-tool protocol above):\n\n"
-                            + ToolCall.getFunctionDefinitions(
-                                    config.webSearchEnabled(), config.contextMemoryEnabled(), config.terminalEnabled())
-                            + "\n\nWhen you need to call a tool, output ONLY the tool call (no preamble text):\n<|tool_call|>{\"name\": \"<ara-tool-name>\", \"arguments\": {...}}<|im_end|>\n"
-                            + "Use the ara-tool name (e.g. get_current_datetime), not the protocol ID (e.g. 102).\n"
-                            + "Then wait for the result before responding naturally.\n\n"
-                            + "Persistent memory: ~/Documents/Ara/context.md — read_memory (104) at session start; write_memory (105) / append_memory (106) to update.";
+            system += "\n\n" + TOOL_POLICY + "\n\nTools:\n"
+                    + ToolCall.getFunctionDefinitions(
+                            config.webSearchEnabled(), config.contextMemoryEnabled(), config.terminalEnabled())
+                    + "\n\nTool call format: <|tool_call|>{\"name\":\"<ara-tool>\",\"arguments\":{...}}<|im_end|>";
         }
         return system;
     }
 
+    private static InferenceParameters inferenceParams(String prompt, InferenceConfig config) {
+        return new InferenceParameters(prompt)
+                .setTemperature(config.temperature())
+                .setNPredict(config.maxTokens())
+                .setCachePrompt(true);
+    }
+
     private static int systemBlockKey(InferenceConfig config, boolean withTools) {
+        var clockBucket = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
         return Objects.hash(
                 config.systemPrompt(),
                 config.webSearchEnabled(),
                 config.contextMemoryEnabled(),
                 config.terminalEnabled(),
                 withTools,
-                VexProtocolCatalog.protocols().size());
+                VexProtocolCatalog.protocols().size(),
+                clockBucket);
     }
 
     /** Clears cached system prompt (e.g. after Vex protocol reload). */
     public void invalidateSystemCache() {
         cachedSystemBlock = null;
         cachedSystemBlockKey = 0;
+        cachedSystemPrefixTokens = 0;
     }
 
     private void runInference(
@@ -279,15 +379,31 @@ public class LlamaCppInferenceService implements InferenceService {
             Runnable onComplete,
             Consumer<Throwable> onError,
             Consumer<ToolCall> onToolCall) {
+        synchronized (loadLock) {
+            runInferenceLocked(prompt, config, onToken, onComplete, onError, onToolCall);
+        }
+    }
+
+    private void runInferenceLocked(
+            String prompt,
+            InferenceConfig config,
+            Consumer<String> onToken,
+            Runnable onComplete,
+            Consumer<Throwable> onError,
+            Consumer<ToolCall> onToolCall) {
         try {
+            if (cachedSystemPrefixTokens <= 0) {
+                refreshSystemPrefixTokens(cachedSystemPrefix(config, true, 0));
+            }
+
             long inferStart = System.nanoTime();
             long firstTokenMs = -1;
             int tokenCount = 0;
 
-            var inferParams = new InferenceParameters(prompt)
-                    .setTemperature(config.temperature())
-                    .setNPredict(config.maxTokens())
-                    .setCachePrompt(true);
+            var inferParams = inferenceParams(prompt, config);
+            if (cachedSystemPrefixTokens > 0) {
+                inferParams.setNKeep(cachedSystemPrefixTokens);
+            }
 
             var iter = model.generate(inferParams).iterator();
             var buffer = new StringBuilder();
@@ -372,33 +488,35 @@ public class LlamaCppInferenceService implements InferenceService {
     @Override
     public void generateTitle(String message, Consumer<String> onTitle) {
         executor.execute(() -> {
-            try {
-                if (model == null) {
+            synchronized (loadLock) {
+                try {
+                    if (model == null) {
+                        var fallback = message.length() > 45 ? message.substring(0, 42) + "..." : message;
+                        onTitle.accept(fallback);
+                        return;
+                    }
+
+                    var prompt =
+                            "Generate a very short title (5 words max) for a conversation that starts with this message. Reply with ONLY the title, no punctuation:\n\n"
+                                    + message;
+
+                    var inferParams = new InferenceParameters(prompt)
+                            .setTemperature(0.3f)
+                            .setNPredict(15); // title gen is small & fast by design
+
+                    var sb = new StringBuilder();
+                    for (LlamaOutput output : model.generate(inferParams)) {
+                        sb.append(output.toString());
+                    }
+                    var title = sb.toString().trim();
+                    title = title.replaceAll("[\"']", "").trim();
+                    if (title.length() > 60) title = title.substring(0, 57) + "...";
+                    onTitle.accept(title);
+                } catch (Exception e) {
+                    LOG.warning("Title generation failed: " + e.getMessage());
                     var fallback = message.length() > 45 ? message.substring(0, 42) + "..." : message;
                     onTitle.accept(fallback);
-                    return;
                 }
-
-                var prompt =
-                        "Generate a very short title (5 words max) for a conversation that starts with this message. Reply with ONLY the title, no punctuation:\n\n"
-                                + message;
-
-                var inferParams = new InferenceParameters(prompt)
-                        .setTemperature(0.3f)
-                        .setNPredict(15); // title gen is small & fast by design
-
-                var sb = new StringBuilder();
-                for (LlamaOutput output : model.generate(inferParams)) {
-                    sb.append(output.toString());
-                }
-                var title = sb.toString().trim();
-                title = title.replaceAll("[\"']", "").trim();
-                if (title.length() > 60) title = title.substring(0, 57) + "...";
-                onTitle.accept(title);
-            } catch (Exception e) {
-                LOG.warning("Title generation failed: " + e.getMessage());
-                var fallback = message.length() > 45 ? message.substring(0, 42) + "..." : message;
-                onTitle.accept(fallback);
             }
         });
     }

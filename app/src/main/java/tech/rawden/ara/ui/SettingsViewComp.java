@@ -295,7 +295,9 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
                     refreshModelList();
                     var modelPath = modelManager.defaultModelPath();
                     try {
+                        inferenceService.preparePromptCache(config);
                         inferenceService.loadModel(modelPath);
+                        inferenceService.warmup(config);
                         refreshStatus();
                     } catch (Exception ex) {
                         LOG.warning("Could not load model: " + ex.getMessage());
@@ -364,7 +366,9 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
             loadBtn.setText("Loading...");
             Thread.startVirtualThread(() -> {
                 try {
+                    inferenceService.preparePromptCache(config);
                     inferenceService.loadModel(modelPath);
+                    inferenceService.warmup(config);
                     Platform.runLater(() -> {
                         refreshModelList();
                         refreshStatus();
@@ -551,8 +555,8 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
     private Region createUpdatesSection() {
         var section = new VBox(12);
 
-        var hint = new Label(
-                "Optional update checks fetch public release metadata from GitHub (installers/latest.json). "
+        var hint =
+                new Label("Optional update checks fetch public release metadata from GitHub (installers/latest.json). "
                         + "Installers download only when you tap Download & Install. "
                         + "Nothing from your chats, memory, or models is sent.");
         hint.setFont(Font.font("Inter", 11));
@@ -579,8 +583,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         checkNowBtn.getStyleClass().add("ara-action-btn");
         checkNowBtn.setOnAction(e -> runManualUpdateCheck(checkNowBtn));
 
-        section.getChildren()
-                .addAll(hint, startupToggle.build(), currentVersion, lastUpdateCheckLabel, checkNowBtn);
+        section.getChildren().addAll(hint, startupToggle.build(), currentVersion, lastUpdateCheckLabel, checkNowBtn);
         return section;
     }
 
@@ -677,8 +680,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
                     + tech.rawden.ara.integration.VexProtocolCatalog.protocols().size() + " protocols)");
         });
 
-        section.getChildren()
-                .addAll(modelsDir, settingsFile, chatsFile, toolsFile, inferenceLabel, reloadToolsBtn);
+        section.getChildren().addAll(modelsDir, settingsFile, chatsFile, toolsFile, inferenceLabel, reloadToolsBtn);
         return section;
     }
 

@@ -25,23 +25,12 @@ public final class PlatformInstallerKey {
         String arch = SystemArch.normalize();
         OsType os = OsType.ofLocal();
         if (os == OsType.MACOS) {
-            return firstPresent(
-                    downloads,
-                    "macos-pkg-" + arch,
-                    "macos-pkg",
-                    "macos-dmg-" + arch,
-                    "macos-dmg");
+            return firstPresent(downloads, "macos-pkg-" + arch, "macos-pkg", "macos-dmg-" + arch, "macos-dmg");
         }
         if (os == OsType.WINDOWS) {
             return firstPresent(downloads, "windows-msi-" + arch, "windows-msi", "windows");
         }
-        return firstPresent(
-                downloads,
-                "linux-deb-" + arch,
-                "linux-deb",
-                "linux-rpm-" + arch,
-                "linux-rpm",
-                "linux");
+        return firstPresent(downloads, "linux-deb-" + arch, "linux-deb", "linux-rpm-" + arch, "linux-rpm", "linux");
     }
 
     private static Optional<String> firstPresent(Map<String, String> downloads, String... keys) {

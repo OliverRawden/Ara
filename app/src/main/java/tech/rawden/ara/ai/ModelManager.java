@@ -3,7 +3,6 @@ package tech.rawden.ara.ai;
 import tech.rawden.ara.core.AraPaths;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 

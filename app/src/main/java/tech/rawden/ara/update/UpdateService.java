@@ -1,7 +1,8 @@
 package tech.rawden.ara.update;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import tech.rawden.ara.util.OsType;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -161,11 +162,12 @@ public class UpdateService {
     }
 
     private static void launchInstaller(Path file) throws IOException {
-        ProcessBuilder builder = switch (OsType.ofLocal()) {
-            case OsType.MacOs mac -> new ProcessBuilder("open", file.toString());
-            case OsType.Windows windows -> new ProcessBuilder("cmd", "/c", "start", "", file.toString());
-            case OsType.Linux linux -> new ProcessBuilder("xdg-open", file.toString());
-        };
+        ProcessBuilder builder =
+                switch (OsType.ofLocal()) {
+                    case OsType.MacOs mac -> new ProcessBuilder("open", file.toString());
+                    case OsType.Windows windows -> new ProcessBuilder("cmd", "/c", "start", "", file.toString());
+                    case OsType.Linux linux -> new ProcessBuilder("xdg-open", file.toString());
+                };
         LOG.info("Launching installer: " + file);
         builder.start();
     }
