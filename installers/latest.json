@@ -1,11 +1,11 @@
 {
-  "latestVersion": "5.5.1",
-  "releaseDate": "2026-07-02",
-  "releaseNotes": "Test update build from develop. Version bumped to 5.5.1 for in-app update flow testing (running app at 5.5.0 should detect this release).",
-  "downloads": {
-    "macos-pkg": "https://github.com/OliverRawden/Ara/releases/download/v5.5.1/ara-installer-macos-arm64.pkg",
-    "macos-pkg-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.5.1/ara-installer-macos-arm64.pkg",
-    "macos-dmg": "https://github.com/OliverRawden/Ara/releases/download/v5.5.1/ara-portable-macos-arm64.dmg",
-    "macos-dmg-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.5.1/ara-portable-macos-arm64.dmg"
-  }
+    "latestVersion": "5.7",
+    "releaseDate": "2026-07-03",
+    "releaseNotes": "Ara v5.7: faster inference, Ara-hosted model download, smarter tool use, optional auto-updates.",
+    "downloads": {
+        "macos-dmg-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.7/ara-portable-macos-arm64.dmg",
+        "macos-dmg": "https://github.com/OliverRawden/Ara/releases/download/v5.7/ara-portable-macos-arm64.dmg",
+        "macos-pkg-arm64": "https://github.com/OliverRawden/Ara/releases/download/v5.7/ara-installer-macos-arm64.pkg",
+        "macos-pkg": "https://github.com/OliverRawden/Ara/releases/download/v5.7/ara-installer-macos-arm64.pkg"
+    }
 }
