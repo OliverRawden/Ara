@@ -31,7 +31,15 @@ public final class ModelCatalog {
         if (release != null && release.defaultModel != null) {
             return release.defaultModel;
         }
-        return embeddedFallback();
+        return embeddedLightFallback();
+    }
+
+    public static ModelRelease.DefaultModel resolveHeavyModel(HttpClient httpClient) {
+        var release = fetchMetadata(httpClient);
+        if (release != null && release.heavyModel != null) {
+            return release.heavyModel;
+        }
+        return embeddedHeavyFallback();
     }
 
     public static void invalidateCache() {
@@ -64,7 +72,7 @@ public final class ModelCatalog {
     }
 
     /** Used when metadata is unreachable (offline / not yet published on main). */
-    private static ModelRelease.DefaultModel embeddedFallback() {
+    private static ModelRelease.DefaultModel embeddedLightFallback() {
         LOG.info("Using embedded model metadata fallback");
         var model = new ModelRelease.DefaultModel();
         model.id = "qwen2.5-7b-instruct-q4_k_m";
@@ -90,5 +98,35 @@ public final class ModelCatalog {
                 "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part2";
         model.parts = java.util.List.of(part0, part1, part2);
         return model;
+    }
+
+    private static ModelRelease.DefaultModel embeddedHeavyFallback() {
+        var model = new ModelRelease.DefaultModel();
+        model.id = "qwen2.5-coder-32b-q4_k_m";
+        model.filename = "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf";
+        model.displayName = "Qwen2.5-Coder-32B Q4_K_M (Heavy)";
+        model.sizeBytes = 19_851_336_672L;
+        model.sha256 = "8e2fd78ff55e7cdf577fda257bac2776feb7d73d922613caf35468073807e815";
+        model.downloadUrl = null;
+        model.parts = embeddedHeavyParts(model.filename);
+        return model;
+    }
+
+    private static java.util.List<ModelRelease.Part> embeddedHeavyParts(String base) {
+        var tag = "models-heavy-v1";
+        long chunk = 2_097_152_000L;
+        long size = 19_851_336_672L;
+        var parts = new java.util.ArrayList<ModelRelease.Part>();
+        long offset = 0;
+        for (int i = 0; offset < size; i++) {
+            long partSize = Math.min(chunk, size - offset);
+            var part = new ModelRelease.Part();
+            part.filename = base + ".part" + i;
+            part.sizeBytes = partSize;
+            part.url = "https://github.com/OliverRawden/Ara/releases/download/" + tag + "/" + part.filename;
+            parts.add(part);
+            offset += partSize;
+        }
+        return parts;
     }
 }

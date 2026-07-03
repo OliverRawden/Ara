@@ -24,5 +24,65 @@
         "sizeBytes": 488770240
       }
     ]
+  },
+  "heavyModel": {
+    "id": "qwen2.5-coder-32b-q4_k_m",
+    "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf",
+    "displayName": "Qwen2.5-Coder-32B Q4_K_M (Heavy)",
+    "sizeBytes": 19851336672,
+    "sha256": "8e2fd78ff55e7cdf577fda257bac2776feb7d73d922613caf35468073807e815",
+    "downloadUrl": null,
+    "parts": [
+      {
+        "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part0",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-heavy-v1/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part0",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part1",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-heavy-v1/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part1",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part2",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-heavy-v1/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part2",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part3",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-heavy-v1/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part3",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part4",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-heavy-v1/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part4",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part5",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-heavy-v1/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part5",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part6",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-heavy-v1/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part6",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part7",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-heavy-v1/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part7",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part8",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-heavy-v1/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part8",
+        "sizeBytes": 2097152000
+      },
+      {
+        "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part9",
+        "url": "https://github.com/OliverRawden/Ara/releases/download/models-heavy-v1/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf.part9",
+        "sizeBytes": 976968672
+      }
+    ]
   }
 }
