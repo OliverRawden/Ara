@@ -53,6 +53,10 @@ run {
 }
 
 processResources {
+    from("$rootDir/version") {
+        into "tech/rawden/ara/resources"
+    }
+
     doLast {
         def pkg = groupName.replaceAll("\\.", "/") + "/" + artifactName.replaceAll("\\.", "/")
         def cssFiles = fileTree(dir: "$sourceSets.main.output.resourcesDir/$pkg/resources/style")

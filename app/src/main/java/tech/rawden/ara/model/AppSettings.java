@@ -14,6 +14,15 @@ public class AppSettings {
     private boolean useSystemAccent = true;
     private String selectedModel = "";
 
+    /** When true, a background check runs once after startup (never blocks launch). Default off for privacy. */
+    private boolean checkForUpdatesOnStartup = false;
+
+    /** ISO-8601 timestamp of the last manual or automatic update check (null if never). */
+    private String lastUpdateCheckAt;
+
+    /** Short status from the last check, e.g. "up to date", "update available", "failed". */
+    private String lastUpdateCheckStatus = "never";
+
     public float getTemperature() {
         return temperature;
     }
@@ -100,5 +109,29 @@ public class AppSettings {
 
     public void setUseSystemAccent(boolean useSystemAccent) {
         this.useSystemAccent = useSystemAccent;
+    }
+
+    public boolean isCheckForUpdatesOnStartup() {
+        return checkForUpdatesOnStartup;
+    }
+
+    public void setCheckForUpdatesOnStartup(boolean checkForUpdatesOnStartup) {
+        this.checkForUpdatesOnStartup = checkForUpdatesOnStartup;
+    }
+
+    public String getLastUpdateCheckAt() {
+        return lastUpdateCheckAt;
+    }
+
+    public void setLastUpdateCheckAt(String lastUpdateCheckAt) {
+        this.lastUpdateCheckAt = lastUpdateCheckAt;
+    }
+
+    public String getLastUpdateCheckStatus() {
+        return lastUpdateCheckStatus;
+    }
+
+    public void setLastUpdateCheckStatus(String lastUpdateCheckStatus) {
+        this.lastUpdateCheckStatus = lastUpdateCheckStatus;
     }
 }

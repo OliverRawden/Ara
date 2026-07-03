@@ -623,17 +623,15 @@ public class ChatViewComp extends RegionBuilder<VBox> {
 
         Runnable startInference = () -> generateResponse(text, 0);
 
-        if (inferenceService.status() == InferenceService.Status.READY) {
-            startInference.run();
-        } else {
-            LOG.info("Waiting for model preload before generating response...");
-            modelPreloader.whenReady(
-                    () -> Platform.runLater(startInference),
-                    error -> Platform.runLater(() -> {
-                        LOG.warning("Model not ready: " + error.getMessage());
-                        setGenerating(false);
-                    }));
+        if (inferenceService.status() != InferenceService.Status.READY) {
+            LOG.info("Waiting for model load before generating response...");
         }
+        modelPreloader.whenInferenceReady(
+                () -> Platform.runLater(startInference),
+                error -> Platform.runLater(() -> {
+                    LOG.warning("Model not ready: " + error.getMessage());
+                    setGenerating(false);
+                }));
     }
 
     private void setGenerating(boolean active) {
@@ -679,10 +677,12 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         }
         var source = pendingTitleSource;
         pendingTitleSource = null;
-        inferenceService.generateTitle(source, title -> Platform.runLater(() -> {
-            session.setTitle(title);
-            onSessionUpdated.run();
-        }));
+        inferenceService.generateTitle(
+                source,
+                title -> Platform.runLater(() -> {
+                    session.setTitle(title);
+                    onSessionUpdated.run();
+                }));
     }
 
     private void generateResponse(String userMessage, int toolRound) {
@@ -722,8 +722,8 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     var msgs = session.messages();
                     var last = msgs.get(msgs.size() - 1);
                     msgs.remove(last);
-                    var complete = ChatMessage.assistantMessage(
-                            session.id(), ToolCallDisplay.forDisplay(sb.toString()));
+                    var complete =
+                            ChatMessage.assistantMessage(session.id(), ToolCallDisplay.forDisplay(sb.toString()));
                     session.addMessage(complete);
                     rebuildMessages();
                     setGenerating(false);
@@ -738,9 +738,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     String content;
                     if (error instanceof java.util.concurrent.CancellationException) {
                         var partial = ToolCallDisplay.forDisplay(sb.toString());
-                        content = partial.isBlank()
-                                ? "[Stopped]"
-                                : partial + "\n\n[Stopped]";
+                        content = partial.isBlank() ? "[Stopped]" : partial + "\n\n[Stopped]";
                     } else {
                         content = "Error: " + error.getMessage();
                     }
@@ -950,8 +948,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                         var messages = session.messages();
                         for (int i = 0; i < messages.size(); i++) {
                             if (messages.get(i).id().equals(searchMsg.id())) {
-                                messages.set(
-                                        i, ChatMessage.toolMessage(session.id(), displayText));
+                                messages.set(i, ChatMessage.toolMessage(session.id(), displayText));
                                 break;
                             }
                         }

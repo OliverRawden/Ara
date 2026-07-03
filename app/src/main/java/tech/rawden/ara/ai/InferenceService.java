@@ -59,6 +59,14 @@ public interface InferenceService {
     /** Optional one-token warmup after load to avoid a cold first user inference. */
     default void warmup() {}
 
+    /** Warmup using runtime config so the system prompt KV cache is primed before the first chat message. */
+    default void warmup(InferenceConfig config) {
+        warmup();
+    }
+
+    /** Pre-build cached system prompt strings (no inference). Called during background preload. */
+    default void preparePromptCache(InferenceConfig config) {}
+
     /** Request cancellation of the active generation (Vex protocol 10 kill analogue). */
     default void cancelGeneration() {}
 

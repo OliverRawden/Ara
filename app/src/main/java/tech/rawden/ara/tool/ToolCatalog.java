@@ -32,20 +32,24 @@ public final class ToolCatalog {
 
     public static String getFunctionDefinitions(
             boolean includeWebSearch, boolean includeSecureMemory, boolean includeTerminal) {
-        var sb = new StringBuilder("[\n");
-        var first = true;
+        return getCompactToolList(includeWebSearch, includeSecureMemory, includeTerminal);
+    }
+
+    /** Token-efficient tool list for inference (ChatML tool_call JSON, not OpenAI function schema). */
+    public static String getCompactToolList(
+            boolean includeWebSearch, boolean includeSecureMemory, boolean includeTerminal) {
+        var sb = new StringBuilder();
         for (var tool : tools()) {
             if (!isEnabled(tool, includeWebSearch, includeSecureMemory, includeTerminal)) {
                 continue;
             }
-            if (!first) {
-                sb.append(",\n");
-            }
-            first = false;
-            sb.append(toFunctionJson(tool));
+            sb.append("- ")
+                    .append(tool.name())
+                    .append(": ")
+                    .append(inferenceHint(tool.name()))
+                    .append('\n');
         }
-        sb.append("\n]");
-        return sb.toString();
+        return sb.toString().strip();
     }
 
     public static ToolDefinition findByName(String name) {
@@ -66,34 +70,16 @@ public final class ToolCatalog {
         return true;
     }
 
-    private static String toFunctionJson(ToolDefinition tool) {
-        var protocol = VexProtocolCatalog.findByAraTool(tool.name());
-        var description = tool.description();
-        if (protocol.isPresent()) {
-            description = description + " [Vex protocol " + protocol.get().id() + "]";
-        }
-        return """
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "%s",
-                        "description": %s,
-                        "parameters": %s
-                    }
-                }""".formatted(escapeJson(tool.name()), jsonString(description), tool.parametersJson());
-    }
-
-    private static String jsonString(String value) {
-        if (value == null) {
-            return "\"\"";
-        }
-        return "\"" + escapeJson(value) + "\"";
-    }
-
-    private static String escapeJson(String value) {
-        return value.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r");
+    /** Short, action-oriented hints — avoids protocol wording that triggers spurious tool calls. */
+    private static String inferenceHint(String name) {
+        return switch (name) {
+            case "get_current_datetime" -> "date/time — only when the user explicitly asks";
+            case "read_memory" -> "read context.md — when a task needs prior context, not on greetings";
+            case "write_memory" -> "replace context.md";
+            case "append_memory" -> "append to context.md";
+            case "web_search" -> "search the web for live facts";
+            case "execute_command" -> "run a shell command";
+            default -> "see Vex catalog";
+        };
     }
 }
