@@ -117,7 +117,7 @@ In the app (**develop** builds), open **Settings → Updates** to optionally che
 
 | Model | Size | Notes |
 |-------|------|-------|
-| [Qwen2.5-7B-Instruct Q4_K_M](https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF) | ~4.5 GB | Default download |
+| Qwen2.5-7B-Instruct Q4_K_M | ~4.5 GB | Default download from [Ara `models-v1` release](https://github.com/OliverRawden/Ara/releases/tag/models-v1) via `installers/models.json` |
 | Llama 3.2 3B / 1B Q4 variants | Smaller | Faster on low-RAM machines |
 
 ---

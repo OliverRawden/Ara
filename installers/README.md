@@ -10,6 +10,22 @@ https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json
 
 Update checks are **optional** (Settings → Updates, default off). Only version metadata is fetched until the user chooses **Download & Install**.
 
+The app also fetches default GGUF model metadata from:
+
+```
+https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/models.json
+```
+
+Model binaries are **not** committed to git (too large for a single GitHub Release asset). They are published as a dedicated release:
+
+| Item | Value |
+|------|--------|
+| Release tag | `models-v1` |
+| Asset pattern | `Qwen2.5-7B-Instruct-Q4_K_M.gguf.part0` … `.part2` (each part &lt; 2 GiB) |
+| Upload script | `./installers/split-and-upload-model.sh` |
+
+After uploading parts, commit `installers/models.json` to **`main`** (same policy as `latest.json`).
+
 ---
 
 ## `latest.json` structure

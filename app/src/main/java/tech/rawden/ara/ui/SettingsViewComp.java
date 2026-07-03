@@ -234,7 +234,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         downloadHeader.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 13));
 
         var downloadDesc = new Label(
-                "Downloads Qwen2.5-7B-Instruct (Q4_K_M, ~4.5 GB) from Hugging Face and places it in your models folder.");
+                "Downloads the recommended Qwen2.5-7B-Instruct (Q4_K_M, ~4.5 GB) from the Ara GitHub repository and places it in your models folder.");
         downloadDesc.setFont(Font.font("Inter", 11));
         downloadDesc.setStyle("-fx-fill: -color-fg-subtle;");
         downloadDesc.setWrapText(true);
