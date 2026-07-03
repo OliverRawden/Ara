@@ -10,6 +10,8 @@ public class ModelRelease {
 
     public int schemaVersion;
     public DefaultModel defaultModel;
+    /** On-demand heavy model (~30B) for complex reasoning and code. */
+    public DefaultModel heavyModel;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class DefaultModel {

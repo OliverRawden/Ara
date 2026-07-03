@@ -3,6 +3,8 @@ package tech.rawden.ara;
 import tech.rawden.ara.ai.LlamaCppInferenceService;
 import tech.rawden.ara.ai.ModelManager;
 import tech.rawden.ara.ai.ModelPreloader;
+import tech.rawden.ara.ai.ModelRouter;
+import tech.rawden.ara.ai.RoutingInferenceService;
 import tech.rawden.ara.core.AraModel;
 import tech.rawden.ara.core.AraPaths;
 import tech.rawden.ara.core.AraTheme;
@@ -49,7 +51,7 @@ public class Main extends Application {
 
     private static final Logger LOG = Logger.getLogger(Main.class.getName());
 
-    private LlamaCppInferenceService inferenceService;
+    private RoutingInferenceService inferenceService;
 
     @Override
     public void start(Stage stage) {
@@ -101,17 +103,20 @@ public class Main extends Application {
         config.setContextMemoryEnabled(appSettings.isContextMemoryEnabled());
         config.setRequireTerminalConfirmation(appSettings.isRequireTerminalConfirmation());
 
-        inferenceService = new LlamaCppInferenceService();
-        var modelManager = new ModelManager();
-        var modelPreloader = new ModelPreloader(inferenceService, modelManager, config);
+        var backend = new LlamaCppInferenceService();
+        var modelManager = new ModelManager(appSettings.getDownloadChunkSizeMb());
+        var modelRouter = new ModelRouter(backend, modelManager, appSettings, config);
+        inferenceService = new RoutingInferenceService(backend, modelRouter);
+        var modelPreloader = new ModelPreloader(inferenceService, modelManager, config, modelRouter);
 
-        // Start GGUF mmap/GPU init immediately — does not need encryption unlock or chat data.
-        modelPreloader.schedulePreload(appSettings.getSelectedModel());
+        // Start light GGUF mmap/GPU init immediately — does not need encryption unlock or chat data.
+        modelPreloader.schedulePreload(appSettings.getLightModel());
 
         var mainView = new MainViewComp(
                 AraModel.get(),
                 initialChatHistory,
                 inferenceService,
+                modelRouter,
                 modelManager,
                 modelPreloader,
                 config,

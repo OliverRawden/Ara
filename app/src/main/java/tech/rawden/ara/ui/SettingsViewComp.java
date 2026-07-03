@@ -2,6 +2,9 @@ package tech.rawden.ara.ui;
 
 import tech.rawden.ara.ai.InferenceService;
 import tech.rawden.ara.ai.ModelManager;
+import tech.rawden.ara.ai.ModelRouter;
+
+import tech.rawden.ara.ai.RoutingMode;
 import tech.rawden.ara.comp.RegionBuilder;
 import tech.rawden.ara.comp.base.ToggleSwitchComp;
 import tech.rawden.ara.core.AraModel;
@@ -53,6 +56,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
     private final AraModel model;
     private final ModelManager modelManager;
     private final InferenceService inferenceService;
+    private final ModelRouter modelRouter;
     private final InferenceConfig config;
     private final Runnable onBack;
     private final Runnable onResetSettings;
@@ -64,8 +68,14 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
     private ProgressBar downloadProgress;
     private Label downloadStatusLabel;
     private Button downloadBtn;
+    private Button downloadHeavyBtn;
+    private ProgressBar downloadHeavyProgress;
+    private Label downloadHeavyStatusLabel;
     private Label statusLabel;
     private Label modelNameLabel;
+    private TextField lightModelField;
+    private TextField heavyModelField;
+    private javafx.scene.control.ComboBox<RoutingMode> routingModeCombo;
 
     // System prompt editor (always available - local app, no gate)
     private TextArea systemPromptArea;
@@ -80,6 +90,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
             AraModel model,
             ModelManager modelManager,
             InferenceService inferenceService,
+            ModelRouter modelRouter,
             InferenceConfig config,
             Runnable onBack,
             Runnable onResetSettings,
@@ -89,6 +100,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         this.model = model;
         this.modelManager = modelManager;
         this.inferenceService = inferenceService;
+        this.modelRouter = modelRouter;
         this.config = config;
         this.onBack = onBack;
         this.onResetSettings = onResetSettings;
@@ -210,6 +222,79 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
 
         section.getChildren().addAll(statusHeader, statusLabel, modelNameLabel);
 
+        // ---- Multi-model routing ----
+        var routingHeader = new Text("Model Routing");
+        routingHeader.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 13));
+
+        var routingDesc = new Label(
+                "Light (~7B) stays hot for chat and fast routing. Heavy (~30B) loads on demand for complex reasoning, code, and tool calling. Fully local.");
+        routingDesc.setFont(Font.font("Inter", 11));
+        routingDesc.setStyle("-fx-fill: -color-fg-subtle;");
+        routingDesc.setWrapText(true);
+
+        lightModelField = new TextField(appSettings.getLightModel());
+        lightModelField.setPromptText(modelManager.defaultModelFilename());
+        lightModelField.getStyleClass().add("ara-input-field");
+        lightModelField.textProperty().addListener((obs, old, val) -> {
+            appSettings.setLightModel(val != null ? val.trim() : "");
+            settingsStorage.save(appSettings);
+        });
+
+        heavyModelField = new TextField(appSettings.getHeavyModel());
+        heavyModelField.setPromptText(modelManager.heavyModelFilename());
+        heavyModelField.getStyleClass().add("ara-input-field");
+        heavyModelField.textProperty().addListener((obs, old, val) -> {
+            appSettings.setHeavyModel(val != null ? val.trim() : "");
+            settingsStorage.save(appSettings);
+        });
+
+        routingModeCombo = new javafx.scene.control.ComboBox<>();
+        routingModeCombo.getItems().addAll(RoutingMode.AUTO, RoutingMode.LIGHT_ONLY, RoutingMode.HEAVY_ONLY);
+        routingModeCombo.setValue(appSettings.getRoutingMode());
+        routingModeCombo.setOnAction(e -> {
+            var mode = routingModeCombo.getValue();
+            if (mode != null) {
+                appSettings.setRoutingMode(mode);
+                settingsStorage.save(appSettings);
+                if (modelRouter != null) {
+                    modelRouter.setUserOverride(mode);
+                }
+            }
+        });
+
+        var lightRow = labeledField("Light model (filename)", lightModelField);
+        var heavyRow = labeledField("Heavy model (filename)", heavyModelField);
+        var modeRow = labeledField("Routing mode", routingModeCombo);
+
+        downloadHeavyProgress = new ProgressBar(0);
+        downloadHeavyProgress.setMaxWidth(Double.MAX_VALUE);
+        downloadHeavyProgress.setVisible(false);
+        downloadHeavyProgress.getStyleClass().add("ara-progress-bar");
+
+        downloadHeavyStatusLabel = new Label("");
+        downloadHeavyStatusLabel.setFont(Font.font("Inter", 11));
+        downloadHeavyStatusLabel.setStyle("-fx-fill: -color-fg-subtle;");
+        downloadHeavyStatusLabel.setVisible(false);
+
+        downloadHeavyBtn = new Button("Download Heavy Model");
+        downloadHeavyBtn.getStyleClass().add("ara-action-btn");
+        if (!modelManager.isHeavyDownloadAvailable()) {
+            downloadHeavyBtn.setText("Heavy model — manual install");
+            downloadHeavyBtn.setDisable(true);
+        }
+        downloadHeavyBtn.setOnAction(e -> startHeavyDownload());
+
+        section.getChildren()
+                .addAll(
+                        routingHeader,
+                        routingDesc,
+                        lightRow,
+                        heavyRow,
+                        modeRow,
+                        downloadHeavyProgress,
+                        downloadHeavyStatusLabel,
+                        downloadHeavyBtn);
+
         // ---- Local GGUF Files ----
         var sep1 = new Separator();
         sep1.setPadding(new Insets(4, 0, 4, 0));
@@ -259,9 +344,62 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         return section;
     }
 
+    private Region labeledField(String label, javafx.scene.Node control) {
+        var lbl = new Label(label);
+        lbl.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 11));
+        var box = new VBox(4, lbl, control);
+        return box;
+    }
+
     private void refreshStatus() {
         statusLabel.setText("Status: " + inferenceService.status());
-        modelNameLabel.setText(inferenceService.modelName());
+        String tier = modelRouter != null ? " (" + modelRouter.getActiveTier().badgeLabel() + ")" : "";
+        modelNameLabel.setText(inferenceService.modelName() + tier);
+    }
+
+    private void startHeavyDownload() {
+        downloadHeavyBtn.setDisable(true);
+        downloadHeavyBtn.setText("Downloading heavy model...");
+        downloadHeavyProgress.setVisible(true);
+        downloadHeavyProgress.setProgress(-1);
+        downloadHeavyStatusLabel.setVisible(true);
+        downloadHeavyStatusLabel.setText("Starting download...");
+
+        Thread.startVirtualThread(() -> {
+            try {
+                modelManager.downloadHeavyModel((downloaded, total) -> Platform.runLater(() -> {
+                    downloadHeavyProgress.setVisible(true);
+                    downloadHeavyStatusLabel.setVisible(true);
+                    if (total > 0) {
+                        downloadHeavyProgress.setProgress((double) downloaded / total);
+                        downloadHeavyStatusLabel.setText(String.format(
+                                "%d / %d MB", downloaded / (1024 * 1024), total / (1024 * 1024)));
+                    } else {
+                        downloadHeavyProgress.setProgress(-1);
+                        downloadHeavyStatusLabel.setText(formatBytes(downloaded) + " downloaded");
+                    }
+                }));
+                Platform.runLater(() -> {
+                    downloadHeavyProgress.setProgress(1);
+                    downloadHeavyStatusLabel.setText("Heavy model download complete");
+                    downloadHeavyBtn.setText("Download Complete");
+                    if (heavyModelField != null) {
+                        heavyModelField.setText(appSettings.getHeavyModel().isBlank()
+                                ? modelManager.heavyModelFilename()
+                                : appSettings.getHeavyModel());
+                    }
+                    refreshModelList();
+                });
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    downloadHeavyProgress.setVisible(false);
+                    downloadHeavyStatusLabel.setText(ex.getMessage());
+                    downloadHeavyBtn.setText("Download Failed — Retry");
+                    downloadHeavyBtn.setDisable(false);
+                });
+                LOG.warning("Heavy model download failed: " + ex.getMessage());
+            }
+        });
     }
 
     private void startDownload() {
@@ -366,9 +504,15 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
             loadBtn.setText("Loading...");
             Thread.startVirtualThread(() -> {
                 try {
-                    inferenceService.preparePromptCache(config);
-                    inferenceService.loadModel(modelPath);
-                    inferenceService.warmup(config);
+                    if (modelRouter != null) {
+                        appSettings.setLightModel(name);
+                        settingsStorage.save(appSettings);
+                        modelRouter.ensureLightModel();
+                    } else {
+                        inferenceService.preparePromptCache(config);
+                        inferenceService.loadModel(modelPath);
+                        inferenceService.warmup(config);
+                    }
                     Platform.runLater(() -> {
                         refreshModelList();
                         refreshStatus();
@@ -671,6 +815,13 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         inferenceLabel.setFont(Font.font("Inter", 11));
         inferenceLabel.setStyle("-fx-fill: -color-fg-subtle;");
 
+        var routingHelp = new Label(
+                "Light/heavy split: the small model handles greetings and quick answers; the big one wakes up for code, "
+                        + "multi-step reasoning, and ambitious tool use — then goes back to sleep so your M4 stays breathable.");
+        routingHelp.setFont(Font.font("Inter", 11));
+        routingHelp.setStyle("-fx-fill: -color-fg-subtle;");
+        routingHelp.setWrapText(true);
+
         var reloadToolsBtn = new Button("Reload Vex protocols");
         reloadToolsBtn.getStyleClass().add("ara-action-btn");
         reloadToolsBtn.setOnAction(e -> {
@@ -680,7 +831,8 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
                     + tech.rawden.ara.integration.VexProtocolCatalog.protocols().size() + " protocols)");
         });
 
-        section.getChildren().addAll(modelsDir, settingsFile, chatsFile, toolsFile, inferenceLabel, reloadToolsBtn);
+        section.getChildren()
+                .addAll(modelsDir, settingsFile, chatsFile, toolsFile, inferenceLabel, routingHelp, reloadToolsBtn);
         return section;
     }
 

@@ -16,9 +16,7 @@ import java.util.logging.Logger;
  * Runs on a dedicated virtual thread ({@code ara-model-preloader}) so tensor mmap / GPU init
  * never blocks the JavaFX thread or competes with PBKDF2 / chat deserialization.
  *
- * <p>{@link tech.rawden.ara.ui.ChatViewComp} calls {@link #whenReady(Runnable, Consumer)} on
- * send — if preload already finished, the first message responds immediately; if still loading,
- * it waits for the same in-flight task instead of starting a duplicate load.
+ * <p>Preloads the <em>light</em> model by default so routing can escalate to heavy on demand.
  */
 public final class ModelPreloader {
 
@@ -27,6 +25,7 @@ public final class ModelPreloader {
     private final InferenceService inferenceService;
     private final ModelManager modelManager;
     private final InferenceConfig inferenceConfig;
+    private final ModelRouter modelRouter;
 
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     private final AtomicBoolean warmupScheduled = new AtomicBoolean(false);
@@ -36,9 +35,18 @@ public final class ModelPreloader {
 
     public ModelPreloader(
             InferenceService inferenceService, ModelManager modelManager, InferenceConfig inferenceConfig) {
+        this(inferenceService, modelManager, inferenceConfig, null);
+    }
+
+    public ModelPreloader(
+            InferenceService inferenceService,
+            ModelManager modelManager,
+            InferenceConfig inferenceConfig,
+            ModelRouter modelRouter) {
         this.inferenceService = inferenceService;
         this.modelManager = modelManager;
         this.inferenceConfig = inferenceConfig;
+        this.modelRouter = modelRouter;
     }
 
     /**
@@ -59,7 +67,7 @@ public final class ModelPreloader {
         loadTask = CompletableFuture.runAsync(
                 this::runPreload,
                 runnable -> Thread.ofVirtual().name("ara-model-preloader").start(runnable));
-        LOG.info("Scheduled background model preload");
+        LOG.info("Scheduled background light model preload");
     }
 
     /**
@@ -117,6 +125,15 @@ public final class ModelPreloader {
             if (inferenceService.status() == InferenceService.Status.READY) {
                 return;
             }
+            if (modelRouter != null) {
+                LOG.info("Background preloading light model via router");
+                long t0 = System.nanoTime();
+                modelRouter.ensureLightModel();
+                LOG.info("Background light model load complete in " + (System.nanoTime() - t0) / 1_000_000 + "ms");
+                scheduleWarmup();
+                return;
+            }
+
             Optional<Path> model = modelManager.resolveModel(preferredModelFilename);
             if (model.isEmpty()) {
                 LOG.info("Background preload skipped — no .gguf files in " + modelManager.modelsDirectory());

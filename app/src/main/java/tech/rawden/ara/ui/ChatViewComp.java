@@ -2,14 +2,20 @@ package tech.rawden.ara.ui;
 
 import tech.rawden.ara.ai.InferenceService;
 import tech.rawden.ara.ai.ModelPreloader;
+import tech.rawden.ara.ai.ModelRouter;
+import tech.rawden.ara.ai.ModelTier;
+import tech.rawden.ara.ai.RoutingInferenceService;
+import tech.rawden.ara.ai.RoutingMode;
 import tech.rawden.ara.comp.RegionBuilder;
 import tech.rawden.ara.core.AraPaths;
 import tech.rawden.ara.core.SecurityService;
 import tech.rawden.ara.model.AuditLogEntry;
 import tech.rawden.ara.model.AuditLogStorage;
 import tech.rawden.ara.model.ChatMessage;
+import tech.rawden.ara.model.AppSettings;
 import tech.rawden.ara.model.ChatSession;
 import tech.rawden.ara.model.InferenceConfig;
+import tech.rawden.ara.model.SettingsStorage;
 import tech.rawden.ara.tool.CustomToolExecutor;
 import tech.rawden.ara.tool.TerminalExecutor;
 import tech.rawden.ara.tool.ToolCall;
@@ -65,12 +71,17 @@ public class ChatViewComp extends RegionBuilder<VBox> {
 
     private final ChatSession session;
     private final InferenceService inferenceService;
+    private final ModelRouter modelRouter;
     private final ModelPreloader modelPreloader;
     private final InferenceConfig config;
+    private final SettingsStorage settingsStorage;
+    private final AppSettings appSettings;
     private final Runnable onSessionUpdated;
 
     private VBox messageContainer;
     private TextField inputField;
+    private ModelStatusControl modelStatusControl;
+    private HBox escalationBanner;
     private Button sendButton;
     private FontIcon sendButtonIcon;
     private boolean generating;
@@ -88,13 +99,19 @@ public class ChatViewComp extends RegionBuilder<VBox> {
     public ChatViewComp(
             ChatSession session,
             InferenceService inferenceService,
+            ModelRouter modelRouter,
             ModelPreloader modelPreloader,
             InferenceConfig config,
+            SettingsStorage settingsStorage,
+            AppSettings appSettings,
             Runnable onSessionUpdated) {
         this.session = session;
         this.inferenceService = inferenceService;
+        this.modelRouter = modelRouter;
         this.modelPreloader = modelPreloader;
         this.config = config;
+        this.settingsStorage = settingsStorage;
+        this.appSettings = appSettings;
         this.onSessionUpdated = onSessionUpdated;
     }
 
@@ -591,7 +608,19 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             }
         });
 
-        var inputBar = new HBox(8, inputField, sendButton);
+        if (modelRouter != null) {
+            modelStatusControl = new ModelStatusControl(modelRouter);
+            modelStatusControl.setOnRoutingChanged(() -> {
+                appSettings.setRoutingMode(modelRouter.getCurrentRoutingMode());
+                settingsStorage.save(appSettings);
+            });
+        }
+
+        var inputBar = new HBox(8);
+        if (modelStatusControl != null) {
+            inputBar.getChildren().add(modelStatusControl);
+        }
+        inputBar.getChildren().addAll(inputField, sendButton);
         inputBar.setPadding(new Insets(12, 20, 16, 20));
         inputBar.setAlignment(Pos.CENTER);
         HBox.setHgrow(inputField, Priority.ALWAYS);
@@ -603,6 +632,12 @@ public class ChatViewComp extends RegionBuilder<VBox> {
     private void sendMessage() {
         var text = inputField.getText();
         if (text == null || text.isBlank()) return;
+
+        var trimmed = text.trim();
+        if (handleSlashCommand(trimmed)) {
+            inputField.clear();
+            return;
+        }
 
         inputField.clear();
         setGenerating(true);
@@ -685,6 +720,75 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                 }));
     }
 
+    private boolean handleSlashCommand(String text) {
+        if (modelRouter == null || !text.startsWith("/")) {
+            return false;
+        }
+        var lower = text.toLowerCase();
+        if (lower.equals("/power") || lower.equals("/heavy")) {
+            modelRouter.setSingleTurnOverride(RoutingMode.HEAVY_ONLY);
+            showSystemNote("Heavy model will be used for your next message.");
+            return true;
+        }
+        if (lower.equals("/light")) {
+            modelRouter.setSingleTurnOverride(RoutingMode.LIGHT_ONLY);
+            showSystemNote("Light model will be used for your next message.");
+            return true;
+        }
+        if (lower.equals("/model")) {
+            var mode = modelRouter.getCurrentRoutingMode();
+            var tier = modelRouter.getActiveTier();
+            showSystemNote(String.format(
+                    "Routing: %s · Active: %s · %s",
+                    mode, tier.badgeLabel(), modelRouter.badgeDetailProperty().get()));
+            return true;
+        }
+        return false;
+    }
+
+    private void showSystemNote(String note) {
+        var msg = ChatMessage.assistantMessage(session.id(), note);
+        session.addMessage(msg);
+        addMessageWithAnimation(createMessageBubble(msg));
+        onSessionUpdated.run();
+        scrollToBottom();
+    }
+
+    private void showEscalationBanner() {
+        removeEscalationBanner();
+        var label = new Text("Heavy model engaged for this complex task. ");
+        label.setFont(Font.font("Inter", 11));
+        label.setStyle("-fx-fill: -color-fg-subtle;");
+
+        var switchLink = new Text("Switch to Light");
+        switchLink.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 11));
+        switchLink.setStyle("-fx-fill: -color-accent-fg; -fx-underline: true; -fx-cursor: hand;");
+        switchLink.setOnMouseClicked(e -> {
+            modelRouter.setUserOverride(RoutingMode.LIGHT_ONLY);
+            appSettings.setRoutingMode(RoutingMode.LIGHT_ONLY);
+            settingsStorage.save(appSettings);
+            removeEscalationBanner();
+        });
+
+        var flow = new TextFlow(label, switchLink);
+        flow.setPadding(new Insets(6, 14, 6, 14));
+        flow.getStyleClass().add("ara-escalation-banner");
+        flow.maxWidthProperty().bind(bubbleMaxWidth());
+
+        escalationBanner = new HBox(flow);
+        escalationBanner.setAlignment(Pos.CENTER_LEFT);
+        escalationBanner.setPadding(new Insets(0, 24, 0, 24));
+        messageContainer.getChildren().add(escalationBanner);
+        scrollToBottom();
+    }
+
+    private void removeEscalationBanner() {
+        if (escalationBanner != null && messageContainer.getChildren().contains(escalationBanner)) {
+            messageContainer.getChildren().remove(escalationBanner);
+        }
+        escalationBanner = null;
+    }
+
     private void generateResponse(String userMessage, int toolRound) {
         if (toolRound >= MAX_TOOL_ROUNDS) {
             setGenerating(false);
@@ -704,7 +808,44 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         var contentBox = findMessageContent(bubble);
         var lastStreamUiMs = new long[] {0};
 
-        inferenceService.generateWithTools(
+        Runnable startInference = () -> runInferenceJob(userMessage, history, sb, bubble, contentBox, lastStreamUiMs, toolRound);
+
+        if (modelRouter != null) {
+            Thread.startVirtualThread(() -> {
+                try {
+                    var decision = modelRouter.prepareForRequest(
+                            userMessage, ModelRouter.buildContextSummary(history));
+                    Platform.runLater(() -> {
+                        if (decision.autoEscalated() && decision.tier() == ModelTier.HEAVY) {
+                            showEscalationBanner();
+                        } else if (!userMessage.isBlank()) {
+                            removeEscalationBanner();
+                        }
+                        startInference.run();
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        setGenerating(false);
+                        showSystemNote("Model routing failed: " + e.getMessage());
+                    });
+                }
+            });
+            return;
+        }
+
+        startInference.run();
+    }
+
+    private void runInferenceJob(
+            String userMessage,
+            List<ChatMessage> history,
+            StringBuilder sb,
+            Region bubble,
+            VBox contentBox,
+            long[] lastStreamUiMs,
+            int toolRound) {
+        var inference = resolveInferenceBackend();
+        inference.generateWithTools(
                 userMessage,
                 config,
                 history,
@@ -748,8 +889,17 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     maybeGenerateTitle();
                 }),
                 toolCall -> Platform.runLater(() -> {
+                    var msgs = session.messages();
+                    var placeholder = msgs.get(msgs.size() - 1);
                     handleToolCall(toolCall, sb.toString(), placeholder, toolRound);
                 }));
+    }
+
+    private InferenceService resolveInferenceBackend() {
+        if (inferenceService instanceof RoutingInferenceService ris) {
+            return ris.backend();
+        }
+        return inferenceService;
     }
 
     private void handleToolCall(ToolCall toolCall, String partialText, ChatMessage placeholder, int toolRound) {

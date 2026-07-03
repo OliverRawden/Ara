@@ -397,6 +397,53 @@
     -fx-padding: -0.2em 0 0 0;
 }
 
+/* ===== Chat: Model routing badge ===== */
+.ara-model-status {
+    -fx-padding: 0 4 0 0;
+}
+
+.ara-model-badge {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 6 10;
+    -fx-cursor: hand;
+}
+
+.ara-model-badge-label {
+    -fx-text-fill: -color-fg-subtle;
+}
+
+.ara-model-indicator-light {
+    -fx-fill: #4ade80;
+}
+
+.ara-model-indicator-heavy {
+    -fx-fill: #60a5fa;
+}
+
+.ara-power-toggle {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+    -fx-padding: 4;
+}
+
+.ara-power-toggle:hover {
+    -fx-background-color: -color-bg-subtle;
+}
+
+.ara-power-toggle.ara-power-active {
+    -fx-background-color: derive(-color-accent-subtle, 20%);
+}
+
+.ara-escalation-banner {
+    -fx-background-color: derive(-color-accent-subtle, 80%);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
 /* ===== Settings: Model Selector ===== */
 .ara-model-selector {
     -fx-background-radius: 8;

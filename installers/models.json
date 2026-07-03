@@ -24,5 +24,14 @@
         "sizeBytes": 488770240
       }
     ]
+  },
+  "heavyModel": {
+    "id": "qwen2.5-coder-32b-q4_k_m",
+    "filename": "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf",
+    "displayName": "Qwen2.5-Coder-32B Q4_K_M (Heavy)",
+    "sizeBytes": 0,
+    "sha256": "",
+    "downloadUrl": null,
+    "parts": []
   }
 }

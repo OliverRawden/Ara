@@ -31,7 +31,15 @@ public final class ModelCatalog {
         if (release != null && release.defaultModel != null) {
             return release.defaultModel;
         }
-        return embeddedFallback();
+        return embeddedLightFallback();
+    }
+
+    public static ModelRelease.DefaultModel resolveHeavyModel(HttpClient httpClient) {
+        var release = fetchMetadata(httpClient);
+        if (release != null && release.heavyModel != null) {
+            return release.heavyModel;
+        }
+        return embeddedHeavyFallback();
     }
 
     public static void invalidateCache() {
@@ -64,7 +72,7 @@ public final class ModelCatalog {
     }
 
     /** Used when metadata is unreachable (offline / not yet published on main). */
-    private static ModelRelease.DefaultModel embeddedFallback() {
+    private static ModelRelease.DefaultModel embeddedLightFallback() {
         LOG.info("Using embedded model metadata fallback");
         var model = new ModelRelease.DefaultModel();
         model.id = "qwen2.5-7b-instruct-q4_k_m";
@@ -89,6 +97,18 @@ public final class ModelCatalog {
         part2.url =
                 "https://github.com/OliverRawden/Ara/releases/download/models-v1/Qwen2.5-7B-Instruct-Q4_K_M.gguf.part2";
         model.parts = java.util.List.of(part0, part1, part2);
+        return model;
+    }
+
+    private static ModelRelease.DefaultModel embeddedHeavyFallback() {
+        var model = new ModelRelease.DefaultModel();
+        model.id = "qwen2.5-coder-32b-q4_k_m";
+        model.filename = "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf";
+        model.displayName = "Qwen2.5-Coder-32B Q4_K_M (Heavy)";
+        model.sizeBytes = 0;
+        model.sha256 = "";
+        model.downloadUrl = null;
+        model.parts = java.util.List.of();
         return model;
     }
 }

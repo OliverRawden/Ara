@@ -521,6 +521,34 @@ public class LlamaCppInferenceService implements InferenceService {
         });
     }
 
+    /**
+     * Cheap routing classification on the currently loaded (light) model. Returns trimmed uppercase text.
+     * Must be called while the light model is loaded and under the same {@link #loadLock} as inference.
+     */
+    public String quickClassify(String prompt, int maxTokens) {
+        synchronized (loadLock) {
+            if (model == null) {
+                return "LIGHT";
+            }
+            try {
+                var inferParams = new InferenceParameters(prompt)
+                        .setTemperature(0f)
+                        .setNPredict(Math.max(1, maxTokens));
+                var sb = new StringBuilder();
+                for (LlamaOutput output : model.generate(inferParams)) {
+                    sb.append(output.toString());
+                    if (sb.length() > 32) {
+                        break;
+                    }
+                }
+                return sb.toString().trim().toUpperCase();
+            } catch (Exception e) {
+                LOG.warning("Routing classification failed: " + e.getMessage());
+                return "LIGHT";
+            }
+        }
+    }
+
     @Override
     public String modelName() {
         return modelName;
