@@ -94,8 +94,25 @@ public final class VexProtocolCatalog {
             sb.append('\n');
         }
 
+        var teams = list.stream().filter(VexProtocol::isTeam).toList();
+        if (!teams.isEmpty()) {
+            sb.append("Teams: ");
+            for (int i = 0; i < teams.size(); i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                var t = teams.get(i);
+                sb.append(t.id()).append('=').append(t.name());
+            }
+            sb.append(" (activate in Ara with /team <id>).\n");
+        }
+
         sb.append("Pipe: left|right (right modifier first; 10 aborts left).\n");
         return sb.toString();
+    }
+
+    public static List<VexProtocol> teams() {
+        return protocols().stream().filter(VexProtocol::isTeam).toList();
     }
 
     private static String formatLine(VexProtocol p) {

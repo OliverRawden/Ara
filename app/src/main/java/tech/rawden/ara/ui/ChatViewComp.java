@@ -10,6 +10,9 @@ import tech.rawden.ara.comp.RegionBuilder;
 import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraPaths;
 import tech.rawden.ara.core.SecurityService;
+import tech.rawden.ara.integration.TeamOrchestrator;
+import tech.rawden.ara.integration.VexProtocolCatalog;
+import tech.rawden.ara.model.MemoryGraphService;
 import tech.rawden.ara.model.AuditLogEntry;
 import tech.rawden.ara.model.AuditLogStorage;
 import tech.rawden.ara.model.ChatMessage;
@@ -543,7 +546,66 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     mode, tier.badgeLabel(), modelRouter.badgeDetailProperty().get()));
             return true;
         }
+        if (lower.startsWith("/team")) {
+            return handleTeamCommand(text);
+        }
+        if (lower.equals("/team-off") || lower.equals("/team off")) {
+            session.setActiveTeamId(null);
+            session.setTeamHandoffContext("");
+            onSessionUpdated.run();
+            showSystemNote("Agent team deactivated for this chat.");
+            return true;
+        }
         return false;
+    }
+
+    private boolean handleTeamCommand(String text) {
+        var parts = text.split("\\s+", 2);
+        if (parts.length < 2 || parts[1].isBlank()) {
+            var teams = VexProtocolCatalog.teams();
+            if (teams.isEmpty()) {
+                showSystemNote("No team protocols found. Seed protocol 20 in Vex (~/Documents/Vex/Protocols/).");
+            } else {
+                var listing = new StringBuilder("Available teams: ");
+                for (int i = 0; i < teams.size(); i++) {
+                    if (i > 0) {
+                        listing.append(", ");
+                    }
+                    listing.append(teams.get(i).id()).append('=').append(teams.get(i).name());
+                }
+                listing.append(". Usage: /team <id>");
+                showSystemNote(listing.toString());
+            }
+            return true;
+        }
+        try {
+            int teamId = Integer.parseInt(parts[1].strip());
+            var team = VexProtocolCatalog.findById(teamId).filter(TeamOrchestrator::isTeam);
+            if (team.isEmpty()) {
+                showSystemNote("Protocol " + teamId + " is not a team. Check Vex Protocols for type: team.");
+                return true;
+            }
+            session.setActiveTeamId(teamId);
+            session.setTeamHandoffContext("");
+            onSessionUpdated.run();
+            var members = TeamOrchestrator.parseMembers(team.get());
+            var note = new StringBuilder("Team activated: ").append(team.get().name()).append(" (").append(teamId).append(").");
+            if (!members.isEmpty()) {
+                note.append(" Members: ");
+                for (int i = 0; i < members.size(); i++) {
+                    if (i > 0) {
+                        note.append(", ");
+                    }
+                    note.append('[').append(members.get(i).role()).append(']');
+                }
+                note.append(". Prefix replies with [role] for tier routing.");
+            }
+            showSystemNote(note.toString());
+            return true;
+        } catch (NumberFormatException e) {
+            showSystemNote("Usage: /team <protocol-id>");
+            return true;
+        }
     }
 
     private void showSystemNote(String note) {
@@ -649,9 +711,10 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             VBox contentBox,
             long[] lastStreamUiMs,
             int toolRound) {
+        var routedMessage = wrapMessageForActiveTeam(userMessage);
         var inference = resolveInferenceBackend();
         inference.generateWithTools(
-                userMessage,
+                routedMessage,
                 config,
                 history,
                 token -> {
@@ -668,8 +731,9 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     var msgs = session.messages();
                     var last = msgs.get(msgs.size() - 1);
                     msgs.remove(last);
-                    var complete =
-                            ChatMessage.assistantMessage(session.id(), ToolCallDisplay.forDisplay(sb.toString()));
+                    var display = ToolCallDisplay.forDisplay(sb.toString());
+                    captureTeamHandoff(display);
+                    var complete = ChatMessage.assistantMessage(session.id(), display);
                     session.addMessage(complete);
                     rebuildMessages();
                     setGenerating(false);
@@ -832,6 +896,10 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             } catch (Exception e) {
                 LOG.warning("Failed to parse append_memory: " + e);
             }
+            return;
+        }
+
+        if (handleMemoryGraphTool(toolCall, toolRound)) {
             return;
         }
 
@@ -1034,6 +1102,104 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         });
     }
 
+    private String wrapMessageForActiveTeam(String userMessage) {
+        return TeamOrchestrator.activeTeam(session)
+                .map(team -> TeamOrchestrator.wrapUserMessageForTeam(userMessage, team, session))
+                .orElse(userMessage);
+    }
+
+    private void captureTeamHandoff(String assistantText) {
+        if (assistantText == null || assistantText.isBlank() || session.activeTeamId() == null) {
+            return;
+        }
+        var matcher = java.util.regex.Pattern.compile("^\\s*\\[([a-zA-Z][a-zA-Z0-9_-]*)]\\s*", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(assistantText);
+        if (matcher.find()) {
+            TeamOrchestrator.appendHandoff(session, matcher.group(1), assistantText);
+            onSessionUpdated.run();
+        }
+    }
+
+    private boolean handleMemoryGraphTool(ToolCall toolCall, int toolRound) {
+        if (!config.contextMemoryEnabled()) {
+            if ("query_memory_graph".equals(toolCall.name())
+                    || "upsert_memory_entity".equals(toolCall.name())
+                    || "link_memory_entities".equals(toolCall.name())) {
+                audit("TOOL_CALL_DENIED", toolCall.name() + " blocked (memory disabled)", 2);
+                var denied = ChatMessage.toolMessage(
+                        session.id(),
+                        toolCall.name() + ": memory tools are disabled in Privacy & Security settings.");
+                executedToolCalls.add(denied.id());
+                session.addMessage(denied);
+                rebuildMessages();
+                scrollToBottom();
+                setGenerating(true);
+                generateResponse("", toolRound + 1);
+                return true;
+            }
+            return false;
+        }
+
+        try {
+            var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            var args = mapper.readTree(toolCall.arguments());
+            var graph = MemoryGraphService.get();
+            String resultText;
+
+            switch (toolCall.name()) {
+                case "query_memory_graph" -> {
+                    String query = args.has("query") ? args.get("query").asText() : "";
+                    String kind = args.has("entity_kind") ? args.get("entity_kind").asText() : null;
+                    int limit = args.has("limit") ? args.get("limit").asInt(20) : 20;
+                    audit("CONTEXT_ACCESS", "query_memory_graph: " + (query.isBlank() ? "(list)" : query), 1);
+                    resultText = graph.formatForAgent(graph.query(query, kind, limit));
+                }
+                case "upsert_memory_entity" -> {
+                    String id = args.has("id") ? args.get("id").asText() : null;
+                    String kind = args.has("kind") ? args.get("kind").asText() : "note";
+                    String label = args.has("label") ? args.get("label").asText() : "";
+                    String content = args.has("content") ? args.get("content").asText() : "";
+                    audit("CONTEXT_ACCESS", "upsert_memory_entity: " + label, 1);
+                    var entity = graph.upsertEntity(id, kind, label, content);
+                    resultText = "upsert_memory_entity: saved [" + entity.id() + "] " + entity.kind() + " · "
+                            + entity.label();
+                }
+                case "link_memory_entities" -> {
+                    String fromId = args.has("from_id") ? args.get("from_id").asText() : "";
+                    String toId = args.has("to_id") ? args.get("to_id").asText() : "";
+                    String relationType = args.has("relation_type") ? args.get("relation_type").asText() : "related_to";
+                    String note = args.has("note") ? args.get("note").asText() : null;
+                    audit("CONTEXT_ACCESS", "link_memory_entities: " + fromId + " -> " + toId, 1);
+                    var relation = graph.linkEntities(fromId, toId, relationType, note);
+                    resultText = "link_memory_entities: " + relation.fromId() + " -[" + relation.relationType() + "]-> "
+                            + relation.toId();
+                }
+                default -> {
+                    return false;
+                }
+            }
+
+            var resultMsg = ChatMessage.toolMessage(session.id(), toolCall.name() + " result:\n\n" + resultText);
+            executedToolCalls.add(resultMsg.id());
+            session.addMessage(resultMsg);
+            rebuildMessages();
+            scrollToBottom();
+            setGenerating(true);
+            generateResponse("", toolRound + 1);
+            return true;
+        } catch (Exception e) {
+            LOG.warning("Memory graph tool failed: " + e.getMessage());
+            var err = ChatMessage.toolMessage(session.id(), toolCall.name() + " error: " + e.getMessage());
+            executedToolCalls.add(err.id());
+            session.addMessage(err);
+            rebuildMessages();
+            scrollToBottom();
+            setGenerating(true);
+            generateResponse("", toolRound + 1);
+            return true;
+        }
+    }
+
     // === Secure memory helpers (respect encryption + privacy model) ===
 
     private String loadSecureMemory() {
@@ -1044,7 +1210,8 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                         # Ara Persistent Memory
 
                         Vex protocols (~/Documents/Vex/Protocols/) are auto-loaded into Ara's system prompt.
-                        Agent tools 101–106; use read_memory (104) at session start. Protocol 102 = get_current_datetime.
+                        Agent tools 101–109; use read_memory (104) or query_memory_graph (107) at session start.
+                        Protocol 102 = get_current_datetime. Teams: /team 20.
 
                         ## Active Context
 

@@ -6,7 +6,7 @@ Ara is a desktop JavaFX chat application that runs **fully on-device** using `ja
 
 **Light/heavy routing** (v5.8 on `develop`): a ~7B light model stays hot for fast chat; a ~32B heavy model loads on demand for code, multi-step reasoning, and complex tool use, then unloads after idle. Routing mode: AUTO (keyword escalation), LIGHT_ONLY, or HEAVY_ONLY.
 
-Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **All Vex protocols** are auto-loaded from `~/Documents/Vex/Protocols/` into every system prompt via `VexProtocolCatalog` (IDs, names, descriptions, ara-tool mappings). Agent tools (101–106) are a subset; new protocols added in Vex appear automatically when files change. Tools are editable in Vex but built-ins cannot be deleted.
+Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **All Vex protocols** are auto-loaded from `~/Documents/Vex/Protocols/` into every system prompt via `VexProtocolCatalog` (IDs, names, descriptions, ara-tool mappings). Agent tools (101–109) and **teams** (e.g. 20) are subsets; new protocols added in Vex appear automatically when files change. Tools are editable in Vex but built-ins cannot be deleted.
 
 **Sibling app:** [Vex](../Vex) — protocol orchestration console; manages Ara tool schemas and Vex-native protocols.
 
@@ -213,6 +213,7 @@ All runtime data lives under `~/Documents/Ara/`:
 | `~/Documents/Ara/data/chats.json` | Chat history (sessions + messages) |
 | `~/Documents/Ara/data/settings.json` | App settings |
 | `~/Documents/Ara/context.md` | Persistent AI memory (Active Context) |
+| `~/Documents/Ara/data/memory_graph.db` | SQLite entity/relation memory graph (shared with Vex) |
 | `~/Documents/Ara/logs/audit.log` | Activity / tool audit log |
 
 Configured in `tech.rawden.ara.core.AraPaths`.
@@ -231,8 +232,13 @@ Configured in `tech.rawden.ara.core.AraPaths`.
 | 104 | `read_memory` | memory | `ChatViewComp.loadSecureMemory()` |
 | 105 | `write_memory` | memory | `ChatViewComp.saveSecureMemory()` |
 | 106 | `append_memory` | memory | Structured append to `context.md` |
+| 107 | `query_memory_graph` | memory-graph | `MemoryGraphService` (SQLite entity/relation query) |
+| 108 | `upsert_memory_entity` | memory-graph | Create/update entity in `~/Documents/Ara/data/memory_graph.db` |
+| 109 | `link_memory_entities` | memory-graph | Typed relation between two entities |
 
-- **Catalog:** `VexProtocolCatalog` — all protocols (1, 2, 9, 10, 16, 101–106, user-added); `formatCatalogSection()` in every prompt
+- **Memory graph:** `MemoryGraphService` — SQLite at `~/Documents/Ara/data/memory_graph.db`; editable in Vex Memory Graph view
+- **Teams:** Vex `type: team` protocols (e.g. **20** Research & Code Team); activate in chat with `/team 20`, deactivate with `/team-off`. `TeamOrchestrator` injects member prompts and shared handoff context; `ModelRouter` routes by `[role]` prefix tier hints
+- **Catalog:** `VexProtocolCatalog` — all protocols (1, 2, 9, 10, 16, 20, 101–109, user-added); `formatCatalogSection()` in every prompt
 - **Load:** auto-reload when `~/Documents/Vex/Protocols/` files change; manual **Reload Vex protocols** in Settings
 - **Tools:** `ToolCatalog` ← ara-tool subset; `ToolCall.getFunctionDefinitions()` (filtered by privacy toggles)
 - **Mapping:** protocol 102 → `get_current_datetime`, 104 → `read_memory`, etc. (ara-tool name in `<|tool_call|>`, not ID)

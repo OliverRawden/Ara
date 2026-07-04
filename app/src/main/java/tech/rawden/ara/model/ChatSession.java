@@ -18,6 +18,8 @@ public class ChatSession {
 
     private final List<ChatMessage> messages;
     private String title;
+    private Integer activeTeamId;
+    private String teamHandoffContext = "";
 
     public ChatSession(String title) {
         this.id = UUID.randomUUID().toString();
@@ -31,11 +33,15 @@ public class ChatSession {
             @JsonProperty("id") String id,
             @JsonProperty("title") String title,
             @JsonProperty("createdAt") Instant createdAt,
-            @JsonProperty("messages") List<ChatMessage> messages) {
+            @JsonProperty("messages") List<ChatMessage> messages,
+            @JsonProperty("activeTeamId") Integer activeTeamId,
+            @JsonProperty("teamHandoffContext") String teamHandoffContext) {
         this.id = id;
         this.title = title;
         this.createdAt = createdAt;
         this.messages = new ArrayList<>(messages != null ? messages : List.of());
+        this.activeTeamId = activeTeamId;
+        this.teamHandoffContext = teamHandoffContext != null ? teamHandoffContext : "";
     }
 
     @JsonProperty("id")
@@ -68,5 +74,23 @@ public class ChatSession {
 
     public void addMessage(ChatMessage message) {
         messages.add(message);
+    }
+
+    @JsonProperty("activeTeamId")
+    public Integer activeTeamId() {
+        return activeTeamId;
+    }
+
+    public void setActiveTeamId(Integer activeTeamId) {
+        this.activeTeamId = activeTeamId;
+    }
+
+    @JsonProperty("teamHandoffContext")
+    public String teamHandoffContext() {
+        return teamHandoffContext != null ? teamHandoffContext : "";
+    }
+
+    public void setTeamHandoffContext(String teamHandoffContext) {
+        this.teamHandoffContext = teamHandoffContext != null ? teamHandoffContext : "";
     }
 }

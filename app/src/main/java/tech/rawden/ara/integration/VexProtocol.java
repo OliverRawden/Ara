@@ -16,10 +16,16 @@ public record VexProtocol(
         String source,
         boolean builtin,
         String description,
-        String parametersJson) {
+        String parametersJson,
+        String membersJson,
+        String handoffMode) {
 
     public boolean isAraTool() {
         return araTool != null && !araTool.isBlank();
+    }
+
+    public boolean isTeam() {
+        return "team".equalsIgnoreCase(type);
     }
 
     public boolean isModifier() {

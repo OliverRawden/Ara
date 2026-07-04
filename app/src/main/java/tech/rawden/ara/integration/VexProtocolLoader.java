@@ -75,7 +75,9 @@ public final class VexProtocolLoader {
                     doc.get("source"),
                     "true".equalsIgnoreCase(doc.get("builtin")),
                     description,
-                    parameters));
+                    parameters,
+                    doc.get("members"),
+                    firstNonBlank(doc.get("handoff"), doc.get("handoff-mode"))));
         } catch (Exception e) {
             LOG.warning("Failed to parse Vex protocol " + path + ": " + e.getMessage());
             return java.util.Optional.empty();

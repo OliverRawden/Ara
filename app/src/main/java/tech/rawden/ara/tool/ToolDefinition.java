@@ -12,6 +12,10 @@ public record ToolDefinition(
     }
 
     public boolean isMemoryTool() {
-        return "memory".equals(toolGroup);
+        return "memory".equals(toolGroup) || isMemoryGraphTool();
+    }
+
+    public boolean isMemoryGraphTool() {
+        return "memory-graph".equals(toolGroup);
     }
 }

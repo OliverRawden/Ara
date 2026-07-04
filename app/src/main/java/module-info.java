@@ -43,5 +43,6 @@ open module tech.rawden.ara {
     requires com.vladsch.flexmark.ext.gfm.strikethrough;
     requires com.vladsch.flexmark.ext.autolink;
     requires com.vladsch.flexmark.ext.gfm.tasklist;
+    requires org.xerial.sqlitejdbc;
     requires java.desktop;
 }

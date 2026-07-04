@@ -40,6 +40,11 @@ public class AraPaths {
         return AUDIT_LOG_FILE;
     }
 
+    /** SQLite memory graph shared with Vex's Memory Graph view. */
+    public static Path memoryGraphDb() {
+        return DATA_DIR.resolve("memory_graph.db");
+    }
+
     /** Shared protocol definitions managed by Vex; Ara reads ara-tool entries at runtime. */
     public static Path vexProtocolsDir() {
         return VEX_PROTOCOLS_DIR;

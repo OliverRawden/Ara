@@ -77,6 +77,9 @@ public final class ToolCatalog {
             case "read_memory" -> "read context.md — when a task needs prior context, not on greetings";
             case "write_memory" -> "replace context.md";
             case "append_memory" -> "append to context.md";
+            case "query_memory_graph" -> "query SQLite entity/relation memory graph";
+            case "upsert_memory_entity" -> "create or update a memory graph entity";
+            case "link_memory_entities" -> "link two memory graph entities";
             case "web_search" -> "search the web for live facts";
             case "execute_command" -> "run a shell command";
             default -> "see Vex catalog";

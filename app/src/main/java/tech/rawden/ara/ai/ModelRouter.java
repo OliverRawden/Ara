@@ -1,6 +1,7 @@
 package tech.rawden.ara.ai;
 
 import tech.rawden.ara.core.AraConfig;
+import tech.rawden.ara.integration.TeamOrchestrator;
 import tech.rawden.ara.model.AppSettings;
 import tech.rawden.ara.model.InferenceConfig;
 
@@ -99,6 +100,28 @@ public final class ModelRouter {
                 ensureLightModel();
             }
             return new RoutingDecision(activeTier, false, "Tool round continuation");
+        }
+
+        var teamTier = TeamOrchestrator.tierHintFromMessage(prompt);
+        if (teamTier.isPresent()) {
+            RoutingDecision decision;
+            if (teamTier.get() == ModelTier.HEAVY) {
+                decision = new RoutingDecision(ModelTier.HEAVY, false, "Team member tier (heavy)");
+                ensureHeavyModel();
+            } else {
+                decision = new RoutingDecision(ModelTier.LIGHT, false, "Team member tier (light)");
+                ensureLightModel();
+            }
+            activeTier = decision.tier();
+            lastEscalationAuto = false;
+            escalatedThisTurn.set(false);
+            activeTierProperty.set(decision.tier());
+            updateBadge();
+            LOG.info("Routing: tier=" + decision.tier() + ", reason=" + decision.reason());
+            if (singleTurnOverride != null) {
+                singleTurnOverride = null;
+            }
+            return decision;
         }
 
         RoutingMode effective = singleTurnOverride != null ? singleTurnOverride : userOverride;
