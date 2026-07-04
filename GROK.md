@@ -178,14 +178,14 @@ Ara/
 │       │       ├── Main.java              # JavaFX Application entry
 │       │       ├── ai/                    # Inference, routing, model download/load profiles
 │       │       ├── comp/                   # RegionBuilder + base components
-│       │       ├── core/                   # Model, theme, paths, security, AppLog, macOS
+│       │       ├── core/                   # AraConfig, AppLog, theme, paths, security, macOS
 │       │       ├── integration/            # Vex protocol loader for tools
 │       │       ├── model/                  # Chat, settings, audit persistence
 │       │       ├── platform/               # Threading, logo, Mac window
 │       │       ├── tool/                   # Tool catalog, executors, ToolCall parse
 │       │       ├── ui/                     # Main, sidebar, chat, settings views
 │       │       ├── update/                 # Optional auto-update checks + installer download
-│       │       └── util/                   # OS detection, threading
+│       │       └── util/                   # RetryExecutor, AraFailures, OS detection, threading
 │       └── resources/tech/rawden/ara/resources/
 │           ├── style/ara.css
 │           ├── font-config/font.css
@@ -283,6 +283,7 @@ Privacy toggles gate which tools appear in the prompt (`terminalEnabled`, `webSe
 ### `tech.rawden.ara.core`
 | File | Purpose |
 |------|---------|
+| `AraConfig.java` | Central config: metadata URLs, timeouts, retry policy, routing defaults; overridable via `-Dara.*` system properties |
 | `AraModel.java` | Singleton navigation: `View` enum (CHAT, SETTINGS) |
 | `AraTheme.java` | Cupertino dark/light + system accent CSS |
 | `AraPaths.java` | Data paths + `vexProtocolsDir()` |
@@ -290,13 +291,21 @@ Privacy toggles gate which tools appear in the prompt (`terminalEnabled`, `webSe
 | `SecurityService.java` | AES-256-GCM encryption for chats, memory, audit log |
 | `MacMenuBar.java` / `ShortcutManager.java` | macOS menu + keyboard shortcuts |
 
+### `tech.rawden.ara.util` — Resilience & errors
+| File | Purpose |
+|------|---------|
+| `RetryExecutor.java` | Exponential-backoff retries for transient HTTP/I/O (model catalog, GGUF parts, update metadata) |
+| `AraFailures.java` | Centralized exception translation (model load, download, chat/settings persistence) |
+| `OsType.java` / `ThreadHelper.java` | Platform detection and threading helpers |
+
 ### `tech.rawden.ara.model`
 | File | Purpose |
 |------|---------|
 | `ChatMessage.java` | Roles: USER, ASSISTANT, SYSTEM, TOOL |
 | `ChatSession.java` / `ChatHistory.java` | Session CRUD |
-| `ChatStorage.java` | Jackson persistence to `chats.json` |
+| `ChatStorage.java` | Jackson persistence to `chats.json`; lazy-load recent sessions (`AraConfig.chatLoadSessionLimit()`); `loadAsync` |
 | `AppSettings.java` / `SettingsStorage.java` | Settings JSON |
+| `SettingsReloader.java` | Hot-reload `settings.json` in developer mode (mtime poll on virtual thread) |
 | `InferenceConfig.java` | Runtime inference + tool flags + `DEFAULT_SYSTEM_PROMPT` |
 | `AuditLog.java` / `AuditLogStorage.java` | Tool/privacy audit events |
 
@@ -639,6 +648,21 @@ Signing and notarization require CI secrets — not for local agent runs:
 - [x] Vex tool sync: live InferenceConfig sync, reload button, correct data paths
 - [x] Condensed model settings — light/heavy filenames, routing mode combo, download buttons
 - [x] Developer mode toggle (Settings → System) — opens `DeveloperLogWindow`
+
+---
+
+### Code quality & maintainability
+
+- [x] `AraConfig` — externalized URLs, timeouts, retry policy (`-Dara.*` overrides for dev)
+- [x] `RetryExecutor` — exponential backoff for model/update HTTP (no extra resilience library)
+- [x] `AraFailures` — centralized exception messages for model, download, persistence
+- [x] `ChatStorage` lazy session load (cap 60 at startup) + `loadAsync` on virtual thread
+- [x] `SettingsReloader` — hot-reload settings in developer mode
+- [x] Expanded Javadoc on inference/routing/threading classes
+- [ ] Profile GGUF mmap/GPU init with VisualVM/JFR
+- [ ] Async model switching with cancellation (beyond cooperative `cancelGeneration`)
+- [ ] On-demand load of older chat sessions not in lazy-load window
+- [ ] `dist/msi/msi.gradle` — replace placeholder UpgradeCode UUID (tracked TODO)
 
 ---
 
