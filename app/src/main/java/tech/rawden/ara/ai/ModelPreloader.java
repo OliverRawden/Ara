@@ -7,6 +7,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import tech.rawden.ara.core.AppLog;
+
 import java.util.logging.Logger;
 
 /**
@@ -20,7 +22,7 @@ import java.util.logging.Logger;
  */
 public final class ModelPreloader {
 
-    private static final Logger LOG = Logger.getLogger(ModelPreloader.class.getName());
+    private static final Logger LOG = AppLog.of("model");
 
     private final InferenceService inferenceService;
     private final ModelManager modelManager;

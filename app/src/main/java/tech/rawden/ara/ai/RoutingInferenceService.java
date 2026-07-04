@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import tech.rawden.ara.core.AppLog;
+
 import java.util.logging.Logger;
 
 /**
@@ -17,7 +19,7 @@ import java.util.logging.Logger;
  */
 public final class RoutingInferenceService implements InferenceService {
 
-    private static final Logger LOG = Logger.getLogger(RoutingInferenceService.class.getName());
+    private static final Logger LOG = AppLog.of("routing");
 
     private final LlamaCppInferenceService backend;
     private final ModelRouter router;
@@ -84,6 +86,8 @@ public final class RoutingInferenceService implements InferenceService {
             Consumer<Throwable> onError,
             Consumer<ToolCall> onToolCall) {
         try {
+            LOG.fine("Routed request: tools=" + withTools + ", promptChars=" + (userMessage != null ? userMessage.length() : 0)
+                    + ", historyMsgs=" + (history != null ? history.size() : 0));
             var summary = ModelRouter.buildContextSummary(history);
             router.prepareForRequest(userMessage, summary);
             if (withTools) {

@@ -7,6 +7,7 @@ import tech.rawden.ara.ai.ModelRouter;
 import tech.rawden.ara.ai.RoutingMode;
 import tech.rawden.ara.comp.RegionBuilder;
 import tech.rawden.ara.comp.base.ToggleSwitchComp;
+import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraModel;
 import tech.rawden.ara.core.AraPaths;
 import tech.rawden.ara.core.AraTheme;
@@ -51,7 +52,7 @@ import java.util.logging.Logger;
 /** Settings panels (lazy-built): appearance, model download/load, inference, personality, memory, privacy. */
 public class SettingsViewComp extends RegionBuilder<VBox> {
 
-    private static final Logger LOG = Logger.getLogger(SettingsViewComp.class.getName());
+    private static final Logger LOG = AppLog.of("settings");
 
     private final AraModel model;
     private final ModelManager modelManager;
@@ -806,10 +807,44 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
             tech.rawden.ara.tool.ToolCatalog.reload();
             statusLabel.setText("Reloaded Vex protocol catalog ("
                     + tech.rawden.ara.integration.VexProtocolCatalog.protocols().size() + " protocols)");
+            LOG.info("Vex protocol catalog reloaded ("
+                    + tech.rawden.ara.integration.VexProtocolCatalog.protocols().size() + " protocols)");
         });
 
+        var devToggle = new ToggleSwitchComp("Developer mode (live diagnostic log window)");
+        devToggle.selectedProperty().set(appSettings.isDeveloperMode());
+        devToggle.selectedProperty().addListener((obs, old, val) -> {
+            appSettings.setDeveloperMode(val);
+            settingsStorage.save(appSettings);
+            AppLog.setVerbose(val);
+            LOG.info("Developer mode " + (val ? "enabled" : "disabled"));
+            Platform.runLater(() -> {
+                var owner = section.getScene() != null ? section.getScene().getWindow() : null;
+                if (val) {
+                    DeveloperLogWindow.show(owner);
+                } else {
+                    DeveloperLogWindow.hide();
+                }
+            });
+        });
+
+        var devHint = new Label(
+                "Shows a separate window with timestamped logs from startup — routing, inference, model load, chat, and tools.");
+        devHint.setFont(Font.font("Inter", 11));
+        devHint.setStyle("-fx-fill: -color-fg-subtle;");
+        devHint.setWrapText(true);
+
         section.getChildren()
-                .addAll(modelsDir, settingsFile, chatsFile, toolsFile, inferenceLabel, routingHelp, reloadToolsBtn);
+                .addAll(
+                        modelsDir,
+                        settingsFile,
+                        chatsFile,
+                        toolsFile,
+                        inferenceLabel,
+                        routingHelp,
+                        reloadToolsBtn,
+                        devToggle.build(),
+                        devHint);
         return section;
     }
 

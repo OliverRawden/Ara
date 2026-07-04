@@ -5,6 +5,7 @@ import tech.rawden.ara.ai.ModelManager;
 import tech.rawden.ara.ai.ModelPreloader;
 import tech.rawden.ara.ai.ModelRouter;
 import tech.rawden.ara.ai.RoutingInferenceService;
+import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraModel;
 import tech.rawden.ara.core.AraPaths;
 import tech.rawden.ara.core.AraTheme;
@@ -17,6 +18,7 @@ import tech.rawden.ara.model.InferenceConfig;
 import tech.rawden.ara.model.SettingsStorage;
 import tech.rawden.ara.platform.MacWindow;
 import tech.rawden.ara.tool.ToolCatalog;
+import tech.rawden.ara.ui.DeveloperLogWindow;
 import tech.rawden.ara.ui.MainViewComp;
 import tech.rawden.ara.update.AppVersion;
 import tech.rawden.ara.update.UpdateDialog;
@@ -49,18 +51,25 @@ public class Main extends Application {
 
     public static final String VERSION = AppVersion.current();
 
-    private static final Logger LOG = Logger.getLogger(Main.class.getName());
+    private static final Logger LOG = AppLog.of("startup");
 
     private RoutingInferenceService inferenceService;
 
     @Override
     public void start(Stage stage) {
+        AppLog.install();
+        LOG.info("Ara " + VERSION + " starting (Java " + System.getProperty("java.version") + ")");
+
         AraModel.init();
         AraTheme.init();
         ToolCatalog.reload();
 
         var settingsStorage = new SettingsStorage();
         var appSettings = settingsStorage.load();
+        AppLog.setVerbose(appSettings.isDeveloperMode());
+        if (appSettings.isDeveloperMode()) {
+            LOG.info("Developer mode enabled — opening diagnostic log window");
+        }
         AraTheme.setUseSystemAccent(appSettings.isUseSystemAccent());
         AraTheme.setDark(appSettings.isDarkMode());
 
@@ -84,6 +93,10 @@ public class Main extends Application {
         stage.setMinWidth(800);
         stage.setMinHeight(500);
         stage.show();
+
+        if (appSettings.isDeveloperMode()) {
+            Platform.runLater(() -> DeveloperLogWindow.show(stage));
+        }
 
         if (OsType.ofLocal() == OsType.MACOS) {
             Platform.runLater(() -> MacWindow.applyModernStyle(stage));
@@ -110,6 +123,7 @@ public class Main extends Application {
         var modelPreloader = new ModelPreloader(inferenceService, modelManager, config, modelRouter);
 
         // Start light GGUF mmap/GPU init immediately — does not need encryption unlock or chat data.
+        LOG.info("Scheduling light model preload: " + appSettings.getLightModel());
         modelPreloader.schedulePreload(appSettings.getLightModel());
 
         var mainView = new MainViewComp(
@@ -226,7 +240,9 @@ public class Main extends Application {
         Runnable loadRealChats =
                 () -> Thread.ofVirtual().name("ara-data-loader").start(() -> {
                     try {
+                        LOG.info("Loading chat history from disk");
                         ChatHistory realHistory = chatStorage.load();
+                        LOG.info("Chat history loaded: " + realHistory.sessions().size() + " sessions");
                         Platform.runLater(() -> mainView.updateChatHistory(realHistory));
                     } catch (Exception ex) {
                         LOG.warning("Data load failed: " + ex.getMessage());
@@ -249,6 +265,8 @@ public class Main extends Application {
 
     @Override
     public void stop() {
+        LOG.info("Ara shutting down");
+        DeveloperLogWindow.dispose();
         if (inferenceService != null) {
             var shutdown = new Thread(inferenceService::shutdown);
             shutdown.setDaemon(true);

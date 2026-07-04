@@ -17,6 +17,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import tech.rawden.ara.core.AppLog;
+
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -26,7 +28,7 @@ import java.util.regex.Pattern;
  */
 public final class ModelRouter {
 
-    private static final Logger LOG = Logger.getLogger(ModelRouter.class.getName());
+    private static final Logger LOG = AppLog.of("routing");
 
     private static final long HEAVY_IDLE_UNLOAD_MINUTES = 10;
 
@@ -130,6 +132,7 @@ public final class ModelRouter {
     }
 
     public void ensureLightModel() throws Exception {
+        LOG.fine("ensureLightModel requested");
         cancelHeavyUnload();
         String filename = resolveLightFilename();
         Path path = modelManager.resolveModel(filename).orElse(modelManager.defaultModelPath());
@@ -147,6 +150,7 @@ public final class ModelRouter {
     }
 
     public void ensureHeavyModel() throws Exception {
+        LOG.info("ensureHeavyModel requested");
         cancelHeavyUnload();
         String filename = resolveHeavyFilename();
         Path path = modelManager.heavyModelPath(filename);

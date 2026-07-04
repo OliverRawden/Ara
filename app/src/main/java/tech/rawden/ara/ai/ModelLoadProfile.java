@@ -4,6 +4,8 @@ import de.kherud.llama.args.CacheType;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import tech.rawden.ara.core.AppLog;
+
 import java.util.logging.Logger;
 
 /**
@@ -23,7 +25,7 @@ public record ModelLoadProfile(
         boolean fullSystemWarmup,
         boolean compactPrompt) {
 
-    private static final Logger LOG = Logger.getLogger(ModelLoadProfile.class.getName());
+    private static final Logger LOG = AppLog.of("model");
 
     private static final long OS_HEADROOM_BYTES = 2L * 1024 * 1024 * 1024;
     private static final int SYSTEM_PROMPT_TOKEN_RESERVE = 2_500;

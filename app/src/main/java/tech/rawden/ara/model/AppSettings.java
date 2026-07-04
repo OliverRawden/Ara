@@ -30,6 +30,9 @@ public class AppSettings {
     /** When true, a background check runs once after startup (never blocks launch). Default off for privacy. */
     private boolean checkForUpdatesOnStartup = false;
 
+    /** When true, shows the live developer log window and captures verbose diagnostics. */
+    private boolean developerMode = false;
+
     /** ISO-8601 timestamp of the last manual or automatic update check (null if never). */
     private String lastUpdateCheckAt;
 
@@ -194,5 +197,13 @@ public class AppSettings {
 
     public void setLastUpdateCheckStatus(String lastUpdateCheckStatus) {
         this.lastUpdateCheckStatus = lastUpdateCheckStatus;
+    }
+
+    public boolean isDeveloperMode() {
+        return developerMode;
+    }
+
+    public void setDeveloperMode(boolean developerMode) {
+        this.developerMode = developerMode;
     }
 }

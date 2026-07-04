@@ -1,5 +1,6 @@
 package tech.rawden.ara.ai;
 
+import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraPaths;
 
 import java.io.IOException;
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
  */
 public final class ModelDownloader {
 
-    private static final Logger LOG = Logger.getLogger(ModelDownloader.class.getName());
+    private static final Logger LOG = AppLog.of("model");
 
     private static final Path MODELS_DIR = AraPaths.modelsDir();
     private static final Duration DOWNLOAD_TIMEOUT = Duration.ofHours(6);

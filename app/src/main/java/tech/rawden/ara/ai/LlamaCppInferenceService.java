@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import tech.rawden.ara.core.AppLog;
+
 import java.util.logging.Logger;
 
 /**
@@ -29,7 +31,7 @@ import java.util.logging.Logger;
  */
 public class LlamaCppInferenceService implements InferenceService {
 
-    private static final Logger LOG = Logger.getLogger(LlamaCppInferenceService.class.getName());
+    private static final Logger LOG = AppLog.of("inference");
 
     private static final DateTimeFormatter CLOCK_FORMAT = DateTimeFormatter.ofPattern("EEE d MMM yyyy HH:mm");
 

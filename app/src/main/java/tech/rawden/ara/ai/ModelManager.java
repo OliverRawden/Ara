@@ -1,5 +1,6 @@
 package tech.rawden.ara.ai;
 
+import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraPaths;
 
 import java.io.IOException;
@@ -19,7 +20,7 @@ import java.util.stream.Stream;
  */
 public class ModelManager {
 
-    private static final Logger LOG = Logger.getLogger(ModelManager.class.getName());
+    private static final Logger LOG = AppLog.of("model");
 
     private static final Path MODELS_DIR = AraPaths.modelsDir();
 

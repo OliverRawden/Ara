@@ -7,6 +7,7 @@ import tech.rawden.ara.ai.ModelTier;
 import tech.rawden.ara.ai.RoutingInferenceService;
 import tech.rawden.ara.ai.RoutingMode;
 import tech.rawden.ara.comp.RegionBuilder;
+import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraPaths;
 import tech.rawden.ara.core.SecurityService;
 import tech.rawden.ara.model.AuditLogEntry;
@@ -67,7 +68,7 @@ import java.util.regex.Pattern;
  */
 public class ChatViewComp extends RegionBuilder<VBox> {
 
-    private static final Logger LOG = Logger.getLogger(ChatViewComp.class.getName());
+    private static final Logger LOG = AppLog.of("chat");
 
     private final ChatSession session;
     private final InferenceService inferenceService;
@@ -661,10 +662,12 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             onSessionUpdated.run();
         }
 
+        LOG.info("User message sent (chars=" + text.length() + ", session=" + session.id() + ")");
+
         Runnable startInference = () -> generateResponse(text, 0);
 
         if (inferenceService.status() != InferenceService.Status.READY) {
-            LOG.info("Waiting for model load before generating response...");
+            LOG.info("Waiting for model load before generating response (status=" + inferenceService.status() + ")");
         }
         modelPreloader.whenInferenceReady(
                 () -> Platform.runLater(startInference),
@@ -795,7 +798,9 @@ public class ChatViewComp extends RegionBuilder<VBox> {
     }
 
     private void generateResponse(String userMessage, int toolRound) {
+        LOG.fine("generateResponse: toolRound=" + toolRound + ", model=" + inferenceService.modelName());
         if (toolRound >= MAX_TOOL_ROUNDS) {
+            LOG.warning("Tool round limit reached (" + MAX_TOOL_ROUNDS + ") — stopping agent loop");
             setGenerating(false);
             maybeGenerateTitle();
             return;
@@ -820,6 +825,8 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                 try {
                     var decision = modelRouter.prepareForRequest(
                             userMessage, ModelRouter.buildContextSummary(history));
+                    LOG.info("Chat routing: tier=" + decision.tier() + ", escalated=" + decision.autoEscalated()
+                            + ", reason=" + decision.reason());
                     Platform.runLater(() -> {
                         if (decision.autoEscalated() && decision.tier() == ModelTier.HEAVY) {
                             showEscalationBanner();
@@ -829,6 +836,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                         startInference.run();
                     });
                 } catch (Exception e) {
+                    LOG.warning("Model routing failed: " + e.getMessage());
                     Platform.runLater(() -> {
                         setGenerating(false);
                         showSystemNote("Model routing failed: " + e.getMessage());
@@ -908,6 +916,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
     }
 
     private void handleToolCall(ToolCall toolCall, String partialText, ChatMessage placeholder, int toolRound) {
+        LOG.info("Tool call: " + toolCall.name() + " (round=" + toolRound + ")");
         if (!toolCall.isKnownTool()) {
             LOG.warning("Unknown tool requested: " + toolCall.name());
             audit("TOOL_CALL_DENIED", "Unknown tool: " + toolCall.name(), 2);

@@ -6,6 +6,7 @@ import tech.rawden.ara.ai.ModelPreloader;
 import tech.rawden.ara.ai.ModelRouter;
 
 import tech.rawden.ara.comp.RegionBuilder;
+import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraModel;
 import tech.rawden.ara.core.AraTheme;
 import tech.rawden.ara.model.AppSettings;
@@ -36,7 +37,7 @@ import java.util.logging.Logger;
  */
 public class MainViewComp extends RegionBuilder<HBox> {
 
-    private static final Logger LOG = Logger.getLogger(MainViewComp.class.getName());
+    private static final Logger LOG = AppLog.of("ui");
 
     private final AraModel model;
     private ChatHistory chatHistory;
