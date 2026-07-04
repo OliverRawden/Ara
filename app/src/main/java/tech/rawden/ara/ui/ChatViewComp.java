@@ -416,19 +416,17 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             });
         }
 
-        var inputRow = new HBox(8, inputField, sendButton);
+        var inputRow = new HBox(6);
         inputRow.setAlignment(Pos.CENTER);
+        if (modelStatusControl != null) {
+            inputRow.getChildren().add(modelStatusControl);
+        }
+        inputRow.getChildren().addAll(inputField, sendButton);
         HBox.setHgrow(inputField, Priority.ALWAYS);
 
-        var wrapper = new VBox(4);
+        var wrapper = new VBox();
         wrapper.getStyleClass().add("ara-input-bar");
         wrapper.setPadding(new Insets(8, 20, 14, 20));
-
-        if (modelStatusControl != null) {
-            var chipRow = new HBox(modelStatusControl);
-            chipRow.setAlignment(Pos.CENTER_RIGHT);
-            wrapper.getChildren().add(chipRow);
-        }
         wrapper.getChildren().add(inputRow);
 
         return wrapper;

@@ -32,21 +32,24 @@ public final class ModelStatusControl extends Region {
         this.router = router;
         getStyleClass().add("ara-model-chip-host");
 
-        indicator = new Circle(3);
+        indicator = new Circle(2.5);
         indicator.getStyleClass().add("ara-model-indicator");
 
         modeIcon = new FontIcon("mdi2a-auto-fix");
-        modeIcon.setIconSize(11);
+        modeIcon.setIconSize(9);
 
         chipLabel = new Label("Auto");
         chipLabel.getStyleClass().add("ara-model-chip-label");
 
-        var content = new HBox(4, indicator, modeIcon, chipLabel);
+        var content = new HBox(3, indicator, modeIcon, chipLabel);
         content.setAlignment(Pos.CENTER);
 
         chip = new Button();
         chip.getStyleClass().add("ara-model-chip");
         chip.setGraphic(content);
+        chip.setMinHeight(28);
+        chip.setPrefHeight(28);
+        chip.setMaxHeight(28);
         chip.setOnAction(e -> {
             router.toggleAutoHeavy();
             refresh();
@@ -59,6 +62,8 @@ public final class ModelStatusControl extends Region {
         Tooltip.install(chip, tooltip);
 
         getChildren().add(chip);
+        setMaxHeight(28);
+        setPrefHeight(28);
 
         router.activeTierProperty().addListener((obs, old, tier) -> refresh());
         router.routingModeProperty().addListener((obs, old, mode) -> refresh());
@@ -87,7 +92,7 @@ public final class ModelStatusControl extends Region {
             modeIcon.setIconLiteral("mdi2f-feather");
             indicator.getStyleClass().add("ara-model-indicator-light");
         } else {
-            chipLabel.setText(tier == ModelTier.HEAVY ? "Auto · Heavy" : "Auto · Light");
+            chipLabel.setText("Auto");
             modeIcon.setIconLiteral("mdi2a-auto-fix");
             chip.getStyleClass().add("ara-model-chip-auto");
             if (tier == ModelTier.HEAVY) {

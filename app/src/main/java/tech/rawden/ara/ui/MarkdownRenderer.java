@@ -79,7 +79,6 @@ public final class MarkdownRenderer {
         container.getStyleClass().add("ara-message-assistant");
 
         if (markdown == null || markdown.isBlank()) {
-            container.setPadding(new Insets(10, 14, 10, 14));
             var empty = new Text(markdown == null ? "" : markdown);
             empty.setFont(BODY_FONT);
             container.getChildren().add(new TextFlow(empty));
@@ -143,7 +142,7 @@ public final class MarkdownRenderer {
 
         private TextFlow renderParagraph(Paragraph paragraph) {
             var flow = new TextFlow();
-            flow.setPadding(new Insets(4, 14, 4, 14));
+            flow.setPadding(new Insets(4, 0, 4, 0));
             appendInlines(flow, paragraph);
             return flow;
         }
@@ -207,14 +206,14 @@ public final class MarkdownRenderer {
             var body = new VBox(6, header, scroll);
             body.setPadding(new Insets(10, 12, 10, 12));
             body.getStyleClass().add("ara-code-block");
-            VBox.setMargin(body, new Insets(6, 14, 6, 14));
+            VBox.setMargin(body, new Insets(6, 0, 6, 0));
             body.maxWidthProperty().bind(wrapWidth());
             return body;
         }
 
         private VBox renderBulletList(BulletList list, int depth) {
             var box = new VBox(4);
-            box.setPadding(new Insets(2, 14, 2, 14 + depth * 16));
+            box.setPadding(new Insets(2, 0, 2, depth * 16));
             int index = 0;
             for (var item = list.getFirstChild(); item != null; item = item.getNext()) {
                 if (item instanceof ListItem listItem) {
@@ -226,7 +225,7 @@ public final class MarkdownRenderer {
 
         private VBox renderOrderedList(OrderedList list, int depth) {
             var box = new VBox(4);
-            box.setPadding(new Insets(2, 14, 2, 14 + depth * 16));
+            box.setPadding(new Insets(2, 0, 2, depth * 16));
             int number = list.getStartNumber();
             for (var item = list.getFirstChild(); item != null; item = item.getNext()) {
                 if (item instanceof ListItem listItem) {
@@ -299,7 +298,7 @@ public final class MarkdownRenderer {
             }
             inner.getStyleClass().add("ara-md-blockquote");
             var wrapper = new VBox(inner);
-            wrapper.setPadding(new Insets(4, 14, 4, 14));
+            wrapper.setPadding(new Insets(4, 0, 4, 0));
             return wrapper;
         }
 
@@ -309,7 +308,7 @@ public final class MarkdownRenderer {
             line.setMaxHeight(1);
             line.getStyleClass().add("ara-md-hr");
             var wrapper = new VBox(line);
-            wrapper.setPadding(new Insets(8, 14, 8, 14));
+            wrapper.setPadding(new Insets(8, 0, 8, 0));
             return wrapper;
         }
 
@@ -327,9 +326,19 @@ public final class MarkdownRenderer {
                     for (var tableRow = section.getFirstChild(); tableRow != null; tableRow = tableRow.getNext()) {
                         if (tableRow instanceof com.vladsch.flexmark.ext.tables.TableRow rowNode) {
                             int col = 0;
+                            int colsInRow = 0;
+                            for (var cell = rowNode.getFirstChild(); cell != null; cell = cell.getNext()) {
+                                if (cell instanceof com.vladsch.flexmark.ext.tables.TableCell) {
+                                    colsInRow++;
+                                }
+                            }
                             for (var cell = rowNode.getFirstChild(); cell != null; cell = cell.getNext()) {
                                 if (cell instanceof com.vladsch.flexmark.ext.tables.TableCell tableCell) {
-                                    var cellBox = renderTableCell(tableCell, section instanceof com.vladsch.flexmark.ext.tables.TableHead);
+                                    boolean lastCol = col == colsInRow - 1;
+                                    var cellBox = renderTableCell(
+                                            tableCell,
+                                            section instanceof com.vladsch.flexmark.ext.tables.TableHead,
+                                            lastCol);
                                     grid.add(cellBox, col++, row);
                                 }
                             }
@@ -344,16 +353,21 @@ public final class MarkdownRenderer {
             scroll.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
             scroll.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
             scroll.getStyleClass().add("ara-md-table-scroll");
-            scroll.maxWidthProperty().bind(wrapWidth().subtract(28));
+            scroll.maxWidthProperty().bind(wrapWidth());
 
-            var wrapper = new VBox(scroll);
-            VBox.setMargin(wrapper, new Insets(8, 14, 8, 14));
+            var frame = new VBox(scroll);
+            frame.getStyleClass().add("ara-md-table-frame");
+            frame.maxWidthProperty().bind(wrapWidth());
+
+            var wrapper = new VBox(frame);
+            VBox.setMargin(wrapper, new Insets(8, 0, 8, 0));
             return wrapper;
         }
 
-        private VBox renderTableCell(com.vladsch.flexmark.ext.tables.TableCell cell, boolean header) {
+        private VBox renderTableCell(
+                com.vladsch.flexmark.ext.tables.TableCell cell, boolean header, boolean lastColumn) {
             var flow = new TextFlow();
-            for (var child = cell.getFirstChild(); child != null; child = child.getNext()) {
+            for (var child = cell.getFirstChild(); child != null; child = cell.getNext()) {
                 if (child instanceof Paragraph paragraph) {
                     appendInlines(flow, paragraph);
                 } else {
@@ -362,7 +376,11 @@ public final class MarkdownRenderer {
             }
             var box = new VBox(flow);
             box.setPadding(new Insets(8, 10, 8, 10));
-            box.getStyleClass().add(header ? "ara-md-table-header" : "ara-md-table-cell");
+            box.getStyleClass()
+                    .add(header ? "ara-md-table-header" : "ara-md-table-cell");
+            if (lastColumn) {
+                box.getStyleClass().add("ara-md-table-cell-last");
+            }
             return box;
         }
 
@@ -493,10 +511,10 @@ public final class MarkdownRenderer {
 
     private static Insets headingPadding(int level) {
         return switch (level) {
-            case 1 -> new Insets(12, 14, 6, 14);
-            case 2 -> new Insets(10, 14, 4, 14);
-            case 3 -> new Insets(8, 14, 4, 14);
-            default -> new Insets(6, 14, 2, 14);
+            case 1 -> new Insets(12, 0, 6, 0);
+            case 2 -> new Insets(10, 0, 4, 0);
+            case 3 -> new Insets(8, 0, 4, 0);
+            default -> new Insets(6, 0, 2, 0);
         };
     }
 }

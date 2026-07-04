@@ -200,6 +200,7 @@
 .ara-message-assistant {
     -fx-background-color: #2A2A2A;
     -fx-background-radius: 16 16 16 4;
+    -fx-padding: 10 14 10 14;
     -fx-text-fill: -color-fg-default;
 }
 
@@ -220,8 +221,10 @@
     -fx-border-radius: 12;
     -fx-border-color: #333333;
     -fx-border-width: 1;
-    -fx-padding: 10 16;
+    -fx-padding: 6 14;
     -fx-font-size: 14px;
+    -fx-min-height: 28;
+    -fx-pref-height: 28;
     -fx-prompt-text-fill: -color-fg-subtle;
 }
 
@@ -232,8 +235,11 @@
 .ara-send-btn {
     -fx-background-color: -color-accent-emphasis;
     -fx-background-radius: 12;
-    -fx-min-width: 40;
-    -fx-min-height: 40;
+    -fx-min-width: 36;
+    -fx-min-height: 36;
+    -fx-pref-width: 36;
+    -fx-pref-height: 36;
+    -fx-max-height: 36;
     -fx-cursor: hand;
 }
 
@@ -358,8 +364,17 @@
     -fx-fill: -color-fg-muted;
 }
 
+.ara-md-table-frame {
+    -fx-background-color: #1A1A1A;
+    -fx-background-radius: 8;
+    -fx-border-color: #3A3A3A;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+}
+
 .ara-md-table-scroll {
     -fx-background-color: transparent;
+    -fx-background-radius: 8;
     -fx-padding: 0;
 }
 
@@ -368,17 +383,18 @@
 }
 
 .ara-md-table {
-    -fx-background-color: #1A1A1A;
-    -fx-border-color: #3A3A3A;
-    -fx-border-width: 1;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
 }
 
 .ara-md-table-header {
     -fx-background-color: #252525;
     -fx-border-color: #3A3A3A;
     -fx-border-width: 0 1 1 0;
+}
+
+.ara-md-table-header.ara-md-table-cell-last {
+    -fx-border-width: 0 0 1 0;
 }
 
 .ara-md-table-header .text {
@@ -390,6 +406,10 @@
     -fx-background-color: transparent;
     -fx-border-color: #3A3A3A;
     -fx-border-width: 0 1 1 0;
+}
+
+.ara-md-table-cell-last {
+    -fx-border-width: 0 0 1 0;
 }
 
 .ara-md-table-cell .text {
@@ -585,19 +605,21 @@
 
 /* ===== Chat: Model routing chip ===== */
 .ara-model-chip-host {
-    -fx-pref-height: 22;
-    -fx-max-height: 22;
+    -fx-pref-height: 28;
+    -fx-max-height: 28;
+    -fx-min-width: 0;
 }
 
 .ara-model-chip {
     -fx-background-color: transparent;
-    -fx-background-radius: 6;
+    -fx-background-radius: 8;
     -fx-border-color: #3a3a3a;
-    -fx-border-radius: 6;
+    -fx-border-radius: 8;
     -fx-border-width: 1;
-    -fx-padding: 2 8 2 6;
-    -fx-min-height: 22;
-    -fx-max-height: 22;
+    -fx-padding: 2 7 2 6;
+    -fx-min-height: 28;
+    -fx-pref-height: 28;
+    -fx-max-height: 28;
     -fx-cursor: hand;
 }
 
@@ -616,13 +638,13 @@
 }
 
 .ara-model-chip-label {
-    -fx-font-size: 10px;
+    -fx-font-size: 9px;
     -fx-text-fill: -color-fg-subtle;
 }
 
 .ara-model-chip .ikonli-font-icon {
     -fx-icon-color: -color-fg-muted;
-    -fx-icon-size: 11;
+    -fx-icon-size: 9;
 }
 
 .ara-model-chip-heavy .ikonli-font-icon {
