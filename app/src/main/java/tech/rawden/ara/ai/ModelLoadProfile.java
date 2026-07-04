@@ -32,15 +32,11 @@ public record ModelLoadProfile(
     private static final int OUTPUT_TOKEN_RESERVE = 2_048;
     private static final double CHARS_PER_TOKEN_ESTIMATE = 3.5;
 
-    /**
-     * Fast-model defaults. Context must stay large enough for the system prompt, Vex catalog, and tool
-     * definitions (~5k+ tokens) — shrinking ctx below 16k causes corrupted output.
-     */
     public static final ModelLoadProfile LIGHT = new ModelLoadProfile(
             ModelTier.LIGHT,
             16_384,
+            4096,
             2048,
-            512,
             99,
             CacheType.Q8_0,
             CacheType.Q4_0,

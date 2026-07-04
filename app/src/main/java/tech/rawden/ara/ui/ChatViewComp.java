@@ -94,7 +94,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
     private static final int MAX_TOOL_ROUNDS = 5;
     private static final long STREAM_UI_INTERVAL_MS = 50;
 
-    private String pendingTitleSource;
+
 
     private static final double MAX_BUBBLE_RATIO = 0.82;
     private static final double MAX_BUBBLE_ABSOLUTE = 800;
@@ -451,13 +451,8 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         session.addMessage(userMsg);
         addMessageWithAnimation(createMessageBubble(userMsg));
 
-        boolean isFirstMessage =
-                "New Chat".equals(session.title()) || session.title().isBlank();
-        if (isFirstMessage) {
-            pendingTitleSource = text;
-            session.setTitle("...");
-            onSessionUpdated.run();
-        }
+        session.setTitle(titleFromUserMessage(trimmed));
+        onSessionUpdated.run();
 
         LOG.info("User message sent (chars=" + text.length() + ", session=" + session.id() + ")");
 
@@ -510,19 +505,12 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         }
     }
 
-    /** Runs after the first assistant reply finishes — never blocks the main inference queue. */
-    private void maybeGenerateTitle() {
-        if (pendingTitleSource == null) {
-            return;
+    private static String titleFromUserMessage(String text) {
+        if (text == null || text.isBlank()) {
+            return "New Chat";
         }
-        var source = pendingTitleSource;
-        pendingTitleSource = null;
-        inferenceService.generateTitle(
-                source,
-                title -> Platform.runLater(() -> {
-                    session.setTitle(title);
-                    onSessionUpdated.run();
-                }));
+        var oneLine = text.replace('\n', ' ').strip();
+        return oneLine.length() > 60 ? oneLine.substring(0, 57) + "…" : oneLine;
     }
 
     private boolean handleSlashCommand(String text) {
@@ -662,7 +650,6 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         if (toolRound >= MAX_TOOL_ROUNDS) {
             LOG.warning("Tool round limit reached (" + MAX_TOOL_ROUNDS + ") — stopping agent loop");
             setGenerating(false);
-            maybeGenerateTitle();
             return;
         }
 
@@ -744,7 +731,6 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     rebuildMessages();
                     setGenerating(false);
                     onSessionUpdated.run();
-                    maybeGenerateTitle();
                 }),
                 error -> Platform.runLater(() -> {
                     setGenerating(false);
@@ -761,7 +747,6 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     var errMsg = ChatMessage.assistantMessage(session.id(), content);
                     session.addMessage(errMsg);
                     onSessionUpdated.run();
-                    maybeGenerateTitle();
                 }),
                 toolCall -> Platform.runLater(() -> {
                     var msgs = session.messages();
