@@ -142,14 +142,20 @@ public class SidebarComp extends RegionBuilder<VBox> {
     public void rebuildChatList() {
         if (chatListView == null) return;
         chatListView.getChildren().clear();
-        var sessions = chatHistory.sessions();
-        // Limit for startup speed (creating many custom row nodes + bindings is expensive)
+        var sessions = chatHistory.sessions().stream().filter(ChatSession::hasUserMessages).toList();
         int start = Math.max(0, sessions.size() - MAX_VISIBLE_CHATS_IN_SIDEBAR);
         for (int i = sessions.size() - 1; i >= start; i--) {
-            var session = sessions.get(i);
-            var item = createChatListItem(session);
-            chatListView.getChildren().add(item);
+            chatListView.getChildren().add(createChatListItem(sessions.get(i)));
         }
+        if (chatListView.getChildren().isEmpty()) {
+            var empty = new Text("No conversations yet");
+            empty.setFont(Font.font("Inter", 11));
+            empty.getStyleClass().add("ara-chat-list-hint");
+            empty.setWrappingWidth(220);
+            VBox.setMargin(empty, new Insets(8, 4, 4, 4));
+            chatListView.getChildren().add(empty);
+        }
+
         if (sessions.size() > MAX_VISIBLE_CHATS_IN_SIDEBAR) {
             var more = new Text("Showing latest " + MAX_VISIBLE_CHATS_IN_SIDEBAR + " of " + sessions.size());
             more.setFont(Font.font("Inter", 10));

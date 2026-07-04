@@ -70,7 +70,7 @@ public final class ModelRouter {
     private volatile ScheduledFuture<?> heavyUnloadTask;
 
     private final StringProperty badgeLabel = new SimpleStringProperty(ModelTier.LIGHT.badgeLabel());
-    private final StringProperty badgeDetail = new SimpleStringProperty("Auto routing enabled");
+    private final StringProperty badgeDetail = new SimpleStringProperty("Automatic routing enabled");
     private final BooleanProperty escalatedThisTurn = new SimpleBooleanProperty(false);
     private final ObjectProperty<RoutingMode> routingModeProperty = new SimpleObjectProperty<>(RoutingMode.AUTO);
     private final ObjectProperty<ModelTier> activeTierProperty = new SimpleObjectProperty<>(ModelTier.LIGHT);
@@ -405,11 +405,13 @@ public final class ModelRouter {
         ModelTier tier = activeTier != null ? activeTier : ModelTier.LIGHT;
         badgeLabel.set(tier.badgeLabel());
         String detail = switch (userOverride) {
-            case HEAVY_ONLY -> "User-forced heavy for this session";
-            case LIGHT_ONLY -> "User-forced light for this session";
+            case HEAVY_ONLY -> "Advanced model locked for this session";
+            case LIGHT_ONLY -> "Fast model locked for this session";
             case AUTO -> tier == ModelTier.HEAVY
-                    ? (lastEscalationAuto ? "Auto-selected for complex reasoning / tool calling" : "Heavy model active")
-                    : "Auto routing — light model";
+                    ? (lastEscalationAuto
+                            ? "Automatically selected for complex tasks"
+                            : "Advanced model active")
+                    : "Automatic routing — fast model";
         };
         badgeDetail.set(detail);
     }

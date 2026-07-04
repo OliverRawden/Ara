@@ -182,7 +182,7 @@ public class MainViewComp extends RegionBuilder<HBox> {
         subtitle.setWrappingWidth(320);
         subtitle.getStyleClass().add("ara-empty-chat-subtitle");
 
-        var hint = new Text("Tip: /light · /heavy · /team · /model");
+        var hint = new Text("Your messages stay on this device.");
         hint.setFont(Font.font("Inter", 11));
         hint.getStyleClass().add("ara-empty-chat-hint");
 
@@ -250,6 +250,7 @@ public class MainViewComp extends RegionBuilder<HBox> {
     }
 
     private void onNewChat() {
+        chatHistory.purgeEmptySessions();
         chatHistory.createSession("New Chat");
         saveAll();
         chatViewSessionId = null; // Force rebuild on next show

@@ -91,7 +91,7 @@ public final class ModelCatalog {
         var model = new ModelRelease.DefaultModel();
         model.id = "qwen2.5-7b-instruct-q4_k_m";
         model.filename = "Qwen2.5-7B-Instruct-Q4_K_M.gguf";
-        model.displayName = "Qwen2.5-7B-Instruct Q4_K_M";
+        model.displayName = "Fast model";
         model.sizeBytes = 4_683_074_240L;
         model.sha256 = "65b8fcd92af6b4fefa935c625d1ac27ea29dcb6ee14589c55a8f115ceaaa1423";
         model.downloadUrl = null;
@@ -118,7 +118,7 @@ public final class ModelCatalog {
         var model = new ModelRelease.DefaultModel();
         model.id = "qwen2.5-coder-32b-q4_k_m";
         model.filename = "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf";
-        model.displayName = "Qwen2.5-Coder-32B Q4_K_M (Heavy)";
+        model.displayName = "Advanced model";
         model.sizeBytes = 19_851_336_672L;
         model.sha256 = "8e2fd78ff55e7cdf577fda257bac2776feb7d73d922613caf35468073807e815";
         model.downloadUrl = null;

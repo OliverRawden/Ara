@@ -6,6 +6,14 @@ public enum RoutingMode {
     LIGHT_ONLY,
     HEAVY_ONLY;
 
+    public String displayName() {
+        return switch (this) {
+            case AUTO -> "Automatic";
+            case LIGHT_ONLY -> "Fast only";
+            case HEAVY_ONLY -> "Advanced only";
+        };
+    }
+
     public static RoutingMode fromString(String value) {
         if (value == null || value.isBlank()) {
             return AUTO;

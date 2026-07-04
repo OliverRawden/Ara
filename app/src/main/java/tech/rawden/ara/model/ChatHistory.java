@@ -70,6 +70,25 @@ public class ChatHistory {
         }
     }
 
+    /** Removes sessions with no user messages (drafts that were never started). */
+    public void purgeEmptySessions() {
+        sessions.removeIf(s -> !s.hasUserMessages());
+        if (activeSessionId != null && findById(activeSessionId).isEmpty()) {
+            activeSessionId = sessions.isEmpty() ? null : sessions.get(sessions.size() - 1).id();
+        }
+    }
+
+    /** Snapshot for persistence — only conversations the user actually started. */
+    public ChatHistory persistableSnapshot() {
+        var saved = sessions.stream().filter(ChatSession::hasUserMessages).toList();
+        String activeId = activeSessionId;
+        final String currentActiveId = activeId;
+        if (currentActiveId != null && saved.stream().noneMatch(s -> s.id().equals(currentActiveId))) {
+            activeId = saved.isEmpty() ? null : saved.get(saved.size() - 1).id();
+        }
+        return new ChatHistory(saved, activeId);
+    }
+
     public void replaceWith(ChatHistory history) {
         sessions.clear();
         sessions.addAll(history.sessions());

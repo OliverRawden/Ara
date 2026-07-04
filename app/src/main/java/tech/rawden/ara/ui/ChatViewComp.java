@@ -387,7 +387,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
 
     private Region createInputArea() {
         inputField = new TextField();
-        inputField.setPromptText("Message Ara…  (/light, /heavy, /team)");
+        inputField.setPromptText("Type a message...");
         inputField.getStyleClass().add("ara-input-field");
         inputField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER && !e.isShiftDown()) {
@@ -532,12 +532,12 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         var lower = text.toLowerCase();
         if (lower.equals("/power") || lower.equals("/heavy")) {
             modelRouter.setSingleTurnOverride(RoutingMode.HEAVY_ONLY);
-            showSystemNote("Heavy model will be used for your next message.");
+            showSystemNote("Advanced model will be used for your next message.");
             return true;
         }
         if (lower.equals("/light")) {
             modelRouter.setSingleTurnOverride(RoutingMode.LIGHT_ONLY);
-            showSystemNote("Light model will be used for your next message.");
+            showSystemNote("Fast model will be used for your next message.");
             return true;
         }
         if (lower.equals("/model")) {
@@ -545,7 +545,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             var tier = modelRouter.getActiveTier();
             showSystemNote(String.format(
                     "Routing: %s · Active: %s · %s",
-                    mode, tier.badgeLabel(), modelRouter.badgeDetailProperty().get()));
+                    mode.displayName(), tier.badgeLabel(), modelRouter.badgeDetailProperty().get()));
             return true;
         }
         if (lower.startsWith("/team")) {
@@ -566,14 +566,14 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         if (parts.length < 2 || parts[1].isBlank()) {
             var teams = VexProtocolCatalog.teams();
             if (teams.isEmpty()) {
-                showSystemNote("No team protocols found. Seed protocol 20 in Vex (~/Documents/Vex/Protocols/).");
+                showSystemNote("No agent teams are configured.");
             } else {
                 var listing = new StringBuilder("Available teams: ");
                 for (int i = 0; i < teams.size(); i++) {
                     if (i > 0) {
                         listing.append(", ");
                     }
-                    listing.append(teams.get(i).id()).append('=').append(teams.get(i).name());
+                    listing.append(teams.get(i).name()).append(" (").append(teams.get(i).id()).append(')');
                 }
                 listing.append(". Usage: /team <id>");
                 showSystemNote(listing.toString());
@@ -584,7 +584,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             int teamId = Integer.parseInt(parts[1].strip());
             var team = VexProtocolCatalog.findById(teamId).filter(TeamOrchestrator::isTeam);
             if (team.isEmpty()) {
-                showSystemNote("Protocol " + teamId + " is not a team. Check Vex Protocols for type: team.");
+                showSystemNote("Team " + teamId + " is not available.");
                 return true;
             }
             session.setActiveTeamId(teamId);
@@ -620,11 +620,11 @@ public class ChatViewComp extends RegionBuilder<VBox> {
 
     private void showEscalationBanner() {
         removeEscalationBanner();
-        var label = new Text("Heavy model engaged for this complex task. ");
+        var label = new Text("Advanced model engaged for this complex task. ");
         label.setFont(Font.font("Inter", 11));
         label.setStyle("-fx-fill: -color-fg-subtle;");
 
-        var switchLink = new Text("Switch to Light");
+        var switchLink = new Text("Switch to fast model");
         switchLink.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 11));
         switchLink.setStyle("-fx-fill: -color-accent-fg; -fx-underline: true; -fx-cursor: hand;");
         switchLink.setOnMouseClicked(e -> {
@@ -781,7 +781,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             var msgs = session.messages();
             msgs.remove(placeholder);
             var denied = ChatMessage.toolMessage(
-                    session.id(), "Error: unknown tool '" + toolCall.name() + "'. Edit tools in Vex Protocols.");
+                    session.id(), "This action is not available: '" + toolCall.name() + "'.");
             session.addMessage(denied);
             rebuildMessages();
             scrollToBottom();

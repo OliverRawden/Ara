@@ -47,9 +47,9 @@ public final class ModelStatusControl extends Region {
         chip = new Button();
         chip.getStyleClass().add("ara-model-chip");
         chip.setGraphic(content);
-        chip.setMinHeight(28);
-        chip.setPrefHeight(28);
-        chip.setMaxHeight(28);
+        chip.setMinHeight(36);
+        chip.setPrefHeight(36);
+        chip.setMaxHeight(36);
         chip.setOnAction(e -> {
             router.toggleAutoHeavy();
             refresh();
@@ -62,8 +62,8 @@ public final class ModelStatusControl extends Region {
         Tooltip.install(chip, tooltip);
 
         getChildren().add(chip);
-        setMaxHeight(28);
-        setPrefHeight(28);
+        setMaxHeight(36);
+        setPrefHeight(36);
 
         router.activeTierProperty().addListener((obs, old, tier) -> refresh());
         router.routingModeProperty().addListener((obs, old, mode) -> refresh());
@@ -83,12 +83,12 @@ public final class ModelStatusControl extends Region {
         chip.getStyleClass().removeAll("ara-model-chip-auto", "ara-model-chip-heavy");
 
         if (mode == RoutingMode.HEAVY_ONLY) {
-            chipLabel.setText("Heavy");
+            chipLabel.setText("Advanced");
             modeIcon.setIconLiteral("mdi2f-flash");
             indicator.getStyleClass().add("ara-model-indicator-heavy");
             chip.getStyleClass().add("ara-model-chip-heavy");
         } else if (mode == RoutingMode.LIGHT_ONLY) {
-            chipLabel.setText("Light");
+            chipLabel.setText("Fast");
             modeIcon.setIconLiteral("mdi2f-feather");
             indicator.getStyleClass().add("ara-model-indicator-light");
         } else {
@@ -113,33 +113,33 @@ public final class ModelStatusControl extends Region {
     private void showContextMenu() {
         var menu = new ContextMenu();
 
-        var lightTurn = new MenuItem("Light for next message");
+        var lightTurn = new MenuItem("Fast model for next message");
         lightTurn.setOnAction(e -> {
             router.setSingleTurnOverride(RoutingMode.LIGHT_ONLY);
             notifyChanged();
         });
 
-        var heavyTurn = new MenuItem("Heavy for next message");
+        var heavyTurn = new MenuItem("Advanced model for next message");
         heavyTurn.setOnAction(e -> {
             router.setSingleTurnOverride(RoutingMode.HEAVY_ONLY);
             notifyChanged();
         });
 
-        var alwaysHeavy = new MenuItem("Always Heavy");
+        var alwaysHeavy = new MenuItem("Always use advanced model");
         alwaysHeavy.setOnAction(e -> {
             router.setUserOverride(RoutingMode.HEAVY_ONLY);
             refresh();
             notifyChanged();
         });
 
-        var alwaysLight = new MenuItem("Always Light");
+        var alwaysLight = new MenuItem("Always use fast model");
         alwaysLight.setOnAction(e -> {
             router.setUserOverride(RoutingMode.LIGHT_ONLY);
             refresh();
             notifyChanged();
         });
 
-        var resetAuto = new MenuItem("Auto routing");
+        var resetAuto = new MenuItem("Automatic routing");
         resetAuto.setOnAction(e -> {
             router.setUserOverride(RoutingMode.AUTO);
             refresh();

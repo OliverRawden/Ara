@@ -131,7 +131,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         root.getChildren().add(createSection("Model", createModelSection()));
         root.getChildren().add(createSection("Inference", createInferenceSection()));
         root.getChildren().add(createSection("Personality", createPersonalitySection()));
-        root.getChildren().add(createSection("Memory (context.md)", createMemorySection()));
+        root.getChildren().add(createSection("Memory", createMemorySection()));
         root.getChildren().add(createSection("Privacy & Security", createPrivacySection()));
         root.getChildren().add(createSection("Updates", createUpdatesSection()));
         root.getChildren().add(createSection("System", createSystemSection()));
@@ -208,7 +208,8 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         var section = new VBox(10);
 
         var hint = new Label(
-                "Light (~7B) stays hot for chat. Heavy (~30B) loads on demand for code and complex tasks. All local.");
+                "Ara uses two on-device models: a fast model for everyday chat, and an advanced model "
+                        + "that loads automatically for complex tasks. All inference runs locally.");
         hint.setFont(Font.font("Inter", 11));
         hint.setStyle("-fx-fill: -color-fg-subtle;");
         hint.setWrapText(true);
@@ -221,7 +222,37 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         routingModeCombo = new javafx.scene.control.ComboBox<>();
         routingModeCombo.getItems().addAll(RoutingMode.AUTO, RoutingMode.LIGHT_ONLY, RoutingMode.HEAVY_ONLY);
         routingModeCombo.setValue(appSettings.getRoutingMode());
-        routingModeCombo.setMaxWidth(160);
+        routingModeCombo.setMaxWidth(200);
+        routingModeCombo.setConverter(new javafx.util.StringConverter<>() {
+            @Override
+            public String toString(RoutingMode mode) {
+                return mode != null ? mode.displayName() : "";
+            }
+
+            @Override
+            public RoutingMode fromString(String string) {
+                for (var mode : RoutingMode.values()) {
+                    if (mode.displayName().equalsIgnoreCase(string)) {
+                        return mode;
+                    }
+                }
+                return RoutingMode.AUTO;
+            }
+        });
+        routingModeCombo.setButtonCell(new javafx.scene.control.ListCell<>() {
+            @Override
+            protected void updateItem(RoutingMode item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.displayName());
+            }
+        });
+        routingModeCombo.setCellFactory(lv -> new javafx.scene.control.ListCell<>() {
+            @Override
+            protected void updateItem(RoutingMode item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.displayName());
+            }
+        });
         routingModeCombo.setOnAction(e -> {
             var mode = routingModeCombo.getValue();
             if (mode != null) {
@@ -235,28 +266,28 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         });
 
         var routingRow = new HBox(10);
-        var routingLbl = new Label("Routing");
+        var routingLbl = new Label("Model routing");
         routingLbl.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 11));
         routingRow.getChildren().addAll(routingLbl, routingModeCombo);
         routingRow.setAlignment(Pos.CENTER_LEFT);
 
-        downloadLightBtn = new Button("Download Light");
+        downloadLightBtn = new Button("Download fast model");
         downloadLightBtn.getStyleClass().add("ara-action-btn");
         downloadLightBtn.setOnAction(e -> startModelDownload(false));
 
-        downloadHeavyBtn = new Button("Download Heavy");
+        downloadHeavyBtn = new Button("Download advanced model");
         downloadHeavyBtn.getStyleClass().add("ara-action-btn");
         if (!modelManager.isHeavyDownloadAvailable()) {
             downloadHeavyBtn.setDisable(true);
             downloadHeavyBtn.setTooltip(new javafx.scene.control.Tooltip(
-                    "Heavy model not in manifest — place a GGUF in " + modelManager.modelsDirectory()));
+                    "Advanced model download is not available yet. You can add a compatible model file in Settings → System."));
         }
         downloadHeavyBtn.setOnAction(e -> startModelDownload(true));
 
-        var lightDlHint = new Label("Qwen2.5-7B · ~4.5 GB");
+        var lightDlHint = new Label("Compact model · about 4.5 GB");
         lightDlHint.setFont(Font.font("Inter", 10));
         lightDlHint.setStyle("-fx-fill: -color-fg-subtle;");
-        var heavyDlHint = new Label("Qwen2.5-Coder-32B · ~18.5 GB");
+        var heavyDlHint = new Label("Advanced model · about 18 GB");
         heavyDlHint.setFont(Font.font("Inter", 10));
         heavyDlHint.setStyle("-fx-fill: -color-fg-subtle;");
 
@@ -297,8 +328,8 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         });
 
         var pathsRow = new HBox(10);
-        var lightPathCol = labeledField("Light file", lightModelField);
-        var heavyPathCol = labeledField("Heavy file", heavyModelField);
+        var lightPathCol = labeledField("Fast model file", lightModelField);
+        var heavyPathCol = labeledField("Advanced model file", heavyModelField);
         HBox.setHgrow(lightPathCol, Priority.ALWAYS);
         HBox.setHgrow(heavyPathCol, Priority.ALWAYS);
         pathsRow.getChildren().addAll(lightPathCol, heavyPathCol);
@@ -332,8 +363,35 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
     }
 
     private String formatModelStatus() {
+        String status = switch (inferenceService.status()) {
+            case READY -> "Ready";
+            case LOADING -> "Loading model…";
+            case UNLOADED -> "No model loaded";
+            case ERROR -> "Model error";
+        };
         String tier = modelRouter != null ? " · " + modelRouter.getActiveTier().badgeLabel() : "";
-        return inferenceService.status() + " · " + inferenceService.modelName() + tier;
+        String model = inferenceService.status() == InferenceService.Status.READY
+                ? " · " + friendlyModelName(inferenceService.modelName())
+                : "";
+        return status + model + tier;
+    }
+
+    private String friendlyModelName(String filename) {
+        if (filename == null || filename.isBlank() || "None".equals(filename)) {
+            return "No model";
+        }
+        if (filename.equals(modelManager.defaultModelFilename())) {
+            return modelManager.defaultModelDisplayName();
+        }
+        var heavy = appSettings.getHeavyModel();
+        if (filename.equals(modelManager.heavyModelFilename())
+                || (heavy != null && !heavy.isBlank() && filename.equals(heavy))) {
+            return modelManager.heavyModelDisplayName();
+        }
+        if (filename.endsWith(".gguf")) {
+            return filename.substring(0, filename.length() - 5);
+        }
+        return filename;
     }
 
     private Region labeledField(String label, javafx.scene.Node control) {
@@ -355,7 +413,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         downloadProgress.setVisible(true);
         downloadProgress.setProgress(-1);
         downloadStatusLabel.setVisible(true);
-        downloadStatusLabel.setText("Starting " + (heavy ? "heavy" : "light") + " download...");
+        downloadStatusLabel.setText("Starting " + (heavy ? "advanced" : "fast") + " model download...");
 
         Thread.startVirtualThread(() -> {
             try {
@@ -366,7 +424,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
                         downloadProgress.setProgress((double) downloaded / total);
                         downloadStatusLabel.setText(String.format(
                                 "%s: %d / %d MB",
-                                heavy ? "Heavy" : "Light",
+                                heavy ? "Advanced" : "Fast",
                                 downloaded / (1024 * 1024),
                                 total / (1024 * 1024)));
                     } else {
@@ -383,7 +441,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
 
                 Platform.runLater(() -> {
                     downloadProgress.setProgress(1);
-                    downloadStatusLabel.setText((heavy ? "Heavy" : "Light") + " download complete");
+                    downloadStatusLabel.setText((heavy ? "Advanced" : "Fast") + " model download complete");
                     downloadLightBtn.setDisable(false);
                     downloadHeavyBtn.setDisable(!modelManager.isHeavyDownloadAvailable());
 
@@ -444,7 +502,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
                 var models = modelManager.listModels();
                 Platform.runLater(() -> {
                     if (models.isEmpty()) {
-                        var empty = new Label("No .gguf files. Download a model above.");
+                        var empty = new Label("No models installed. Download a model above.");
                         empty.setFont(Font.font("Inter", 11));
                         empty.setStyle("-fx-fill: -color-fg-subtle;");
                         modelListContainer.getChildren().add(empty);
@@ -573,12 +631,13 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         var section = new VBox(8);
 
         var hint = new Label(
-                "Persistent memory file (~/Documents/Ara/context.md). Ara reads/writes this via Vex tool protocols 104–106 (read_memory, write_memory, append_memory). Changes here are written directly to disk.");
+                "Long-term memory stored locally on your device. Ara can read and update this file during conversations. "
+                        + "Changes made here are saved immediately.");
         hint.setFont(Font.font("Inter", 11));
         hint.setStyle("-fx-fill: -color-fg-subtle;");
         hint.setWrapText(true);
 
-        var label = new Label("context.md");
+        var label = new Label("Memory file");
         label.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 12));
 
         contextArea = new TextArea(loadContext());
@@ -664,8 +723,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         });
 
         var tokensHelp = new Label(
-                "Max tokens generated per reply. The heavy (~32B) model uses a smaller context window (6k) on 24 GB Macs — "
-                        + "this slider does not change KV size; routing handles that automatically.");
+                "Maximum length of each assistant reply. Ara adjusts context limits automatically based on the active model.");
         tokensHelp.setFont(Font.font("Inter", 10));
         tokensHelp.setStyle("-fx-fill: -color-fg-subtle;");
         tokensHelp.setWrapText(true);
@@ -678,9 +736,8 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         var section = new VBox(12);
 
         var hint =
-                new Label("Optional update checks fetch public release metadata from GitHub (installers/latest.json). "
-                        + "Installers download only when you tap Download & Install. "
-                        + "Nothing from your chats, memory, or models is sent.");
+                new Label("Optional update checks look for new app releases. Downloads start only when you choose "
+                        + "Download & Install. Nothing from your chats, memory, or models is sent.");
         hint.setFont(Font.font("Inter", 11));
         hint.setStyle("-fx-fill: -color-fg-subtle;");
         hint.setWrapText(true);
@@ -785,33 +842,32 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         chatsFile.setFont(Font.font("Inter", 11));
         chatsFile.setStyle("-fx-fill: -color-fg-subtle;");
 
-        var toolsFile = new Label("Vex tools: " + tech.rawden.ara.core.AraPaths.vexProtocolsDir());
+        var toolsFile = new Label("Integrations: " + tech.rawden.ara.core.AraPaths.vexProtocolsDir());
         toolsFile.setFont(Font.font("Inter", 11));
         toolsFile.setStyle("-fx-fill: -color-fg-subtle;");
 
-        var inferenceLabel = new Label("Inference: Built-in (java-llama.cpp / GGUF)");
+        var inferenceLabel = new Label("Inference: On-device");
         inferenceLabel.setFont(Font.font("Inter", 11));
         inferenceLabel.setStyle("-fx-fill: -color-fg-subtle;");
 
         var routingHelp = new Label(
-                "Light/heavy split: the small model handles greetings and quick answers; the big one wakes up for code, "
-                        + "multi-step reasoning, and ambitious tool use — then goes back to sleep so your M4 stays breathable.");
+                "Automatic routing chooses the fast model for simple requests and switches to the advanced model "
+                        + "for coding, analysis, and multi-step tasks.");
         routingHelp.setFont(Font.font("Inter", 11));
         routingHelp.setStyle("-fx-fill: -color-fg-subtle;");
         routingHelp.setWrapText(true);
 
-        var reloadToolsBtn = new Button("Reload Vex protocols");
+        var reloadToolsBtn = new Button("Reload integrations");
         reloadToolsBtn.getStyleClass().add("ara-action-btn");
         reloadToolsBtn.setOnAction(e -> {
             tech.rawden.ara.integration.VexProtocolCatalog.reload();
             tech.rawden.ara.tool.ToolCatalog.reload();
-            statusLabel.setText("Reloaded Vex protocol catalog ("
-                    + tech.rawden.ara.integration.VexProtocolCatalog.protocols().size() + " protocols)");
-            LOG.info("Vex protocol catalog reloaded ("
-                    + tech.rawden.ara.integration.VexProtocolCatalog.protocols().size() + " protocols)");
+            int count = tech.rawden.ara.integration.VexProtocolCatalog.protocols().size();
+            statusLabel.setText("Reloaded " + count + " integration" + (count == 1 ? "" : "s"));
+            LOG.info("Integration catalog reloaded (" + count + " protocols)");
         });
 
-        var devToggle = new ToggleSwitchComp("Developer mode (live diagnostic log window)");
+        var devToggle = new ToggleSwitchComp("Developer mode");
         devToggle.selectedProperty().set(appSettings.isDeveloperMode());
         devToggle.selectedProperty().addListener((obs, old, val) -> {
             appSettings.setDeveloperMode(val);
@@ -829,7 +885,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         });
 
         var devHint = new Label(
-                "Shows a separate window with timestamped logs — routing, inference, model load, chat, and tools.");
+                "Opens a diagnostic log window for troubleshooting. Intended for development and support.");
         devHint.setFont(Font.font("Inter", 11));
         devHint.setStyle("-fx-fill: -color-fg-subtle;");
         devHint.setWrapText(true);
@@ -966,7 +1022,7 @@ You are Ara, a witty and intelligent on-device AI assistant created by Rawden.
         var section = new VBox(12);
 
         // Toggles
-        var encryptionToggle = new ToggleSwitchComp("Encrypt stored data at rest (chats, memory/context, audit logs)");
+        var encryptionToggle = new ToggleSwitchComp("Encrypt stored data at rest (chats, memory, and activity logs)");
         encryptionToggle.selectedProperty().set(appSettings.isEncryptionEnabled());
         encryptionToggle.selectedProperty().addListener((obs, old, val) -> {
             appSettings.setEncryptionEnabled(val);
@@ -991,7 +1047,7 @@ You are Ara, a witty and intelligent on-device AI assistant created by Rawden.
             }
         });
 
-        var terminalToggle = new ToggleSwitchComp("Enable terminal / execute_command tool (powerful but risky)");
+        var terminalToggle = new ToggleSwitchComp("Allow the assistant to run terminal commands");
         terminalToggle.selectedProperty().set(appSettings.isTerminalEnabled());
         terminalToggle.selectedProperty().addListener((obs, old, val) -> {
             appSettings.setTerminalEnabled(val);
@@ -1007,7 +1063,7 @@ You are Ara, a witty and intelligent on-device AI assistant created by Rawden.
             syncInferenceConfigFromSettings();
         });
 
-        var memoryToggle = new ToggleSwitchComp("Enable persistent memory (context.md) read/write by AI");
+        var memoryToggle = new ToggleSwitchComp("Allow the assistant to read and update persistent memory");
         memoryToggle.selectedProperty().set(appSettings.isContextMemoryEnabled());
         memoryToggle.selectedProperty().addListener((obs, old, val) -> {
             appSettings.setContextMemoryEnabled(val);
@@ -1015,7 +1071,7 @@ You are Ara, a witty and intelligent on-device AI assistant created by Rawden.
             syncInferenceConfigFromSettings();
         });
 
-        var privacyModeToggle = new ToggleSwitchComp("Privacy Mode (disables web search + terminal tools entirely)");
+        var privacyModeToggle = new ToggleSwitchComp("Privacy mode (disables web search and terminal access)");
         privacyModeToggle.selectedProperty().set(!appSettings.isWebSearchEnabled() && !appSettings.isTerminalEnabled());
         privacyModeToggle.selectedProperty().addListener((obs, old, val) -> {
             boolean off = val;
@@ -1038,8 +1094,8 @@ You are Ara, a witty and intelligent on-device AI assistant created by Rawden.
         encStatus.setStyle("-fx-fill: -color-fg-subtle;");
         boolean enc = appSettings.isEncryptionEnabled();
         boolean unlocked = tech.rawden.ara.core.SecurityService.isUnlocked();
-        encStatus.setText("Encryption: " + (enc ? "ON" : "OFF") + "  •  Unlocked this session: "
-                + (unlocked ? "Yes" : "No (will prompt on next sensitive operation)"));
+        encStatus.setText("Encryption: " + (enc ? "On" : "Off") + "  •  Unlocked this session: "
+                + (unlocked ? "Yes" : "No — you will be prompted when needed"));
         section.getChildren().add(encStatus);
 
         // Actions - two rows for better small window resizing (polish for narrow settings)
@@ -1068,7 +1124,7 @@ You are Ara, a witty and intelligent on-device AI assistant created by Rawden.
         clearAllBtn.setOnAction(e -> {
             Alert confirm = new Alert(
                     Alert.AlertType.CONFIRMATION,
-                    "This will permanently (and securely) delete chats, memory/context, settings history, and audit logs.\n\nModels will be kept. Continue?",
+                    "This will permanently delete chats, memory, settings history, and activity logs.\n\nModels will be kept. Continue?",
                     ButtonType.YES,
                     ButtonType.NO);
             confirm.setTitle("Confirm Data Deletion");

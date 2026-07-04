@@ -76,6 +76,11 @@ public class ChatSession {
         messages.add(message);
     }
 
+    /** True once the user has sent at least one message (empty drafts stay out of the sidebar). */
+    public boolean hasUserMessages() {
+        return messages.stream().anyMatch(m -> m.role() == ChatMessage.Role.USER);
+    }
+
     @JsonProperty("activeTeamId")
     public Integer activeTeamId() {
         return activeTeamId;

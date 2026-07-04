@@ -84,6 +84,7 @@ public class ChatStorage {
             }
 
             var history = new ChatHistory(sessions, activeId);
+            history.purgeEmptySessions();
             LOG.info("Loaded " + history.mutableSessions().size() + " chat sessions"
                     + (SecurityService.isEncryptionEnabled() ? " (decrypted)" : ""));
             return history;
@@ -103,7 +104,8 @@ public class ChatStorage {
     public void save(ChatHistory history) {
         try {
             Files.createDirectories(DATA_DIR);
-            byte[] jsonBytes = MAPPER.writerWithDefaultPrettyPrinter().writeValueAsBytes(history);
+            byte[] jsonBytes =
+                    MAPPER.writerWithDefaultPrettyPrinter().writeValueAsBytes(history.persistableSnapshot());
 
             byte[] toWrite = SecurityService.isEncryptionEnabled() ? SecurityService.encrypt(jsonBytes) : jsonBytes;
 

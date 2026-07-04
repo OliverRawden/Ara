@@ -23,7 +23,7 @@ public class MacMenuBar {
             var alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("About Ara");
             alert.setHeaderText("Ara v" + Main.VERSION);
-            alert.setContentText("On-device AI Assistant\nBuilt with JavaFX and llama.cpp");
+            alert.setContentText("Private AI assistant.\nYour conversations stay on this device.");
             alert.show();
         });
 
