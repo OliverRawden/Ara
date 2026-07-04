@@ -46,6 +46,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
@@ -54,12 +55,10 @@ import javafx.util.Duration;
 
 import org.kordamp.ikonli.javafx.FontIcon;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * Active chat session: message bubbles, streaming inference, and the tool agent loop (max 5 rounds).
@@ -363,161 +362,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
     }
 
     private VBox buildFormattedContent(String content) {
-        var container = new VBox();
-        container.getStyleClass().add("ara-message-assistant");
-        container.maxWidthProperty().bind(bubbleMaxWidth());
-
-        var lines = content.split("\n", -1);
-        boolean inCodeBlock = false;
-        var codeLines = new ArrayList<String>();
-        var paraLines = new ArrayList<String>();
-
-        for (var line : lines) {
-            var trimmed = line.trim();
-
-            if (trimmed.startsWith("```")) {
-                if (inCodeBlock) {
-                    var cb = createCodeBlock(String.join("\n", codeLines));
-                    VBox.setMargin(cb, new Insets(6, 14, 6, 14));
-                    container.getChildren().add(cb);
-                    codeLines.clear();
-                } else {
-                    flushParagraph(container, paraLines);
-                    paraLines.clear();
-                }
-                inCodeBlock = !inCodeBlock;
-                continue;
-            }
-
-            if (inCodeBlock) {
-                codeLines.add(line);
-            } else {
-                paraLines.add(line);
-            }
-        }
-
-        flushParagraph(container, paraLines);
-        if (!codeLines.isEmpty()) {
-            var cb = createCodeBlock(String.join("\n", codeLines));
-            VBox.setMargin(cb, new Insets(6, 14, 6, 14));
-            container.getChildren().add(cb);
-        }
-
-        if (container.getChildren().isEmpty()) {
-            container.setPadding(new Insets(10, 14, 10, 14));
-            var empty = new Text(content);
-            empty.setFont(Font.font("Inter", 14));
-            container.getChildren().add(new TextFlow(empty));
-        }
-
-        return container;
-    }
-
-    private void flushParagraph(VBox container, List<String> lines) {
-        if (lines.isEmpty()) return;
-        container.getChildren().add(createParagraph(String.join("\n", lines)));
-    }
-
-    private TextFlow createParagraph(String text) {
-        var textFlow = new TextFlow();
-        textFlow.setPadding(new Insets(10, 14, 10, 14));
-        var lines = text.split("\n", -1);
-
-        for (int i = 0; i < lines.length; i++) {
-            var line = lines[i];
-
-            if (line.isEmpty()) {
-                textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-
-            if (line.startsWith("### ")) {
-                var heading = new Text(line.substring(4));
-                heading.setFont(Font.font("Inter", FontWeight.BOLD, 16));
-                textFlow.getChildren().add(heading);
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-            if (line.startsWith("## ")) {
-                var heading = new Text(line.substring(3));
-                heading.setFont(Font.font("Inter", FontWeight.BOLD, 18));
-                textFlow.getChildren().add(heading);
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-            if (line.startsWith("# ")) {
-                var heading = new Text(line.substring(2));
-                heading.setFont(Font.font("Inter", FontWeight.BOLD, 20));
-                textFlow.getChildren().add(heading);
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-
-            if (line.startsWith("- ") || line.startsWith("* ")) {
-                var bullet = new Text("  \u2022  ");
-                bullet.setFont(Font.font("Inter", FontWeight.NORMAL, 14));
-                textFlow.getChildren().add(bullet);
-                textFlow.getChildren().addAll(formatInline(line.substring(2)));
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-
-            var numMatch = Pattern.compile("^(\\d+)\\. (.+)$").matcher(line);
-            if (numMatch.matches()) {
-                var numText = new Text("  " + numMatch.group(1) + ".  ");
-                numText.setFont(Font.font("Inter", FontWeight.NORMAL, 14));
-                textFlow.getChildren().add(numText);
-                textFlow.getChildren().addAll(formatInline(numMatch.group(2)));
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-
-            if (line.startsWith("> ")) {
-                var quote = new Text(line.substring(2));
-                quote.setFont(Font.font("Inter", FontPosture.ITALIC, 13));
-                quote.setStyle("-fx-fill: -color-fg-subtle;");
-                textFlow.getChildren().add(quote);
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-
-            textFlow.getChildren().addAll(formatInline(line));
-            if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-        }
-
-        return textFlow;
-    }
-
-    private Region createCodeBlock(String code) {
-        var codeText = new Text(code);
-        codeText.setFont(Font.font("Menlo", 12));
-        codeText.setStyle("-fx-fill: -color-fg-default;");
-        codeText.wrappingWidthProperty().bind(bubbleMaxWidth().subtract(24));
-
-        var copyIcon = new FontIcon("mdi2c-content-copy");
-        copyIcon.setIconSize(12);
-        var copyBtn = new Button("", copyIcon);
-        copyBtn.getStyleClass().add("ara-code-copy-btn");
-        copyBtn.setOnAction(e -> {
-            var cc = new ClipboardContent();
-            cc.putString(code);
-            Clipboard.getSystemClipboard().setContent(cc);
-        });
-
-        var langLabel = new Text("  Code");
-        langLabel.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 11));
-        langLabel.setStyle("-fx-fill: -color-fg-muted;");
-
-        var header = new HBox(langLabel, copyBtn);
-        header.setAlignment(Pos.CENTER_RIGHT);
-        HBox.setHgrow(langLabel, Priority.ALWAYS);
-
-        var body = new VBox(header, codeText);
-        body.setPadding(new Insets(10, 12, 10, 12));
-        body.getStyleClass().add("ara-code-block");
-        body.maxWidthProperty().bind(bubbleMaxWidth());
-
-        return body;
+        return MarkdownRenderer.render(content, bubbleMaxWidth());
     }
 
     private Button createCopyButton(String text) {
@@ -531,59 +376,6 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             Clipboard.getSystemClipboard().setContent(cc);
         });
         return btn;
-    }
-
-    private static final Pattern INLINE_PATTERN =
-            Pattern.compile("\\*\\*(.+?)\\*\\*|__(.+?)__|\\*(.+?)\\*|_(.+?)_|`([^`]*)`");
-
-    private List<Text> formatInline(String text) {
-        var result = new ArrayList<Text>();
-        var matcher = INLINE_PATTERN.matcher(text);
-        int lastEnd = 0;
-
-        while (matcher.find()) {
-            if (matcher.start() > lastEnd) {
-                var plain = new Text(text.substring(lastEnd, matcher.start()));
-                plain.setFont(Font.font("Inter", 14));
-                result.add(plain);
-            }
-
-            Text formatted;
-            if (matcher.group(1) != null) {
-                formatted = new Text(matcher.group(1));
-                formatted.setFont(Font.font("Inter", FontWeight.BOLD, 14));
-            } else if (matcher.group(2) != null) {
-                formatted = new Text(matcher.group(2));
-                formatted.setFont(Font.font("Inter", FontWeight.BOLD, 14));
-            } else if (matcher.group(3) != null) {
-                formatted = new Text(matcher.group(3));
-                formatted.setFont(Font.font("Inter", FontPosture.ITALIC, 14));
-            } else if (matcher.group(4) != null) {
-                formatted = new Text(matcher.group(4));
-                formatted.setFont(Font.font("Inter", FontPosture.ITALIC, 14));
-            } else {
-                formatted = new Text(matcher.group(5));
-                formatted.setFont(Font.font("Menlo", 13));
-                formatted.setStyle("-fx-fill: -color-accent-fg;");
-            }
-
-            result.add(formatted);
-            lastEnd = matcher.end();
-        }
-
-        if (lastEnd < text.length()) {
-            var plain = new Text(text.substring(lastEnd));
-            plain.setFont(Font.font("Inter", 14));
-            result.add(plain);
-        }
-
-        if (result.isEmpty()) {
-            var plain = new Text(text);
-            plain.setFont(Font.font("Inter", 14));
-            result.add(plain);
-        }
-
-        return result;
     }
 
     private Region createInputArea() {

@@ -35,4 +35,13 @@ open module tech.rawden.ara {
     requires jdk.zipfs;
     requires jdk.management;
     requires de.kherud.llama;
+    requires com.vladsch.flexmark;
+    requires com.vladsch.flexmark.util;
+    requires com.vladsch.flexmark.util.ast;
+    requires com.vladsch.flexmark.util.data;
+    requires com.vladsch.flexmark.ext.tables;
+    requires com.vladsch.flexmark.ext.gfm.strikethrough;
+    requires com.vladsch.flexmark.ext.autolink;
+    requires com.vladsch.flexmark.ext.gfm.tasklist;
+    requires java.desktop;
 }

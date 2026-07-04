@@ -234,6 +234,135 @@
     -fx-margin: 8 14;
 }
 
+/* ===== Markdown (flexmark) ===== */
+.ara-md-h1 {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-md-h2 {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-md-h3 {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-md-h4, .ara-md-h5, .ara-md-h6 {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-md-heading .text {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-md-inline-code {
+    -fx-fill: #A5D6FF;
+    -fx-background-color: #1A1A1A;
+}
+
+.ara-md-code-lang {
+    -fx-fill: -color-fg-muted;
+}
+
+.ara-md-code-scroll {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.ara-md-code-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.ara-md-link {
+    -fx-fill: -color-accent-fg;
+}
+
+.ara-md-link:hover {
+    -fx-fill: -color-accent-emphasis;
+}
+
+.ara-md-blockquote {
+    -fx-background-color: #1E1E1E;
+    -fx-border-color: -color-accent-emphasis;
+    -fx-border-width: 0 0 0 3;
+    -fx-background-radius: 0 6 6 0;
+}
+
+.ara-md-blockquote .text {
+    -fx-fill: -color-fg-subtle;
+    -fx-font-style: italic;
+}
+
+.ara-md-hr {
+    -fx-background-color: #3A3A3A;
+}
+
+.ara-md-strikethrough {
+    -fx-fill: -color-fg-muted;
+}
+
+.ara-md-table-scroll {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.ara-md-table-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.ara-md-table {
+    -fx-background-color: #1A1A1A;
+    -fx-border-color: #3A3A3A;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.ara-md-table-header {
+    -fx-background-color: #252525;
+    -fx-border-color: #3A3A3A;
+    -fx-border-width: 0 1 1 0;
+}
+
+.ara-md-table-header .text {
+    -fx-fill: -color-fg-default;
+    -fx-font-weight: bold;
+}
+
+.ara-md-table-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: #3A3A3A;
+    -fx-border-width: 0 1 1 0;
+}
+
+.ara-md-table-cell .text {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-syntax-plain {
+    -fx-fill: #E6E6E6;
+}
+
+.ara-syntax-keyword {
+    -fx-fill: #C792EA;
+}
+
+.ara-syntax-string {
+    -fx-fill: #C3E88D;
+}
+
+.ara-syntax-comment {
+    -fx-fill: #546E7A;
+}
+
+.ara-syntax-number {
+    -fx-fill: #F78C6C;
+}
+
+.ara-syntax-type {
+    -fx-fill: #FFCB6B;
+}
+
 .ara-code-copy-btn {
     -fx-background-color: transparent;
     -fx-background-radius: 4;
