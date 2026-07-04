@@ -237,6 +237,7 @@ public class LlamaCppInferenceService implements InferenceService {
             }
             long buildStart = System.nanoTime();
             var fitted = fitPromptToContext(userMessage, config, history, withTools);
+            validatePromptFitsContext(fitted, config);
             long buildMs = (System.nanoTime() - buildStart) / 1_000_000;
             LOG.info(String.format(
                     "Inference job: promptChars=%d, promptTokens=%d, ctx=%d, historyMsgs=%d, dropped=%d, buildMs=%d, tools=%s",
@@ -274,8 +275,10 @@ public class LlamaCppInferenceService implements InferenceService {
                     refreshSystemPrefixTokens(prefix);
                     var warmupPrompt = prefix + "<|im_start|>user\nping<|im_end|>\n<|im_start|>assistant\n";
                     var params = inferenceParams(warmupPrompt, cfg).setNPredict(1).setTemperature(0f);
+                    int warmupCtx = activeProfile.ctxSize();
                     if (cachedSystemPrefixTokens > 0
-                            && cachedSystemPrefixTokens < activeProfile.ctxSize() / 2) {
+                            && cachedSystemPrefixTokens < warmupCtx / 2
+                            && cachedSystemPrefixTokens + 1 < warmupCtx) {
                         params.setNKeep(cachedSystemPrefixTokens);
                     }
                     for (LlamaOutput ignored : model.generate(params)) {
@@ -336,13 +339,36 @@ public class LlamaCppInferenceService implements InferenceService {
 
         if (promptTokens > maxPromptTokens) {
             LOG.warning(String.format(
-                    "Prompt still exceeds KV budget after truncation: tokens=%d max=%d ctx=%d — inference may fail",
+                    "Prompt still exceeds KV budget after truncation: tokens=%d max=%d ctx=%d",
                     promptTokens, maxPromptTokens, activeProfile.ctxSize()));
         }
         if (dropped > limited.droppedMessages()) {
             LOG.info("Token budget truncation: dropped " + dropped + " oldest messages");
         }
         return new FittedPrompt(prompt, promptTokens, dropped);
+    }
+
+    private void validatePromptFitsContext(FittedPrompt fitted, InferenceConfig config) {
+        int nPredict = Math.min(config.maxTokens(), activeProfile.maxGenerateTokens());
+        int ctx = activeProfile.ctxSize();
+        if (fitted.promptTokens() + nPredict > ctx) {
+            throw new IllegalStateException(
+                    "This conversation is too long for the current context window ("
+                            + fitted.promptTokens()
+                            + " prompt tokens + "
+                            + nPredict
+                            + " reply budget > "
+                            + ctx
+                            + "). Start a new chat or lower Max Tokens in Settings.");
+        }
+        if (fitted.promptTokens() >= ctx - 64) {
+            throw new IllegalStateException(
+                    "The system prompt and message history exceed the model context ("
+                            + fitted.promptTokens()
+                            + " / "
+                            + ctx
+                            + " tokens). Start a new chat.");
+        }
     }
 
     private int countPromptTokens(String prompt) {
@@ -501,8 +527,11 @@ public class LlamaCppInferenceService implements InferenceService {
             int tokenCount = 0;
 
             var inferParams = inferenceParams(prompt, config);
+            int ctx = activeProfile.ctxSize();
+            int nPredict = Math.min(config.maxTokens(), activeProfile.maxGenerateTokens());
             if (cachedSystemPrefixTokens > 0
-                    && cachedSystemPrefixTokens < activeProfile.ctxSize() / 2) {
+                    && cachedSystemPrefixTokens < ctx / 2
+                    && cachedSystemPrefixTokens + nPredict < ctx) {
                 inferParams.setNKeep(cachedSystemPrefixTokens);
             }
 
