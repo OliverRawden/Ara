@@ -9,6 +9,7 @@ import tech.rawden.ara.comp.RegionBuilder;
 import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraModel;
 import tech.rawden.ara.core.AraTheme;
+import tech.rawden.ara.platform.AraLogo;
 import tech.rawden.ara.model.AppSettings;
 import tech.rawden.ara.model.ChatHistory;
 import tech.rawden.ara.model.ChatSession;
@@ -18,6 +19,7 @@ import tech.rawden.ara.model.SettingsStorage;
 
 import javafx.animation.FadeTransition;
 import javafx.scene.Cursor;
+import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -26,6 +28,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
 import java.util.logging.Logger;
@@ -166,11 +169,28 @@ public class MainViewComp extends RegionBuilder<HBox> {
     }
 
     private Region createEmptyChatView() {
-        var prompt = new Text("Create a new chat");
-        prompt.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 18));
-        prompt.getStyleClass().add("ara-empty-chat-text");
+        var icon = AraLogo.createNode(56);
+        icon.setOpacity(0.85);
 
-        var emptyView = new StackPane(prompt);
+        var title = new Text("Start a conversation");
+        title.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 20));
+        title.getStyleClass().add("ara-empty-chat-title");
+
+        var subtitle = new Text("Select a chat from the sidebar or create a new one.");
+        subtitle.setFont(Font.font("Inter", 13));
+        subtitle.setTextAlignment(TextAlignment.CENTER);
+        subtitle.setWrappingWidth(320);
+        subtitle.getStyleClass().add("ara-empty-chat-subtitle");
+
+        var hint = new Text("Tip: /light · /heavy · /team · /model");
+        hint.setFont(Font.font("Inter", 11));
+        hint.getStyleClass().add("ara-empty-chat-hint");
+
+        var stack = new VBox(10, icon, title, subtitle, hint);
+        stack.setAlignment(Pos.CENTER);
+        stack.getStyleClass().add("ara-empty-chat-content");
+
+        var emptyView = new StackPane(stack);
         emptyView.getStyleClass().add("ara-empty-chat-view");
         return emptyView;
     }

@@ -377,13 +377,17 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             var cc = new ClipboardContent();
             cc.putString(text);
             Clipboard.getSystemClipboard().setContent(cc);
+            copyIcon.setIconLiteral("mdi2c-check");
+            var revert = new javafx.animation.PauseTransition(Duration.millis(1400));
+            revert.setOnFinished(ev -> copyIcon.setIconLiteral("mdi2c-content-copy"));
+            revert.playFromStart();
         });
         return btn;
     }
 
     private Region createInputArea() {
         inputField = new TextField();
-        inputField.setPromptText("Type a message...");
+        inputField.setPromptText("Message Ara…  (/light, /heavy, /team)");
         inputField.getStyleClass().add("ara-input-field");
         inputField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER && !e.isShiftDown()) {

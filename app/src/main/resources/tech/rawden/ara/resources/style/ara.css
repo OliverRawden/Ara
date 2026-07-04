@@ -93,6 +93,27 @@
     -fx-border-width: 1.5;
 }
 
+.ara-chat-item-title {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-chat-item-selected .ara-chat-item-title {
+    -fx-fill: -color-accent-fg;
+}
+
+.ara-chat-item-preview {
+    -fx-fill: -color-fg-muted;
+}
+
+.ara-chat-item-time {
+    -fx-fill: derive(-color-fg-muted, 15%);
+}
+
+.ara-chat-list-hint {
+    -fx-fill: -color-fg-muted;
+    -fx-text-alignment: center;
+}
+
 .ara-chat-scroll {
     -fx-background-color: transparent;
 }
@@ -134,6 +155,24 @@
     -fx-fill: -color-fg-subtle;
 }
 
+.ara-empty-chat-content {
+    -fx-alignment: center;
+    -fx-padding: 24;
+}
+
+.ara-empty-chat-title {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-empty-chat-subtitle {
+    -fx-fill: -color-fg-subtle;
+}
+
+.ara-empty-chat-hint {
+    -fx-fill: -color-fg-muted;
+    -fx-padding: 8 0 0 0;
+}
+
 .ara-message-scroll {
     -fx-background-color: transparent;
 }
@@ -145,6 +184,7 @@
 /* ===== Message Bubbles ===== */
 .ara-message-container {
     -fx-background-color: transparent;
+    -fx-spacing: 14;
 }
 
 .ara-message-user {
@@ -201,7 +241,24 @@
     -fx-opacity: 0.9;
 }
 
+.ara-send-btn:pressed {
+    -fx-scale-x: 0.96;
+    -fx-scale-y: 0.96;
+}
+
 .ara-send-btn .ikonli-font-icon {
+    -fx-icon-color: -color-button-fg;
+}
+
+.ara-stop-btn {
+    -fx-background-color: -color-danger-emphasis;
+}
+
+.ara-stop-btn:hover {
+    -fx-opacity: 0.92;
+}
+
+.ara-stop-btn .ikonli-font-icon {
     -fx-icon-color: -color-button-fg;
 }
 
@@ -584,6 +641,8 @@
     -fx-background-color: derive(-color-accent-subtle, 80%);
     -fx-background-radius: 8;
     -fx-border-radius: 8;
+    -fx-border-color: derive(-color-accent-emphasis, -40%);
+    -fx-border-width: 1;
 }
 
 /* ===== Settings: Model Selector ===== */

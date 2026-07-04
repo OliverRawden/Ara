@@ -122,7 +122,7 @@ public class SidebarComp extends RegionBuilder<VBox> {
 
         var scroll = new ScrollPane(chatListView);
         scroll.setFitToWidth(true);
-        scroll.setVbarPolicy(ScrollBarPolicy.NEVER);
+        scroll.setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
         scroll.setHbarPolicy(ScrollBarPolicy.NEVER);
         scroll.hvalueProperty().addListener((obs, old, value) -> {
             if (value.doubleValue() != 0) {
@@ -151,7 +151,12 @@ public class SidebarComp extends RegionBuilder<VBox> {
             chatListView.getChildren().add(item);
         }
         if (sessions.size() > MAX_VISIBLE_CHATS_IN_SIDEBAR) {
-            // Optional: could add a "show more" placeholder in future
+            var more = new Text("Showing latest " + MAX_VISIBLE_CHATS_IN_SIDEBAR + " of " + sessions.size());
+            more.setFont(Font.font("Inter", 10));
+            more.getStyleClass().add("ara-chat-list-hint");
+            more.setWrappingWidth(240);
+            VBox.setMargin(more, new Insets(6, 4, 4, 4));
+            chatListView.getChildren().add(more);
         }
     }
 
@@ -163,21 +168,30 @@ public class SidebarComp extends RegionBuilder<VBox> {
                         - CHAT_ROW_DELETE_BTN_SPACE,
                 sidebarNode.widthProperty());
 
-        var lastMsg = session.lastMessage();
-        var displayText = lastMsg != null ? lastMsg.content() : "New Chat";
-        if (displayText.length() > 80) displayText = displayText.substring(0, 77) + "...";
+        var titleText = session.title();
+        if (titleText == null || titleText.isBlank() || "...".equals(titleText)) {
+            titleText = "New Chat";
+        }
 
-        var title = new Text(displayText);
-        title.setFont(Font.font("Inter", 12));
+        var title = new Text(titleText);
+        title.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 12));
+        title.getStyleClass().add("ara-chat-item-title");
         title.wrappingWidthProperty().bind(textMaxWidth);
+
+        var lastMsg = session.lastMessage();
+        var preview = previewText(lastMsg);
+        var previewNode = new Text(preview);
+        previewNode.setFont(Font.font("Inter", 10));
+        previewNode.getStyleClass().add("ara-chat-item-preview");
+        previewNode.wrappingWidthProperty().bind(textMaxWidth);
 
         var timeText =
                 new Text(session.createdAt().atZone(ZoneId.systemDefault()).format(TIME_FMT));
-        timeText.setFont(Font.font("Inter", 10));
-        timeText.setStyle("-fx-fill: -color-fg-muted;");
+        timeText.setFont(Font.font("Inter", 9));
+        timeText.getStyleClass().add("ara-chat-item-time");
 
-        var content = new VBox(1, title, timeText);
-        content.setPadding(new Insets(6, CHAT_ROW_CONTENT_PADDING, 6, CHAT_ROW_CONTENT_PADDING));
+        var content = new VBox(2, title, previewNode, timeText);
+        content.setPadding(new Insets(8, CHAT_ROW_CONTENT_PADDING, 8, CHAT_ROW_CONTENT_PADDING));
         HBox.setHgrow(content, Priority.ALWAYS);
 
         var deleteIcon = new FontIcon("mdi2c-close");
@@ -217,5 +231,24 @@ public class SidebarComp extends RegionBuilder<VBox> {
         btn.setPadding(new Insets(12, 20, 12, 20));
         btn.setOnAction(e -> model.selectView(AraModel.View.SETTINGS));
         return btn;
+    }
+
+    private static String previewText(tech.rawden.ara.model.ChatMessage lastMsg) {
+        if (lastMsg == null || lastMsg.content() == null || lastMsg.content().isBlank()) {
+            return "No messages yet";
+        }
+        if (lastMsg.role() == tech.rawden.ara.model.ChatMessage.Role.TOOL) {
+            var content = lastMsg.content().strip();
+            if (content.startsWith("web_search:")) {
+                return "Web search";
+            }
+            if (content.startsWith("Current date and time:")) {
+                return "Date & time";
+            }
+            var firstLine = content.lines().findFirst().orElse("Tool result");
+            return firstLine.length() > 60 ? firstLine.substring(0, 57) + "…" : firstLine;
+        }
+        var oneLine = lastMsg.content().replace('\n', ' ').strip();
+        return oneLine.length() > 60 ? oneLine.substring(0, 57) + "…" : oneLine;
     }
 }
