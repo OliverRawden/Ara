@@ -4,13 +4,13 @@
 
 Ara is a desktop JavaFX chat application that runs **fully on-device** using `java-llama.cpp` (GGUF models). It was bootstrapped from [KickstartFX](https://kickstartfx.xpipe.io/) and extensively customized. The UI uses AtlantaFX Cupertino theming with a sidebar-first layout.
 
-**Light/heavy routing** (v5.8 on `develop`): a ~7B light model stays hot for fast chat; a ~32B heavy model loads on demand for code, multi-step reasoning, and complex tool use, then unloads after idle. Routing mode: AUTO (keyword escalation), LIGHT_ONLY, or HEAVY_ONLY.
+**Light/heavy routing** (v5.9+): a ~7B light model stays hot for fast chat; a ~32B heavy model loads on demand for code, multi-step reasoning, and complex tool use, then unloads after idle. Routing mode: AUTO (keyword escalation), LIGHT_ONLY, or HEAVY_ONLY.
 
 Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **All Vex protocols** are auto-loaded from `~/Documents/Vex/Protocols/` into every system prompt via `VexProtocolCatalog` (IDs, names, descriptions, ara-tool mappings). Agent tools (101–109) and **teams** (e.g. 20) are subsets; new protocols added in Vex appear automatically when files change. Tools are editable in Vex but built-ins cannot be deleted.
 
 **Sibling app:** [Vex](../Vex) — protocol orchestration console; manages Ara tool schemas and Vex-native protocols.
 
-**Version:** `5.8.0` on `develop`; stable `5.7` on `main` (see `version` file)
+**Version:** `6.0` on `develop`; stable `5.9` on `main` (see `version` file)
 **Package:** `tech.rawden.ara`  
 **Product name:** `Ara`  
 **JDK:** Java 21+ (Java 25 recommended)  
@@ -23,8 +23,8 @@ Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **A
 
 | Branch | `version` file | Role |
 |--------|----------------|------|
-| **`main`** | `5.7` | Stable. Default branch. GitHub Releases and tags are cut from here. Holds `installers/latest.json` and `installers/models.json` (update + model metadata). |
-| **`develop`** | `5.8.0` | Unstable. All active development and Grok build sessions land here first. Light/heavy routing, developer mode, and next-cycle features land here before merge to `main`. |
+| **`main`** | `5.9` | Stable. Default branch. GitHub Releases and tags are cut from here. Holds `installers/latest.json` and `installers/models.json` (update + model metadata). |
+| **`develop`** | `6.0` | Unstable. All active development and Grok build sessions land here first. Next-cycle features land here before merge to `main`. |
 | **`master`** | (legacy) | Tracks older default; prefer `main` / `develop`. Keep `GROK.md` in sync when touched. |
 
 **Rule:** Never commit installer binaries (`.pkg`, `.dmg`, `.msi`) to git. They live only as GitHub Release assets.
@@ -35,24 +35,21 @@ Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **A
 
 | Item | Status |
 |------|--------|
-| **`develop` tip** | `a11df8b` — developer log window polish |
-| **`main` tip** | `97bb482` — heavy model manifest synced (`models-heavy-v1`) |
-| **`develop` version** | `5.8.0` (`version` file) |
-| **`main` version** | `5.7` (`version` file) |
-| **`develop` vs `main`** | **9 commits ahead** — routing, developer mode, heavy-model tuning (not yet merged) |
+| **`develop` tip** | v6.0 cycle — post v5.9 release |
+| **`main` tip** | `87f6b0d` — Release v5.9 |
+| **`develop` version** | `6.0` (`version` file) |
+| **`main` version** | `5.9` (`version` file) |
+| **`develop` vs `main`** | Next-cycle development after v5.9 cut |
 | **Repo visibility** | **Public** — no GitHub token required for update checks, model downloads, or release assets |
-| **Update metadata** | `installers/latest.json` on `main` → `latestVersion: 5.7` |
+| **Update metadata** | `installers/latest.json` on `main` → `latestVersion: 5.9` |
 | **Model metadata** | `installers/models.json` on `main` — light (`models-v1`) + heavy (`models-heavy-v1`) manifests |
 | **Metadata URLs** | `latest.json`: https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json · `models.json`: https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/models.json |
 | **GitHub Releases** | [v5.7](https://github.com/OliverRawden/Ara/releases/tag/v5.7) (stable app) · [models-v1](https://github.com/OliverRawden/Ara/releases/tag/models-v1) (light GGUF parts) · [models-heavy-v1](https://github.com/OliverRawden/Ara/releases/tag/models-heavy-v1) (heavy GGUF parts) |
 | **Release assets (v5.7)** | macOS arm64: `ara-installer-macos-arm64.pkg`, `ara-portable-macos-arm64.dmg` |
 
-**Known gaps (v5.8 release housekeeping)**
+**Release status**
 
-- Merge `develop` → `main` so v5.8 ships light/heavy routing, developer mode, and Apple Silicon heavy-model fixes.
-- Cut v5.8 GitHub Release from `main` with `RELEASE=true` (verify embedded version matches tag, not `*-SNAPSHOT`).
-- Bump `installers/latest.json` to `5.8` after release.
-- Trim `latest.json` to only uploaded assets (or add Windows/Linux builds).
+- v5.9 merged to `main` (4 Jul 2026). Cut GitHub Release v5.9 with `RELEASE=true` when installers are ready.
 
 **Local paths**
 
