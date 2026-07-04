@@ -163,6 +163,7 @@ public final class ModelRouter {
                                 + modelManager.modelsDirectory());
             }
         }
+        releaseMemoryBeforeHeavyLoad();
         loadAndWarm(path, ModelTier.HEAVY);
         activeTier = ModelTier.HEAVY;
         activeTierProperty.set(ModelTier.HEAVY);
@@ -172,14 +173,31 @@ public final class ModelRouter {
 
     private void loadAndWarm(Path path, ModelTier tier) throws Exception {
         String name = path.getFileName().toString();
+        var profile = ModelLoadProfile.forTier(tier, path);
         if (backend.status() == InferenceService.Status.READY
                 && name.equals(backend.modelName())
-                && backend.activeProfile() == ModelLoadProfile.forTier(tier)) {
+                && backend.activeProfile().equals(profile)) {
             return;
         }
-        backend.preparePromptCache(inferenceConfig);
         backend.loadModel(path, tier);
+        backend.preparePromptCache(inferenceConfig);
         backend.warmup(inferenceConfig);
+    }
+
+    /** Frees Metal/unified memory from the light model before loading a ~19 GB heavy GGUF. */
+    private void releaseMemoryBeforeHeavyLoad() {
+        if (activeTier == ModelTier.HEAVY || backend.status() != InferenceService.Status.READY) {
+            return;
+        }
+        LOG.info("Releasing loaded model before heavy load (free RAM: "
+                + String.format("%.1f GB", SystemMemory.freeBytes() / 1e9) + ")");
+        backend.unloadModel();
+        System.gc();
+        try {
+            Thread.sleep(150);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public void switchToLightAfterHeavyUse() {

@@ -39,6 +39,9 @@ public class LlamaCppInferenceService implements InferenceService {
                     + "Never call get_current_datetime unless they ask about date or time. "
                     + "Never call read_memory on a simple hello.";
 
+    private static final String TOOL_POLICY_COMPACT =
+            "Tools: only when needed for actions/data you lack; no tools for greetings or small talk.";
+
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final Object loadLock = new Object();
 
@@ -65,7 +68,7 @@ public class LlamaCppInferenceService implements InferenceService {
 
     /** Loads with tier-specific ctx/batch/GPU settings (required for 32B on 24 GB unified memory). */
     public void loadModel(Path modelPath, ModelTier tier) throws Exception {
-        loadModel(modelPath, ModelLoadProfile.forTier(tier));
+        loadModel(modelPath, ModelLoadProfile.forTier(tier, modelPath));
     }
 
     public void loadModel(Path modelPath, ModelLoadProfile profile) throws Exception {
@@ -73,7 +76,7 @@ public class LlamaCppInferenceService implements InferenceService {
             if (status == Status.READY
                     && model != null
                     && modelPath.getFileName().toString().equals(modelName)
-                    && activeProfile == profile) {
+                    && activeProfile.equals(profile)) {
                 return;
             }
             status = Status.LOADING;
@@ -92,7 +95,7 @@ public class LlamaCppInferenceService implements InferenceService {
                 cachedSystemPrefixTokens = 0;
                 status = Status.READY;
                 LOG.info("Model loaded in " + (System.nanoTime() - loadStart) / 1_000_000 + "ms: " + modelName
-                        + " profile=" + profile.name() + " ctx=" + profile.ctxSize());
+                        + " profile=" + profile.tier().name() + " ctx=" + profile.ctxSize());
             } catch (Exception e) {
                 status = Status.ERROR;
                 modelName = "None";
@@ -115,7 +118,7 @@ public class LlamaCppInferenceService implements InferenceService {
 
     private static ModelParameters buildModelParams(Path modelPath, ModelLoadProfile profile) {
         int cores = Runtime.getRuntime().availableProcessors();
-        int threads = Math.max(4, cores - 1);
+        int threads = Math.max(4, cores);
         int threadsBatch = Math.max(threads, cores);
 
         var params = new ModelParameters()
@@ -126,6 +129,7 @@ public class LlamaCppInferenceService implements InferenceService {
                 .setCtxSize(profile.ctxSize())
                 .setBatchSize(profile.batchSize())
                 .setUbatchSize(profile.ubatchSize())
+                .setParallel(1)
                 .enableFlashAttn()
                 .setCacheTypeK(profile.cacheK())
                 .setCacheTypeV(profile.cacheV())
@@ -134,7 +138,7 @@ public class LlamaCppInferenceService implements InferenceService {
                 .skipWarmup()
                 .disablePerf();
 
-        if (profile == ModelLoadProfile.LIGHT && shouldMlock()) {
+        if (profile.tier() == ModelTier.LIGHT && shouldMlock()) {
             params.enableMlock();
         }
         if (shouldUseNuma()) {
@@ -220,17 +224,18 @@ public class LlamaCppInferenceService implements InferenceService {
                 return;
             }
             long buildStart = System.nanoTime();
-            int contextBudget = Math.min(config.maxContextChars(), activeProfile.maxContextChars());
-            var limited = PromptContextLimiter.limit(history, contextBudget);
-            if (limited.droppedMessages() > 0) {
-                LOG.info("Context truncated: dropped " + limited.droppedMessages() + " oldest messages");
-            }
-            var prompt = buildPrompt(userMessage, config, limited.history(), withTools, limited.droppedMessages());
+            var fitted = fitPromptToContext(userMessage, config, history, withTools);
             long buildMs = (System.nanoTime() - buildStart) / 1_000_000;
             LOG.info(String.format(
-                    "Inference job: promptChars=%d, historyMsgs=%d, dropped=%d, buildMs=%d, tools=%s",
-                    prompt.length(), history.size(), limited.droppedMessages(), buildMs, withTools));
-            runInference(prompt, config, onToken, onComplete, onError, onToolCall);
+                    "Inference job: promptChars=%d, promptTokens=%d, ctx=%d, historyMsgs=%d, dropped=%d, buildMs=%d, tools=%s",
+                    fitted.prompt().length(),
+                    fitted.promptTokens(),
+                    activeProfile.ctxSize(),
+                    history.size(),
+                    fitted.droppedMessages(),
+                    buildMs,
+                    withTools));
+            runInference(fitted.prompt(), config, onToken, onComplete, onError, onToolCall);
         } catch (Exception e) {
             LOG.warning("Generation failed: " + e.getMessage());
             onError.accept(e);
@@ -289,7 +294,55 @@ public class LlamaCppInferenceService implements InferenceService {
     @Override
     public void preparePromptCache(InferenceConfig config) {
         var cfg = config != null ? config : InferenceConfig.defaults();
-        buildStaticSystemContent(cfg, true);
+        buildStaticSystemContent(cfg, true, activeProfile);
+    }
+
+    private record FittedPrompt(String prompt, int promptTokens, int droppedMessages) {}
+
+    private FittedPrompt fitPromptToContext(
+            String userMessage,
+            InferenceConfig config,
+            List<ChatMessage> history,
+            boolean withTools) {
+        int contextBudget = Math.min(config.maxContextChars(), activeProfile.maxContextChars());
+        var limited = PromptContextLimiter.limit(history, contextBudget);
+        int outputReserve = Math.min(config.maxTokens(), activeProfile.maxGenerateTokens());
+        int maxPromptTokens = activeProfile.ctxSize() - outputReserve - 32;
+
+        String prompt = buildPrompt(userMessage, config, limited.history(), withTools, limited.droppedMessages());
+        int promptTokens = countPromptTokens(prompt);
+        int dropped = limited.droppedMessages();
+
+        var working = new java.util.ArrayList<>(limited.history());
+        while (promptTokens > maxPromptTokens
+                && working.size() > PromptContextLimiter.MIN_RECENT_MESSAGES) {
+            working.remove(0);
+            dropped++;
+            prompt = buildPrompt(userMessage, config, working, withTools, dropped);
+            promptTokens = countPromptTokens(prompt);
+        }
+
+        if (promptTokens > maxPromptTokens) {
+            LOG.warning(String.format(
+                    "Prompt still exceeds KV budget after truncation: tokens=%d max=%d ctx=%d — inference may fail",
+                    promptTokens, maxPromptTokens, activeProfile.ctxSize()));
+        }
+        if (dropped > limited.droppedMessages()) {
+            LOG.info("Token budget truncation: dropped " + dropped + " oldest messages");
+        }
+        return new FittedPrompt(prompt, promptTokens, dropped);
+    }
+
+    private int countPromptTokens(String prompt) {
+        if (model == null) {
+            return prompt.length() / 4;
+        }
+        try {
+            return model.encode(prompt).length;
+        } catch (Exception e) {
+            LOG.warning("Could not tokenize prompt: " + e.getMessage());
+            return prompt.length() / 4;
+        }
     }
 
     private String buildPrompt(
@@ -343,7 +396,7 @@ public class LlamaCppInferenceService implements InferenceService {
         if (cachedSystemBlock != null && cachedSystemBlockKey == key) {
             base = cachedSystemBlock;
         } else {
-            base = buildStaticSystemContent(config, withTools);
+            base = buildStaticSystemContent(config, withTools, activeProfile);
             cachedSystemBlock = base;
             cachedSystemBlockKey = key;
             cachedSystemPrefixTokens = 0;
@@ -357,15 +410,21 @@ public class LlamaCppInferenceService implements InferenceService {
         return base;
     }
 
-    private static String buildStaticSystemContent(InferenceConfig config, boolean withTools) {
+    private static String buildStaticSystemContent(
+            InferenceConfig config, boolean withTools, ModelLoadProfile profile) {
         var system = config.systemPrompt() != null && !config.systemPrompt().isBlank()
                 ? config.systemPrompt()
                 : InferenceConfig.DEFAULT_SYSTEM_PROMPT;
 
-        system += VexProtocolCatalog.formatCatalogSection();
+        if (profile.compactPrompt()) {
+            system += "\n\nVex agent tools use ara-tool names in <|tool_call|> (not protocol IDs).";
+        } else {
+            system += VexProtocolCatalog.formatCatalogSection();
+        }
 
         if (withTools) {
-            system += "\n\n" + TOOL_POLICY + "\n\nTools:\n"
+            var policy = profile.compactPrompt() ? TOOL_POLICY_COMPACT : TOOL_POLICY;
+            system += "\n\n" + policy + "\n\nTools:\n"
                     + ToolCall.getFunctionDefinitions(
                             config.webSearchEnabled(), config.contextMemoryEnabled(), config.terminalEnabled())
                     + "\n\nTool call format: <|tool_call|>{\"name\":\"<ara-tool>\",\"arguments\":{...}}<|im_end|>";
@@ -381,7 +440,7 @@ public class LlamaCppInferenceService implements InferenceService {
                 .setCachePrompt(true);
     }
 
-    private static int systemBlockKey(InferenceConfig config, boolean withTools) {
+    private int systemBlockKey(InferenceConfig config, boolean withTools) {
         var clockBucket = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
         return Objects.hash(
                 config.systemPrompt(),
@@ -389,6 +448,7 @@ public class LlamaCppInferenceService implements InferenceService {
                 config.contextMemoryEnabled(),
                 config.terminalEnabled(),
                 withTools,
+                activeProfile.compactPrompt(),
                 VexProtocolCatalog.protocols().size(),
                 clockBucket);
     }
