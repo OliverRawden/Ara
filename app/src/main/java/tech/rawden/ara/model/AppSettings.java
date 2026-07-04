@@ -1,5 +1,7 @@
 package tech.rawden.ara.model;
 
+import tech.rawden.ara.ai.RoutingMode;
+
 public class AppSettings {
 
     private float temperature = 0.7f;
@@ -13,9 +15,23 @@ public class AppSettings {
     private boolean encryptionEnabled = false;
     private boolean useSystemAccent = true;
     private String selectedModel = "";
+    /** Light model filename (hot). Defaults to {@link #selectedModel} when blank. */
+    private String lightModel = "";
+    /** Heavy model filename (on-demand). */
+    private String heavyModel = "";
+    /** AUTO, LIGHT_ONLY, or HEAVY_ONLY. */
+    private String routingMode = RoutingMode.AUTO.name();
+    /** Download chunk size in megabytes (8–16 recommended). */
+    private int downloadChunkSizeMb = 12;
+    private int maxConcurrentConnections = 4;
+    /** When true, heavy model download uses Ara repo manifest. */
+    private boolean downloadHeavyFromRepo = true;
 
     /** When true, a background check runs once after startup (never blocks launch). Default off for privacy. */
     private boolean checkForUpdatesOnStartup = false;
+
+    /** When true, shows the live developer log window and captures verbose diagnostics. */
+    private boolean developerMode = false;
 
     /** ISO-8601 timestamp of the last manual or automatic update check (null if never). */
     private String lastUpdateCheckAt;
@@ -103,6 +119,54 @@ public class AppSettings {
         this.selectedModel = selectedModel;
     }
 
+    public String getLightModel() {
+        return lightModel != null && !lightModel.isBlank() ? lightModel : selectedModel;
+    }
+
+    public void setLightModel(String lightModel) {
+        this.lightModel = lightModel;
+    }
+
+    public String getHeavyModel() {
+        return heavyModel;
+    }
+
+    public void setHeavyModel(String heavyModel) {
+        this.heavyModel = heavyModel;
+    }
+
+    public RoutingMode getRoutingMode() {
+        return RoutingMode.fromString(routingMode);
+    }
+
+    public void setRoutingMode(RoutingMode mode) {
+        this.routingMode = mode != null ? mode.name() : RoutingMode.AUTO.name();
+    }
+
+    public int getDownloadChunkSizeMb() {
+        return downloadChunkSizeMb > 0 ? downloadChunkSizeMb : 12;
+    }
+
+    public void setDownloadChunkSizeMb(int downloadChunkSizeMb) {
+        this.downloadChunkSizeMb = downloadChunkSizeMb;
+    }
+
+    public int getMaxConcurrentConnections() {
+        return maxConcurrentConnections > 0 ? maxConcurrentConnections : 4;
+    }
+
+    public void setMaxConcurrentConnections(int maxConcurrentConnections) {
+        this.maxConcurrentConnections = maxConcurrentConnections;
+    }
+
+    public boolean isDownloadHeavyFromRepo() {
+        return downloadHeavyFromRepo;
+    }
+
+    public void setDownloadHeavyFromRepo(boolean downloadHeavyFromRepo) {
+        this.downloadHeavyFromRepo = downloadHeavyFromRepo;
+    }
+
     public boolean isUseSystemAccent() {
         return useSystemAccent;
     }
@@ -133,5 +197,13 @@ public class AppSettings {
 
     public void setLastUpdateCheckStatus(String lastUpdateCheckStatus) {
         this.lastUpdateCheckStatus = lastUpdateCheckStatus;
+    }
+
+    public boolean isDeveloperMode() {
+        return developerMode;
+    }
+
+    public void setDeveloperMode(boolean developerMode) {
+        this.developerMode = developerMode;
     }
 }

@@ -3,6 +3,9 @@ package tech.rawden.ara;
 import tech.rawden.ara.ai.LlamaCppInferenceService;
 import tech.rawden.ara.ai.ModelManager;
 import tech.rawden.ara.ai.ModelPreloader;
+import tech.rawden.ara.ai.ModelRouter;
+import tech.rawden.ara.ai.RoutingInferenceService;
+import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraModel;
 import tech.rawden.ara.core.AraPaths;
 import tech.rawden.ara.core.AraTheme;
@@ -12,9 +15,11 @@ import tech.rawden.ara.model.AppSettings;
 import tech.rawden.ara.model.ChatHistory;
 import tech.rawden.ara.model.ChatStorage;
 import tech.rawden.ara.model.InferenceConfig;
+import tech.rawden.ara.model.SettingsReloader;
 import tech.rawden.ara.model.SettingsStorage;
 import tech.rawden.ara.platform.MacWindow;
 import tech.rawden.ara.tool.ToolCatalog;
+import tech.rawden.ara.ui.DeveloperLogWindow;
 import tech.rawden.ara.ui.MainViewComp;
 import tech.rawden.ara.update.AppVersion;
 import tech.rawden.ara.update.UpdateDialog;
@@ -41,24 +46,39 @@ import java.util.logging.Logger;
  *   <li>Encryption unlock dialog if needed (PBKDF2 on virtual thread)</li>
  *   <li>Parallel background work: chat decrypt/load + GGUF model preload</li>
  * </ol>
- * Model preload never blocks window appearance; see {@link ModelPreloader}.
+ *
+ * <p><b>Threading:</b> all FX updates via {@link javafx.application.Platform#runLater}; background work
+ * (chat load, model preload, update checks, crypto) via virtual threads ({@code ara-data-loader},
+ * {@code ara-model-preloader}, {@code ara-crypto}) so the UI thread is never blocked.
+ *
+ * <p>Developer mode enables {@link DeveloperLogWindow} and {@link tech.rawden.ara.model.SettingsReloader}
+ * for live diagnostics and settings hot-reload.
+ *
+ * @see ModelPreloader — model preload never blocks window appearance
  */
 public class Main extends Application {
 
     public static final String VERSION = AppVersion.current();
 
-    private static final Logger LOG = Logger.getLogger(Main.class.getName());
+    private static final Logger LOG = AppLog.of("startup");
 
-    private LlamaCppInferenceService inferenceService;
+    private RoutingInferenceService inferenceService;
 
     @Override
     public void start(Stage stage) {
+        AppLog.install();
+        LOG.info("Ara " + VERSION + " starting (Java " + System.getProperty("java.version") + ")");
+
         AraModel.init();
         AraTheme.init();
         ToolCatalog.reload();
 
         var settingsStorage = new SettingsStorage();
         var appSettings = settingsStorage.load();
+        AppLog.setVerbose(appSettings.isDeveloperMode());
+        if (appSettings.isDeveloperMode()) {
+            LOG.info("Developer mode enabled — opening diagnostic log window");
+        }
         AraTheme.setUseSystemAccent(appSettings.isUseSystemAccent());
         AraTheme.setDark(appSettings.isDarkMode());
 
@@ -83,6 +103,10 @@ public class Main extends Application {
         stage.setMinHeight(500);
         stage.show();
 
+        if (appSettings.isDeveloperMode()) {
+            Platform.runLater(() -> DeveloperLogWindow.show(stage));
+        }
+
         if (OsType.ofLocal() == OsType.MACOS) {
             Platform.runLater(() -> MacWindow.applyModernStyle(stage));
         }
@@ -101,17 +125,38 @@ public class Main extends Application {
         config.setContextMemoryEnabled(appSettings.isContextMemoryEnabled());
         config.setRequireTerminalConfirmation(appSettings.isRequireTerminalConfirmation());
 
-        inferenceService = new LlamaCppInferenceService();
-        var modelManager = new ModelManager();
-        var modelPreloader = new ModelPreloader(inferenceService, modelManager, config);
+        var backend = new LlamaCppInferenceService();
+        var modelManager = new ModelManager(appSettings.getDownloadChunkSizeMb());
+        var modelRouter = new ModelRouter(backend, modelManager, appSettings, config);
+        inferenceService = new RoutingInferenceService(backend, modelRouter);
+        var modelPreloader = new ModelPreloader(inferenceService, modelManager, config, modelRouter);
 
-        // Start GGUF mmap/GPU init immediately — does not need encryption unlock or chat data.
-        modelPreloader.schedulePreload(appSettings.getSelectedModel());
+        if (appSettings.isDeveloperMode()) {
+            var settingsReloader = new SettingsReloader(settingsStorage);
+            settingsReloader.addListener(reloaded -> Platform.runLater(() -> {
+                AppLog.setVerbose(reloaded.isDeveloperMode());
+                appSettings.setRoutingMode(reloaded.getRoutingMode());
+                appSettings.setTemperature(reloaded.getTemperature());
+                appSettings.setMaxTokens(reloaded.getMaxTokens());
+                appSettings.setSystemPrompt(reloaded.getSystemPrompt());
+                config.setTemperature(reloaded.getTemperature());
+                config.setMaxTokens(reloaded.getMaxTokens());
+                config.setSystemPrompt(reloaded.getSystemPrompt());
+                modelRouter.applySettings(reloaded);
+                LOG.info("Applied hot-reloaded settings");
+            }));
+            settingsReloader.start();
+        }
+
+        // Start light GGUF mmap/GPU init immediately — does not need encryption unlock or chat data.
+        LOG.info("Scheduling light model preload: " + appSettings.getLightModel());
+        modelPreloader.schedulePreload(appSettings.getLightModel());
 
         var mainView = new MainViewComp(
                 AraModel.get(),
                 initialChatHistory,
                 inferenceService,
+                modelRouter,
                 modelManager,
                 modelPreloader,
                 config,
@@ -218,14 +263,16 @@ public class Main extends Application {
             Platform.runLater(() -> MacWindow.applyModernStyle(stage));
         }
 
-        Runnable loadRealChats =
-                () -> Thread.ofVirtual().name("ara-data-loader").start(() -> {
-                    try {
-                        ChatHistory realHistory = chatStorage.load();
-                        Platform.runLater(() -> mainView.updateChatHistory(realHistory));
-                    } catch (Exception ex) {
+        // Virtual thread: decrypt + lazy-load recent sessions — never blocks FX thread.
+        Runnable loadRealChats = () -> chatStorage
+                .loadAsync(r -> Thread.ofVirtual().name("ara-data-loader").start(r))
+                .whenComplete((realHistory, ex) -> {
+                    if (ex != null) {
                         LOG.warning("Data load failed: " + ex.getMessage());
+                        return;
                     }
+                    LOG.info("Chat history loaded: " + realHistory.sessions().size() + " sessions");
+                    Platform.runLater(() -> mainView.updateChatHistory(realHistory));
                 });
 
         Runnable onSessionReady = () -> {
@@ -244,6 +291,8 @@ public class Main extends Application {
 
     @Override
     public void stop() {
+        LOG.info("Ara shutting down");
+        DeveloperLogWindow.dispose();
         if (inferenceService != null) {
             var shutdown = new Thread(inferenceService::shutdown);
             shutdown.setDaemon(true);

@@ -234,6 +234,135 @@
     -fx-margin: 8 14;
 }
 
+/* ===== Markdown (flexmark) ===== */
+.ara-md-h1 {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-md-h2 {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-md-h3 {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-md-h4, .ara-md-h5, .ara-md-h6 {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-md-heading .text {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-md-inline-code {
+    -fx-fill: #A5D6FF;
+    -fx-background-color: #1A1A1A;
+}
+
+.ara-md-code-lang {
+    -fx-fill: -color-fg-muted;
+}
+
+.ara-md-code-scroll {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.ara-md-code-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.ara-md-link {
+    -fx-fill: -color-accent-fg;
+}
+
+.ara-md-link:hover {
+    -fx-fill: -color-accent-emphasis;
+}
+
+.ara-md-blockquote {
+    -fx-background-color: #1E1E1E;
+    -fx-border-color: -color-accent-emphasis;
+    -fx-border-width: 0 0 0 3;
+    -fx-background-radius: 0 6 6 0;
+}
+
+.ara-md-blockquote .text {
+    -fx-fill: -color-fg-subtle;
+    -fx-font-style: italic;
+}
+
+.ara-md-hr {
+    -fx-background-color: #3A3A3A;
+}
+
+.ara-md-strikethrough {
+    -fx-fill: -color-fg-muted;
+}
+
+.ara-md-table-scroll {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.ara-md-table-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.ara-md-table {
+    -fx-background-color: #1A1A1A;
+    -fx-border-color: #3A3A3A;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.ara-md-table-header {
+    -fx-background-color: #252525;
+    -fx-border-color: #3A3A3A;
+    -fx-border-width: 0 1 1 0;
+}
+
+.ara-md-table-header .text {
+    -fx-fill: -color-fg-default;
+    -fx-font-weight: bold;
+}
+
+.ara-md-table-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: #3A3A3A;
+    -fx-border-width: 0 1 1 0;
+}
+
+.ara-md-table-cell .text {
+    -fx-fill: -color-fg-default;
+}
+
+.ara-syntax-plain {
+    -fx-fill: #E6E6E6;
+}
+
+.ara-syntax-keyword {
+    -fx-fill: #C792EA;
+}
+
+.ara-syntax-string {
+    -fx-fill: #C3E88D;
+}
+
+.ara-syntax-comment {
+    -fx-fill: #546E7A;
+}
+
+.ara-syntax-number {
+    -fx-fill: #F78C6C;
+}
+
+.ara-syntax-type {
+    -fx-fill: #FFCB6B;
+}
+
 .ara-code-copy-btn {
     -fx-background-color: transparent;
     -fx-background-radius: 4;
@@ -397,6 +526,66 @@
     -fx-padding: -0.2em 0 0 0;
 }
 
+/* ===== Chat: Model routing chip ===== */
+.ara-model-chip-host {
+    -fx-pref-height: 22;
+    -fx-max-height: 22;
+}
+
+.ara-model-chip {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-border-color: #3a3a3a;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 2 8 2 6;
+    -fx-min-height: 22;
+    -fx-max-height: 22;
+    -fx-cursor: hand;
+}
+
+.ara-model-chip:hover {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #4a4a4a;
+}
+
+.ara-model-chip-auto {
+    -fx-border-color: #3a3a3a;
+}
+
+.ara-model-chip-heavy {
+    -fx-border-color: derive(-color-accent-emphasis, -30%);
+    -fx-background-color: derive(-color-accent-subtle, 85%);
+}
+
+.ara-model-chip-label {
+    -fx-font-size: 10px;
+    -fx-text-fill: -color-fg-subtle;
+}
+
+.ara-model-chip .ikonli-font-icon {
+    -fx-icon-color: -color-fg-muted;
+    -fx-icon-size: 11;
+}
+
+.ara-model-chip-heavy .ikonli-font-icon {
+    -fx-icon-color: -color-accent-fg;
+}
+
+.ara-model-indicator-light {
+    -fx-fill: #4ade80;
+}
+
+.ara-model-indicator-heavy {
+    -fx-fill: #60a5fa;
+}
+
+.ara-escalation-banner {
+    -fx-background-color: derive(-color-accent-subtle, 80%);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
 /* ===== Settings: Model Selector ===== */
 .ara-model-selector {
     -fx-background-radius: 8;
@@ -504,4 +693,14 @@
 .slider.progress-slider:vertical > .progress {
     -fx-background-insets: 0, 0 6px 0 6px;
     -fx-background-radius: 0 0 6px 6px;
+}
+
+/* ===== Developer log window ===== */
+.ara-dev-log-root {
+    -fx-background-color: -color-bg-default;
+}
+
+.ara-dev-log-area {
+    -fx-font-family: "Menlo", "SF Mono", "Consolas", monospace;
+    -fx-font-size: 11px;
 }

@@ -1,21 +1,14 @@
 package tech.rawden.ara.ai;
 
+import tech.rawden.ara.core.AppLog;
+import tech.rawden.ara.core.AraConfig;
 import tech.rawden.ara.core.AraPaths;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 import java.time.Duration;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -23,24 +16,38 @@ import java.util.stream.Stream;
 
 /**
  * Discovers, downloads, and resolves GGUF model files under {@code ~/Documents/Ara/models/}.
- * Default model metadata and download URLs come from {@code installers/models.json} on the Ara
- * GitHub repo (see {@link ModelCatalog}).
+ *
+ * <p>Default and heavy model metadata come from {@link ModelCatalog} ({@code installers/models.json}
+ * on GitHub). Downloads use {@link ModelDownloader} with exponential-backoff retries.
+ *
+ * <p><b>Thread-safety:</b> safe for concurrent reads; download methods should not overlap the same
+ * target filename without external coordination.
+ *
+ * @apiNote UI progress callbacks should marshal to the FX thread via {@link tech.rawden.ara.platform.PlatformThread}.
  */
 public class ModelManager {
 
-    private static final Logger LOG = Logger.getLogger(ModelManager.class.getName());
+    private static final Logger LOG = AppLog.of("model");
 
     private static final Path MODELS_DIR = AraPaths.modelsDir();
-    private static final Duration DOWNLOAD_TIMEOUT = Duration.ofHours(6);
-    private static final String USER_AGENT = "Ara/" + tech.rawden.ara.update.AppVersion.current() + " (model-download)";
 
     private final HttpClient httpClient;
+    private final ModelDownloader downloader;
 
     public ModelManager() {
         this.httpClient = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
-                .connectTimeout(Duration.ofSeconds(30))
+                .connectTimeout(AraConfig.httpConnectTimeout())
                 .build();
+        this.downloader = new ModelDownloader(httpClient);
+    }
+
+    public ModelManager(int downloadChunkSizeMb) {
+        this.httpClient = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .connectTimeout(AraConfig.httpConnectTimeout())
+                .build();
+        this.downloader = new ModelDownloader(httpClient, downloadChunkSizeMb);
     }
 
     public Path modelsDirectory() {
@@ -48,20 +55,48 @@ public class ModelManager {
     }
 
     public void ensureModelsDirectory() throws IOException {
-        Files.createDirectories(MODELS_DIR);
+        downloader.ensureModelsDirectory();
     }
 
     public Path defaultModelPath() {
         return MODELS_DIR.resolve(defaultModelFilename());
     }
 
+    public Path heavyModelPath(String preferredFilename) {
+        String filename = preferredFilename != null && !preferredFilename.isBlank()
+                ? preferredFilename
+                : heavyModelFilename();
+        return MODELS_DIR.resolve(filename);
+    }
+
     public String defaultModelFilename() {
         return ModelCatalog.resolveDefaultModel(httpClient).filename;
+    }
+
+    public String heavyModelFilename() {
+        return ModelCatalog.resolveHeavyModel(httpClient).filename;
     }
 
     public String defaultModelDisplayName() {
         var model = ModelCatalog.resolveDefaultModel(httpClient);
         return model.displayName != null && !model.displayName.isBlank() ? model.displayName : model.filename;
+    }
+
+    public String heavyModelDisplayName() {
+        var model = ModelCatalog.resolveHeavyModel(httpClient);
+        return model.displayName != null && !model.displayName.isBlank() ? model.displayName : model.filename;
+    }
+
+    public boolean isHeavyDownloadAvailable() {
+        return downloader.isDownloadAvailable(ModelCatalog.resolveHeavyModel(httpClient));
+    }
+
+    public boolean isModelPresent(String filename) throws IOException {
+        if (filename == null || filename.isBlank()) {
+            return false;
+        }
+        Path path = MODELS_DIR.resolve(filename);
+        return Files.exists(path) && Files.size(path) > 0;
     }
 
     public List<Path> listModels() throws IOException {
@@ -117,138 +152,27 @@ public class ModelManager {
     }
 
     public void downloadDefaultModel(ProgressCallback callback) throws IOException, InterruptedException {
-        ensureModelsDirectory();
-        var meta = ModelCatalog.resolveDefaultModel(httpClient);
-        Path target = MODELS_DIR.resolve(meta.filename);
-        Path tempFile = target.resolveSibling(target.getFileName() + ".tmp");
+        downloadModel(ModelCatalog.resolveDefaultModel(httpClient), callback);
+    }
 
-        if (hasParts(meta)) {
-            LOG.info("Downloading default model from Ara repo (" + meta.parts.size() + " parts)...");
-            downloadAndAssembleParts(meta, tempFile, callback);
-        } else if (meta.downloadUrl != null && !meta.downloadUrl.isBlank()) {
-            LOG.info("Downloading default model from " + meta.downloadUrl);
-            downloadUrlToFile(meta.downloadUrl, tempFile, meta.sizeBytes, callback);
-        } else {
-            throw new IOException("No download URL or parts defined in model metadata.");
+    public void downloadHeavyModel(ProgressCallback callback) throws IOException, InterruptedException {
+        var meta = ModelCatalog.resolveHeavyModel(httpClient);
+        if (!downloader.isDownloadAvailable(meta)) {
+            throw new IOException(
+                    "Heavy model is not yet hosted on the Ara repo. Place a GGUF in "
+                            + MODELS_DIR
+                            + " or update installers/models.json with download parts.");
         }
-
-        verifyDownload(tempFile, meta);
-        Files.move(tempFile, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        LOG.info("Download complete: " + target);
+        downloadModel(meta, callback);
     }
 
-    private static boolean hasParts(ModelRelease.DefaultModel meta) {
-        return meta.parts != null && !meta.parts.isEmpty();
-    }
-
-    private void downloadAndAssembleParts(ModelRelease.DefaultModel meta, Path tempFile, ProgressCallback callback)
+    private void downloadModel(ModelRelease.DefaultModel meta, ProgressCallback callback)
             throws IOException, InterruptedException {
-        long total = expectedTotalBytes(meta);
-        long downloaded = 0;
-        MessageDigest digest = newMessageDigest();
-
-        try (OutputStream out = new DigestOutputStream(Files.newOutputStream(tempFile), digest)) {
-            for (var part : meta.parts) {
-                LOG.info("Downloading part: " + part.filename);
-                downloaded = downloadUrlToStream(part.url, out, downloaded, total, callback);
-            }
-        }
-
-        if (meta.sha256 != null && !meta.sha256.isBlank()) {
-            var actual = HexFormat.of().formatHex(digest.digest());
-            if (!actual.equalsIgnoreCase(meta.sha256)) {
-                Files.deleteIfExists(tempFile);
-                throw new IOException("SHA-256 mismatch after assembling model parts.");
-            }
-        }
-    }
-
-    private void downloadUrlToFile(String url, Path dest, long expectedSize, ProgressCallback callback)
-            throws IOException, InterruptedException {
-        try (OutputStream out = Files.newOutputStream(dest)) {
-            downloadUrlToStream(url, out, 0, expectedSize > 0 ? expectedSize : -1, callback);
-        }
-    }
-
-    private long downloadUrlToStream(
-            String url, OutputStream out, long downloadedSoFar, long totalBytes, ProgressCallback callback)
-            throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(DOWNLOAD_TIMEOUT)
-                .header("User-Agent", USER_AGENT)
-                .GET()
-                .build();
-
-        HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new IOException("Download failed HTTP " + response.statusCode() + " for " + url);
-        }
-
-        long total = totalBytes;
-        if (total < 0) {
-            total = response.headers().firstValueAsLong("Content-Length").orElse(-1);
-        }
-
-        byte[] buf = new byte[8192];
-        long downloaded = downloadedSoFar;
-        try (InputStream in = response.body()) {
-            int read;
-            while ((read = in.read(buf)) != -1) {
-                out.write(buf, 0, read);
-                downloaded += read;
-                if (callback != null) {
-                    callback.onProgress(downloaded, total);
-                }
-            }
-        }
-        return downloaded;
-    }
-
-    private static void verifyDownload(Path file, ModelRelease.DefaultModel meta) throws IOException {
-        long size = Files.size(file);
-        if (meta.sizeBytes > 0 && size != meta.sizeBytes) {
-            Files.deleteIfExists(file);
-            throw new IOException("Downloaded size " + size + " does not match expected " + meta.sizeBytes);
-        }
-        if (meta.sha256 != null && !meta.sha256.isBlank()) {
-            String actual = sha256Hex(file);
-            if (!actual.equalsIgnoreCase(meta.sha256)) {
-                Files.deleteIfExists(file);
-                throw new IOException("SHA-256 mismatch for downloaded model.");
-            }
-        }
-    }
-
-    private static long expectedTotalBytes(ModelRelease.DefaultModel meta) {
-        if (meta.sizeBytes > 0) {
-            return meta.sizeBytes;
-        }
-        return meta.parts.stream().mapToLong(p -> p.sizeBytes).sum();
-    }
-
-    private static MessageDigest newMessageDigest() throws IOException {
-        try {
-            return MessageDigest.getInstance("SHA-256");
-        } catch (Exception e) {
-            throw new IOException("SHA-256 not available", e);
-        }
-    }
-
-    private static String sha256Hex(Path file) throws IOException {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] buf = new byte[8192];
-            try (InputStream in = Files.newInputStream(file)) {
-                int read;
-                while ((read = in.read(buf)) != -1) {
-                    digest.update(buf, 0, read);
-                }
-            }
-            return HexFormat.of().formatHex(digest.digest());
-        } catch (Exception e) {
-            throw new IOException("Could not hash model file", e);
-        }
+        downloader.download(
+                meta,
+                callback != null
+                        ? (downloaded, total) -> callback.onProgress(downloaded, total)
+                        : null);
     }
 
     @FunctionalInterface

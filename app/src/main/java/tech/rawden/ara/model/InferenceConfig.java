@@ -9,7 +9,9 @@ public class InferenceConfig {
                     + "personality. You are concise when needed and elaborate when appropriate.\n\n"
                     + "A compact Vex Protocol Catalog is appended below. Agent tools use ara-tool names in "
                     + "<|tool_call|> (not protocol IDs). For ~/Documents/Ara/context.md use read_memory, "
-                    + "write_memory, or append_memory — never shell cat/echo/tee.";
+                    + "write_memory, or append_memory — never shell cat/echo/tee. For structured facts use "
+                    + "memory graph tools (query_memory_graph, upsert_memory_entity, link_memory_entities). "
+                    + "Teams: /team <protocol-id> activates multi-agent handoff.";
 
     public static final int DEFAULT_MAX_TOKENS = 4096;
     public static final int DEFAULT_MAX_CONTEXT_CHARS = 28_000;

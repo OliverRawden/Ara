@@ -1,6 +1,7 @@
 package tech.rawden.ara.model;
 
 import tech.rawden.ara.core.AraPaths;
+import tech.rawden.ara.util.AraFailures;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -9,6 +10,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
+/**
+ * Persists {@link AppSettings} to {@code ~/Documents/Ara/data/settings.json}.
+ *
+ * <p><b>Hot-reload:</b> when developer mode is on, {@link SettingsReloader} polls this file and
+ * notifies listeners — edits to {@code settings.json} apply without restart.
+ *
+ * <p><b>Thread-safety:</b> safe for concurrent reads from virtual threads; serialize writes externally.
+ */
 public class SettingsStorage {
 
     private static final Logger LOG = Logger.getLogger(SettingsStorage.class.getName());
@@ -33,7 +42,7 @@ public class SettingsStorage {
             MAPPER.writeValue(SETTINGS_FILE.toFile(), settings);
             LOG.fine("Settings saved to " + SETTINGS_FILE);
         } catch (IOException e) {
-            LOG.warning("Failed to save settings: " + e.getMessage());
+            LOG.warning("Failed to save settings: " + AraFailures.settingsPersistence("save", e).getMessage());
         }
     }
 

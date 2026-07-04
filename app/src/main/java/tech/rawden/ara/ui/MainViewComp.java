@@ -3,7 +3,10 @@ package tech.rawden.ara.ui;
 import tech.rawden.ara.ai.InferenceService;
 import tech.rawden.ara.ai.ModelManager;
 import tech.rawden.ara.ai.ModelPreloader;
+import tech.rawden.ara.ai.ModelRouter;
+
 import tech.rawden.ara.comp.RegionBuilder;
+import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraModel;
 import tech.rawden.ara.core.AraTheme;
 import tech.rawden.ara.model.AppSettings;
@@ -34,11 +37,12 @@ import java.util.logging.Logger;
  */
 public class MainViewComp extends RegionBuilder<HBox> {
 
-    private static final Logger LOG = Logger.getLogger(MainViewComp.class.getName());
+    private static final Logger LOG = AppLog.of("ui");
 
     private final AraModel model;
     private ChatHistory chatHistory;
     private final InferenceService inferenceService;
+    private final ModelRouter modelRouter;
     private final ModelManager modelManager;
     private final ModelPreloader modelPreloader;
     private final InferenceConfig config;
@@ -56,6 +60,7 @@ public class MainViewComp extends RegionBuilder<HBox> {
             AraModel model,
             ChatHistory chatHistory,
             InferenceService inferenceService,
+            ModelRouter modelRouter,
             ModelManager modelManager,
             ModelPreloader modelPreloader,
             InferenceConfig config,
@@ -65,6 +70,7 @@ public class MainViewComp extends RegionBuilder<HBox> {
         this.model = model;
         this.chatHistory = chatHistory;
         this.inferenceService = inferenceService;
+        this.modelRouter = modelRouter;
         this.modelManager = modelManager;
         this.modelPreloader = modelPreloader;
         this.config = config;
@@ -141,10 +147,18 @@ public class MainViewComp extends RegionBuilder<HBox> {
             return; // Already have the right view cached
         }
         chatViewSessionId = sid;
-        chatViewNode = new ChatViewComp(session, inferenceService, modelPreloader, config, () -> {
-                    sidebar.rebuildChatList();
-                    chatStorage.save(chatHistory);
-                })
+        chatViewNode = new ChatViewComp(
+                        session,
+                        inferenceService,
+                        modelRouter,
+                        modelPreloader,
+                        config,
+                        settingsStorage,
+                        appSettings,
+                        () -> {
+                            sidebar.rebuildChatList();
+                            chatStorage.save(chatHistory);
+                        })
                 .style("ara-chat-wrapper")
                 .build();
         VBox.setVgrow(chatViewNode, Priority.ALWAYS);
@@ -166,6 +180,7 @@ public class MainViewComp extends RegionBuilder<HBox> {
                         model,
                         modelManager,
                         inferenceService,
+                        modelRouter,
                         config,
                         () -> model.selectView(AraModel.View.CHAT),
                         this::resetSettings,
@@ -284,7 +299,15 @@ public class MainViewComp extends RegionBuilder<HBox> {
         appSettings.setSystemPrompt(settings.getSystemPrompt());
         appSettings.setDarkMode(settings.isDarkMode());
         appSettings.setSelectedModel(settings.getSelectedModel());
+        appSettings.setLightModel(settings.getLightModel());
+        appSettings.setHeavyModel(settings.getHeavyModel());
+        appSettings.setRoutingMode(settings.getRoutingMode());
+        appSettings.setDownloadChunkSizeMb(settings.getDownloadChunkSizeMb());
+        appSettings.setDownloadHeavyFromRepo(settings.isDownloadHeavyFromRepo());
         appSettings.setUseSystemAccent(settings.isUseSystemAccent());
+        if (modelRouter != null) {
+            modelRouter.setUserOverride(appSettings.getRoutingMode());
+        }
 
         config.setTemperature(appSettings.getTemperature());
         config.setMaxTokens(appSettings.getMaxTokens());

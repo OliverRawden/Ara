@@ -1,26 +1,35 @@
 package tech.rawden.ara.ai;
 
+import tech.rawden.ara.core.AraConfig;
+import tech.rawden.ara.core.AppLog;
+import tech.rawden.ara.util.RetryExecutor;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.logging.Logger;
 
-/** Fetches hosted GGUF metadata from the public Ara repository. */
+/**
+ * Fetches hosted GGUF metadata from the public Ara repository ({@link AraConfig#MODEL_METADATA_URL}).
+ *
+ * <p>Results are cached in memory until {@link #invalidateCache()}. On fetch failure, embedded
+ * fallbacks mirror the published {@code models-v1} / {@code models-heavy-v1} manifests so offline
+ * downloads still work.
+ *
+ * <p><b>Thread-safety:</b> cache is {@code volatile}; concurrent callers may duplicate a fetch but
+ * only one result is retained.
+ */
 public final class ModelCatalog {
 
-    private static final Logger LOG = Logger.getLogger(ModelCatalog.class.getName());
+    private static final Logger LOG = AppLog.of("model");
 
     /** Same branch policy as {@link tech.rawden.ara.update.UpdateService} — metadata on {@code main}. */
-    public static final String DEFAULT_METADATA_URL =
-            "https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/models.json";
+    public static final String DEFAULT_METADATA_URL = AraConfig.MODEL_METADATA_URL;
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final Duration TIMEOUT = Duration.ofSeconds(20);
-    private static final String USER_AGENT = "Ara/" + tech.rawden.ara.update.AppVersion.current() + " (model-catalog)";
 
     private static volatile ModelRelease cached;
 
@@ -51,24 +60,29 @@ public final class ModelCatalog {
             return cached;
         }
         try {
-            var request = HttpRequest.newBuilder()
-                    .uri(URI.create(DEFAULT_METADATA_URL))
-                    .timeout(TIMEOUT)
-                    .header("User-Agent", USER_AGENT)
-                    .GET()
-                    .build();
-            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
-                LOG.warning("Model metadata HTTP " + response.statusCode() + " from " + DEFAULT_METADATA_URL);
-                return null;
-            }
-            cached = MAPPER.readValue(response.body(), ModelRelease.class);
-            LOG.info("Loaded model metadata: " + cached.defaultModel.filename);
+            cached = RetryExecutor.run("model-metadata", () -> fetchMetadataOnce(httpClient));
             return cached;
         } catch (Exception e) {
             LOG.warning("Could not fetch model metadata: " + e.getMessage());
             return null;
         }
+    }
+
+    private static ModelRelease fetchMetadataOnce(HttpClient httpClient) throws Exception {
+        var request = HttpRequest.newBuilder()
+                .uri(URI.create(DEFAULT_METADATA_URL))
+                .timeout(AraConfig.metadataTimeout())
+                .header("User-Agent", AraConfig.userAgent("model-catalog"))
+                .GET()
+                .build();
+        var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new java.io.IOException(
+                    "Model metadata HTTP " + response.statusCode() + " from " + DEFAULT_METADATA_URL);
+        }
+        var release = MAPPER.readValue(response.body(), ModelRelease.class);
+        LOG.info("Loaded model metadata: " + release.defaultModel.filename);
+        return release;
     }
 
     /** Used when metadata is unreachable (offline / not yet published on main). */

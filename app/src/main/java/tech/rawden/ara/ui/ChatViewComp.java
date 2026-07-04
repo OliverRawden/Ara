@@ -2,14 +2,24 @@ package tech.rawden.ara.ui;
 
 import tech.rawden.ara.ai.InferenceService;
 import tech.rawden.ara.ai.ModelPreloader;
+import tech.rawden.ara.ai.ModelRouter;
+import tech.rawden.ara.ai.ModelTier;
+import tech.rawden.ara.ai.RoutingInferenceService;
+import tech.rawden.ara.ai.RoutingMode;
 import tech.rawden.ara.comp.RegionBuilder;
+import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraPaths;
 import tech.rawden.ara.core.SecurityService;
+import tech.rawden.ara.integration.TeamOrchestrator;
+import tech.rawden.ara.integration.VexProtocolCatalog;
+import tech.rawden.ara.model.MemoryGraphService;
 import tech.rawden.ara.model.AuditLogEntry;
 import tech.rawden.ara.model.AuditLogStorage;
 import tech.rawden.ara.model.ChatMessage;
+import tech.rawden.ara.model.AppSettings;
 import tech.rawden.ara.model.ChatSession;
 import tech.rawden.ara.model.InferenceConfig;
+import tech.rawden.ara.model.SettingsStorage;
 import tech.rawden.ara.tool.CustomToolExecutor;
 import tech.rawden.ara.tool.TerminalExecutor;
 import tech.rawden.ara.tool.ToolCall;
@@ -39,6 +49,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
@@ -47,12 +58,10 @@ import javafx.util.Duration;
 
 import org.kordamp.ikonli.javafx.FontIcon;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * Active chat session: message bubbles, streaming inference, and the tool agent loop (max 5 rounds).
@@ -61,16 +70,21 @@ import java.util.regex.Pattern;
  */
 public class ChatViewComp extends RegionBuilder<VBox> {
 
-    private static final Logger LOG = Logger.getLogger(ChatViewComp.class.getName());
+    private static final Logger LOG = AppLog.of("chat");
 
     private final ChatSession session;
     private final InferenceService inferenceService;
+    private final ModelRouter modelRouter;
     private final ModelPreloader modelPreloader;
     private final InferenceConfig config;
+    private final SettingsStorage settingsStorage;
+    private final AppSettings appSettings;
     private final Runnable onSessionUpdated;
 
     private VBox messageContainer;
     private TextField inputField;
+    private ModelStatusControl modelStatusControl;
+    private HBox escalationBanner;
     private Button sendButton;
     private FontIcon sendButtonIcon;
     private boolean generating;
@@ -88,13 +102,19 @@ public class ChatViewComp extends RegionBuilder<VBox> {
     public ChatViewComp(
             ChatSession session,
             InferenceService inferenceService,
+            ModelRouter modelRouter,
             ModelPreloader modelPreloader,
             InferenceConfig config,
+            SettingsStorage settingsStorage,
+            AppSettings appSettings,
             Runnable onSessionUpdated) {
         this.session = session;
         this.inferenceService = inferenceService;
+        this.modelRouter = modelRouter;
         this.modelPreloader = modelPreloader;
         this.config = config;
+        this.settingsStorage = settingsStorage;
+        this.appSettings = appSettings;
         this.onSessionUpdated = onSessionUpdated;
     }
 
@@ -345,161 +365,7 @@ public class ChatViewComp extends RegionBuilder<VBox> {
     }
 
     private VBox buildFormattedContent(String content) {
-        var container = new VBox();
-        container.getStyleClass().add("ara-message-assistant");
-        container.maxWidthProperty().bind(bubbleMaxWidth());
-
-        var lines = content.split("\n", -1);
-        boolean inCodeBlock = false;
-        var codeLines = new ArrayList<String>();
-        var paraLines = new ArrayList<String>();
-
-        for (var line : lines) {
-            var trimmed = line.trim();
-
-            if (trimmed.startsWith("```")) {
-                if (inCodeBlock) {
-                    var cb = createCodeBlock(String.join("\n", codeLines));
-                    VBox.setMargin(cb, new Insets(6, 14, 6, 14));
-                    container.getChildren().add(cb);
-                    codeLines.clear();
-                } else {
-                    flushParagraph(container, paraLines);
-                    paraLines.clear();
-                }
-                inCodeBlock = !inCodeBlock;
-                continue;
-            }
-
-            if (inCodeBlock) {
-                codeLines.add(line);
-            } else {
-                paraLines.add(line);
-            }
-        }
-
-        flushParagraph(container, paraLines);
-        if (!codeLines.isEmpty()) {
-            var cb = createCodeBlock(String.join("\n", codeLines));
-            VBox.setMargin(cb, new Insets(6, 14, 6, 14));
-            container.getChildren().add(cb);
-        }
-
-        if (container.getChildren().isEmpty()) {
-            container.setPadding(new Insets(10, 14, 10, 14));
-            var empty = new Text(content);
-            empty.setFont(Font.font("Inter", 14));
-            container.getChildren().add(new TextFlow(empty));
-        }
-
-        return container;
-    }
-
-    private void flushParagraph(VBox container, List<String> lines) {
-        if (lines.isEmpty()) return;
-        container.getChildren().add(createParagraph(String.join("\n", lines)));
-    }
-
-    private TextFlow createParagraph(String text) {
-        var textFlow = new TextFlow();
-        textFlow.setPadding(new Insets(10, 14, 10, 14));
-        var lines = text.split("\n", -1);
-
-        for (int i = 0; i < lines.length; i++) {
-            var line = lines[i];
-
-            if (line.isEmpty()) {
-                textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-
-            if (line.startsWith("### ")) {
-                var heading = new Text(line.substring(4));
-                heading.setFont(Font.font("Inter", FontWeight.BOLD, 16));
-                textFlow.getChildren().add(heading);
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-            if (line.startsWith("## ")) {
-                var heading = new Text(line.substring(3));
-                heading.setFont(Font.font("Inter", FontWeight.BOLD, 18));
-                textFlow.getChildren().add(heading);
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-            if (line.startsWith("# ")) {
-                var heading = new Text(line.substring(2));
-                heading.setFont(Font.font("Inter", FontWeight.BOLD, 20));
-                textFlow.getChildren().add(heading);
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-
-            if (line.startsWith("- ") || line.startsWith("* ")) {
-                var bullet = new Text("  \u2022  ");
-                bullet.setFont(Font.font("Inter", FontWeight.NORMAL, 14));
-                textFlow.getChildren().add(bullet);
-                textFlow.getChildren().addAll(formatInline(line.substring(2)));
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-
-            var numMatch = Pattern.compile("^(\\d+)\\. (.+)$").matcher(line);
-            if (numMatch.matches()) {
-                var numText = new Text("  " + numMatch.group(1) + ".  ");
-                numText.setFont(Font.font("Inter", FontWeight.NORMAL, 14));
-                textFlow.getChildren().add(numText);
-                textFlow.getChildren().addAll(formatInline(numMatch.group(2)));
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-
-            if (line.startsWith("> ")) {
-                var quote = new Text(line.substring(2));
-                quote.setFont(Font.font("Inter", FontPosture.ITALIC, 13));
-                quote.setStyle("-fx-fill: -color-fg-subtle;");
-                textFlow.getChildren().add(quote);
-                if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-                continue;
-            }
-
-            textFlow.getChildren().addAll(formatInline(line));
-            if (i < lines.length - 1) textFlow.getChildren().add(new Text("\n"));
-        }
-
-        return textFlow;
-    }
-
-    private Region createCodeBlock(String code) {
-        var codeText = new Text(code);
-        codeText.setFont(Font.font("Menlo", 12));
-        codeText.setStyle("-fx-fill: -color-fg-default;");
-        codeText.wrappingWidthProperty().bind(bubbleMaxWidth().subtract(24));
-
-        var copyIcon = new FontIcon("mdi2c-content-copy");
-        copyIcon.setIconSize(12);
-        var copyBtn = new Button("", copyIcon);
-        copyBtn.getStyleClass().add("ara-code-copy-btn");
-        copyBtn.setOnAction(e -> {
-            var cc = new ClipboardContent();
-            cc.putString(code);
-            Clipboard.getSystemClipboard().setContent(cc);
-        });
-
-        var langLabel = new Text("  Code");
-        langLabel.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 11));
-        langLabel.setStyle("-fx-fill: -color-fg-muted;");
-
-        var header = new HBox(langLabel, copyBtn);
-        header.setAlignment(Pos.CENTER_RIGHT);
-        HBox.setHgrow(langLabel, Priority.ALWAYS);
-
-        var body = new VBox(header, codeText);
-        body.setPadding(new Insets(10, 12, 10, 12));
-        body.getStyleClass().add("ara-code-block");
-        body.maxWidthProperty().bind(bubbleMaxWidth());
-
-        return body;
+        return MarkdownRenderer.render(content, bubbleMaxWidth());
     }
 
     private Button createCopyButton(String text) {
@@ -513,59 +379,6 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             Clipboard.getSystemClipboard().setContent(cc);
         });
         return btn;
-    }
-
-    private static final Pattern INLINE_PATTERN =
-            Pattern.compile("\\*\\*(.+?)\\*\\*|__(.+?)__|\\*(.+?)\\*|_(.+?)_|`([^`]*)`");
-
-    private List<Text> formatInline(String text) {
-        var result = new ArrayList<Text>();
-        var matcher = INLINE_PATTERN.matcher(text);
-        int lastEnd = 0;
-
-        while (matcher.find()) {
-            if (matcher.start() > lastEnd) {
-                var plain = new Text(text.substring(lastEnd, matcher.start()));
-                plain.setFont(Font.font("Inter", 14));
-                result.add(plain);
-            }
-
-            Text formatted;
-            if (matcher.group(1) != null) {
-                formatted = new Text(matcher.group(1));
-                formatted.setFont(Font.font("Inter", FontWeight.BOLD, 14));
-            } else if (matcher.group(2) != null) {
-                formatted = new Text(matcher.group(2));
-                formatted.setFont(Font.font("Inter", FontWeight.BOLD, 14));
-            } else if (matcher.group(3) != null) {
-                formatted = new Text(matcher.group(3));
-                formatted.setFont(Font.font("Inter", FontPosture.ITALIC, 14));
-            } else if (matcher.group(4) != null) {
-                formatted = new Text(matcher.group(4));
-                formatted.setFont(Font.font("Inter", FontPosture.ITALIC, 14));
-            } else {
-                formatted = new Text(matcher.group(5));
-                formatted.setFont(Font.font("Menlo", 13));
-                formatted.setStyle("-fx-fill: -color-accent-fg;");
-            }
-
-            result.add(formatted);
-            lastEnd = matcher.end();
-        }
-
-        if (lastEnd < text.length()) {
-            var plain = new Text(text.substring(lastEnd));
-            plain.setFont(Font.font("Inter", 14));
-            result.add(plain);
-        }
-
-        if (result.isEmpty()) {
-            var plain = new Text(text);
-            plain.setFont(Font.font("Inter", 14));
-            result.add(plain);
-        }
-
-        return result;
     }
 
     private Region createInputArea() {
@@ -591,18 +404,41 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             }
         });
 
-        var inputBar = new HBox(8, inputField, sendButton);
-        inputBar.setPadding(new Insets(12, 20, 16, 20));
-        inputBar.setAlignment(Pos.CENTER);
-        HBox.setHgrow(inputField, Priority.ALWAYS);
-        inputBar.getStyleClass().add("ara-input-bar");
+        if (modelRouter != null) {
+            modelStatusControl = new ModelStatusControl(modelRouter);
+            modelStatusControl.setOnRoutingChanged(() -> {
+                appSettings.setRoutingMode(modelRouter.getCurrentRoutingMode());
+                settingsStorage.save(appSettings);
+            });
+        }
 
-        return inputBar;
+        var inputRow = new HBox(8, inputField, sendButton);
+        inputRow.setAlignment(Pos.CENTER);
+        HBox.setHgrow(inputField, Priority.ALWAYS);
+
+        var wrapper = new VBox(4);
+        wrapper.getStyleClass().add("ara-input-bar");
+        wrapper.setPadding(new Insets(8, 20, 14, 20));
+
+        if (modelStatusControl != null) {
+            var chipRow = new HBox(modelStatusControl);
+            chipRow.setAlignment(Pos.CENTER_RIGHT);
+            wrapper.getChildren().add(chipRow);
+        }
+        wrapper.getChildren().add(inputRow);
+
+        return wrapper;
     }
 
     private void sendMessage() {
         var text = inputField.getText();
         if (text == null || text.isBlank()) return;
+
+        var trimmed = text.trim();
+        if (handleSlashCommand(trimmed)) {
+            inputField.clear();
+            return;
+        }
 
         inputField.clear();
         setGenerating(true);
@@ -621,10 +457,12 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             onSessionUpdated.run();
         }
 
+        LOG.info("User message sent (chars=" + text.length() + ", session=" + session.id() + ")");
+
         Runnable startInference = () -> generateResponse(text, 0);
 
         if (inferenceService.status() != InferenceService.Status.READY) {
-            LOG.info("Waiting for model load before generating response...");
+            LOG.info("Waiting for model load before generating response (status=" + inferenceService.status() + ")");
         }
         modelPreloader.whenInferenceReady(
                 () -> Platform.runLater(startInference),
@@ -685,8 +523,138 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                 }));
     }
 
+    private boolean handleSlashCommand(String text) {
+        if (modelRouter == null || !text.startsWith("/")) {
+            return false;
+        }
+        var lower = text.toLowerCase();
+        if (lower.equals("/power") || lower.equals("/heavy")) {
+            modelRouter.setSingleTurnOverride(RoutingMode.HEAVY_ONLY);
+            showSystemNote("Heavy model will be used for your next message.");
+            return true;
+        }
+        if (lower.equals("/light")) {
+            modelRouter.setSingleTurnOverride(RoutingMode.LIGHT_ONLY);
+            showSystemNote("Light model will be used for your next message.");
+            return true;
+        }
+        if (lower.equals("/model")) {
+            var mode = modelRouter.getCurrentRoutingMode();
+            var tier = modelRouter.getActiveTier();
+            showSystemNote(String.format(
+                    "Routing: %s · Active: %s · %s",
+                    mode, tier.badgeLabel(), modelRouter.badgeDetailProperty().get()));
+            return true;
+        }
+        if (lower.startsWith("/team")) {
+            return handleTeamCommand(text);
+        }
+        if (lower.equals("/team-off") || lower.equals("/team off")) {
+            session.setActiveTeamId(null);
+            session.setTeamHandoffContext("");
+            onSessionUpdated.run();
+            showSystemNote("Agent team deactivated for this chat.");
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleTeamCommand(String text) {
+        var parts = text.split("\\s+", 2);
+        if (parts.length < 2 || parts[1].isBlank()) {
+            var teams = VexProtocolCatalog.teams();
+            if (teams.isEmpty()) {
+                showSystemNote("No team protocols found. Seed protocol 20 in Vex (~/Documents/Vex/Protocols/).");
+            } else {
+                var listing = new StringBuilder("Available teams: ");
+                for (int i = 0; i < teams.size(); i++) {
+                    if (i > 0) {
+                        listing.append(", ");
+                    }
+                    listing.append(teams.get(i).id()).append('=').append(teams.get(i).name());
+                }
+                listing.append(". Usage: /team <id>");
+                showSystemNote(listing.toString());
+            }
+            return true;
+        }
+        try {
+            int teamId = Integer.parseInt(parts[1].strip());
+            var team = VexProtocolCatalog.findById(teamId).filter(TeamOrchestrator::isTeam);
+            if (team.isEmpty()) {
+                showSystemNote("Protocol " + teamId + " is not a team. Check Vex Protocols for type: team.");
+                return true;
+            }
+            session.setActiveTeamId(teamId);
+            session.setTeamHandoffContext("");
+            onSessionUpdated.run();
+            var members = TeamOrchestrator.parseMembers(team.get());
+            var note = new StringBuilder("Team activated: ").append(team.get().name()).append(" (").append(teamId).append(").");
+            if (!members.isEmpty()) {
+                note.append(" Members: ");
+                for (int i = 0; i < members.size(); i++) {
+                    if (i > 0) {
+                        note.append(", ");
+                    }
+                    note.append('[').append(members.get(i).role()).append(']');
+                }
+                note.append(". Prefix replies with [role] for tier routing.");
+            }
+            showSystemNote(note.toString());
+            return true;
+        } catch (NumberFormatException e) {
+            showSystemNote("Usage: /team <protocol-id>");
+            return true;
+        }
+    }
+
+    private void showSystemNote(String note) {
+        var msg = ChatMessage.assistantMessage(session.id(), note);
+        session.addMessage(msg);
+        addMessageWithAnimation(createMessageBubble(msg));
+        onSessionUpdated.run();
+        scrollToBottom();
+    }
+
+    private void showEscalationBanner() {
+        removeEscalationBanner();
+        var label = new Text("Heavy model engaged for this complex task. ");
+        label.setFont(Font.font("Inter", 11));
+        label.setStyle("-fx-fill: -color-fg-subtle;");
+
+        var switchLink = new Text("Switch to Light");
+        switchLink.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 11));
+        switchLink.setStyle("-fx-fill: -color-accent-fg; -fx-underline: true; -fx-cursor: hand;");
+        switchLink.setOnMouseClicked(e -> {
+            modelRouter.setUserOverride(RoutingMode.LIGHT_ONLY);
+            appSettings.setRoutingMode(RoutingMode.LIGHT_ONLY);
+            settingsStorage.save(appSettings);
+            removeEscalationBanner();
+        });
+
+        var flow = new TextFlow(label, switchLink);
+        flow.setPadding(new Insets(6, 14, 6, 14));
+        flow.getStyleClass().add("ara-escalation-banner");
+        flow.maxWidthProperty().bind(bubbleMaxWidth());
+
+        escalationBanner = new HBox(flow);
+        escalationBanner.setAlignment(Pos.CENTER_LEFT);
+        escalationBanner.setPadding(new Insets(0, 24, 0, 24));
+        messageContainer.getChildren().add(escalationBanner);
+        scrollToBottom();
+    }
+
+    private void removeEscalationBanner() {
+        if (escalationBanner != null && messageContainer.getChildren().contains(escalationBanner)) {
+            messageContainer.getChildren().remove(escalationBanner);
+        }
+        escalationBanner = null;
+    }
+
     private void generateResponse(String userMessage, int toolRound) {
+        LOG.fine("generateResponse: toolRound=" + toolRound + ", model=" + inferenceService.modelName());
         if (toolRound >= MAX_TOOL_ROUNDS) {
+            LOG.warning("Tool round limit reached (" + MAX_TOOL_ROUNDS + ") — stopping agent loop");
             setGenerating(false);
             maybeGenerateTitle();
             return;
@@ -704,8 +672,49 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         var contentBox = findMessageContent(bubble);
         var lastStreamUiMs = new long[] {0};
 
-        inferenceService.generateWithTools(
-                userMessage,
+        Runnable startInference = () -> runInferenceJob(userMessage, history, sb, bubble, contentBox, lastStreamUiMs, toolRound);
+
+        if (modelRouter != null) {
+            Thread.startVirtualThread(() -> {
+                try {
+                    var decision = modelRouter.prepareForRequest(
+                            userMessage, ModelRouter.buildContextSummary(history));
+                    LOG.info("Chat routing: tier=" + decision.tier() + ", escalated=" + decision.autoEscalated()
+                            + ", reason=" + decision.reason());
+                    Platform.runLater(() -> {
+                        if (decision.autoEscalated() && decision.tier() == ModelTier.HEAVY) {
+                            showEscalationBanner();
+                        } else if (!userMessage.isBlank()) {
+                            removeEscalationBanner();
+                        }
+                        startInference.run();
+                    });
+                } catch (Exception e) {
+                    LOG.warning("Model routing failed: " + e.getMessage());
+                    Platform.runLater(() -> {
+                        setGenerating(false);
+                        showSystemNote("Model routing failed: " + e.getMessage());
+                    });
+                }
+            });
+            return;
+        }
+
+        startInference.run();
+    }
+
+    private void runInferenceJob(
+            String userMessage,
+            List<ChatMessage> history,
+            StringBuilder sb,
+            Region bubble,
+            VBox contentBox,
+            long[] lastStreamUiMs,
+            int toolRound) {
+        var routedMessage = wrapMessageForActiveTeam(userMessage);
+        var inference = resolveInferenceBackend();
+        inference.generateWithTools(
+                routedMessage,
                 config,
                 history,
                 token -> {
@@ -722,8 +731,9 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     var msgs = session.messages();
                     var last = msgs.get(msgs.size() - 1);
                     msgs.remove(last);
-                    var complete =
-                            ChatMessage.assistantMessage(session.id(), ToolCallDisplay.forDisplay(sb.toString()));
+                    var display = ToolCallDisplay.forDisplay(sb.toString());
+                    captureTeamHandoff(display);
+                    var complete = ChatMessage.assistantMessage(session.id(), display);
                     session.addMessage(complete);
                     rebuildMessages();
                     setGenerating(false);
@@ -748,11 +758,21 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                     maybeGenerateTitle();
                 }),
                 toolCall -> Platform.runLater(() -> {
+                    var msgs = session.messages();
+                    var placeholder = msgs.get(msgs.size() - 1);
                     handleToolCall(toolCall, sb.toString(), placeholder, toolRound);
                 }));
     }
 
+    private InferenceService resolveInferenceBackend() {
+        if (inferenceService instanceof RoutingInferenceService ris) {
+            return ris.backend();
+        }
+        return inferenceService;
+    }
+
     private void handleToolCall(ToolCall toolCall, String partialText, ChatMessage placeholder, int toolRound) {
+        LOG.info("Tool call: " + toolCall.name() + " (round=" + toolRound + ")");
         if (!toolCall.isKnownTool()) {
             LOG.warning("Unknown tool requested: " + toolCall.name());
             audit("TOOL_CALL_DENIED", "Unknown tool: " + toolCall.name(), 2);
@@ -876,6 +896,10 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             } catch (Exception e) {
                 LOG.warning("Failed to parse append_memory: " + e);
             }
+            return;
+        }
+
+        if (handleMemoryGraphTool(toolCall, toolRound)) {
             return;
         }
 
@@ -1078,6 +1102,104 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         });
     }
 
+    private String wrapMessageForActiveTeam(String userMessage) {
+        return TeamOrchestrator.activeTeam(session)
+                .map(team -> TeamOrchestrator.wrapUserMessageForTeam(userMessage, team, session))
+                .orElse(userMessage);
+    }
+
+    private void captureTeamHandoff(String assistantText) {
+        if (assistantText == null || assistantText.isBlank() || session.activeTeamId() == null) {
+            return;
+        }
+        var matcher = java.util.regex.Pattern.compile("^\\s*\\[([a-zA-Z][a-zA-Z0-9_-]*)]\\s*", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(assistantText);
+        if (matcher.find()) {
+            TeamOrchestrator.appendHandoff(session, matcher.group(1), assistantText);
+            onSessionUpdated.run();
+        }
+    }
+
+    private boolean handleMemoryGraphTool(ToolCall toolCall, int toolRound) {
+        if (!config.contextMemoryEnabled()) {
+            if ("query_memory_graph".equals(toolCall.name())
+                    || "upsert_memory_entity".equals(toolCall.name())
+                    || "link_memory_entities".equals(toolCall.name())) {
+                audit("TOOL_CALL_DENIED", toolCall.name() + " blocked (memory disabled)", 2);
+                var denied = ChatMessage.toolMessage(
+                        session.id(),
+                        toolCall.name() + ": memory tools are disabled in Privacy & Security settings.");
+                executedToolCalls.add(denied.id());
+                session.addMessage(denied);
+                rebuildMessages();
+                scrollToBottom();
+                setGenerating(true);
+                generateResponse("", toolRound + 1);
+                return true;
+            }
+            return false;
+        }
+
+        try {
+            var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            var args = mapper.readTree(toolCall.arguments());
+            var graph = MemoryGraphService.get();
+            String resultText;
+
+            switch (toolCall.name()) {
+                case "query_memory_graph" -> {
+                    String query = args.has("query") ? args.get("query").asText() : "";
+                    String kind = args.has("entity_kind") ? args.get("entity_kind").asText() : null;
+                    int limit = args.has("limit") ? args.get("limit").asInt(20) : 20;
+                    audit("CONTEXT_ACCESS", "query_memory_graph: " + (query.isBlank() ? "(list)" : query), 1);
+                    resultText = graph.formatForAgent(graph.query(query, kind, limit));
+                }
+                case "upsert_memory_entity" -> {
+                    String id = args.has("id") ? args.get("id").asText() : null;
+                    String kind = args.has("kind") ? args.get("kind").asText() : "note";
+                    String label = args.has("label") ? args.get("label").asText() : "";
+                    String content = args.has("content") ? args.get("content").asText() : "";
+                    audit("CONTEXT_ACCESS", "upsert_memory_entity: " + label, 1);
+                    var entity = graph.upsertEntity(id, kind, label, content);
+                    resultText = "upsert_memory_entity: saved [" + entity.id() + "] " + entity.kind() + " · "
+                            + entity.label();
+                }
+                case "link_memory_entities" -> {
+                    String fromId = args.has("from_id") ? args.get("from_id").asText() : "";
+                    String toId = args.has("to_id") ? args.get("to_id").asText() : "";
+                    String relationType = args.has("relation_type") ? args.get("relation_type").asText() : "related_to";
+                    String note = args.has("note") ? args.get("note").asText() : null;
+                    audit("CONTEXT_ACCESS", "link_memory_entities: " + fromId + " -> " + toId, 1);
+                    var relation = graph.linkEntities(fromId, toId, relationType, note);
+                    resultText = "link_memory_entities: " + relation.fromId() + " -[" + relation.relationType() + "]-> "
+                            + relation.toId();
+                }
+                default -> {
+                    return false;
+                }
+            }
+
+            var resultMsg = ChatMessage.toolMessage(session.id(), toolCall.name() + " result:\n\n" + resultText);
+            executedToolCalls.add(resultMsg.id());
+            session.addMessage(resultMsg);
+            rebuildMessages();
+            scrollToBottom();
+            setGenerating(true);
+            generateResponse("", toolRound + 1);
+            return true;
+        } catch (Exception e) {
+            LOG.warning("Memory graph tool failed: " + e.getMessage());
+            var err = ChatMessage.toolMessage(session.id(), toolCall.name() + " error: " + e.getMessage());
+            executedToolCalls.add(err.id());
+            session.addMessage(err);
+            rebuildMessages();
+            scrollToBottom();
+            setGenerating(true);
+            generateResponse("", toolRound + 1);
+            return true;
+        }
+    }
+
     // === Secure memory helpers (respect encryption + privacy model) ===
 
     private String loadSecureMemory() {
@@ -1088,7 +1210,8 @@ public class ChatViewComp extends RegionBuilder<VBox> {
                         # Ara Persistent Memory
 
                         Vex protocols (~/Documents/Vex/Protocols/) are auto-loaded into Ara's system prompt.
-                        Agent tools 101–106; use read_memory (104) at session start. Protocol 102 = get_current_datetime.
+                        Agent tools 101–109; use read_memory (104) or query_memory_graph (107) at session start.
+                        Protocol 102 = get_current_datetime. Teams: /team 20.
 
                         ## Active Context
 

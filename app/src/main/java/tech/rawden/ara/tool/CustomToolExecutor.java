@@ -22,7 +22,15 @@ public final class CustomToolExecutor {
     private static final Pattern TEMPLATE = Pattern.compile("\\{\\{([a-zA-Z0-9_]+)}}");
 
     private static final Set<String> BUILTIN_TOOLS = Set.of(
-            "execute_command", "get_current_datetime", "web_search", "read_memory", "write_memory", "append_memory");
+            "execute_command",
+            "get_current_datetime",
+            "web_search",
+            "read_memory",
+            "write_memory",
+            "append_memory",
+            "query_memory_graph",
+            "upsert_memory_entity",
+            "link_memory_entities");
 
     private CustomToolExecutor() {}
 
