@@ -140,7 +140,7 @@ public final class ModelRouter {
         if (activeTier == ModelTier.HEAVY && backend.status() == InferenceService.Status.READY) {
             backend.unloadModel();
         }
-        loadAndWarm(path);
+        loadAndWarm(path, ModelTier.LIGHT);
         activeTier = ModelTier.LIGHT;
         activeTierProperty.set(ModelTier.LIGHT);
         updateBadge();
@@ -163,20 +163,22 @@ public final class ModelRouter {
                                 + modelManager.modelsDirectory());
             }
         }
-        loadAndWarm(path);
+        loadAndWarm(path, ModelTier.HEAVY);
         activeTier = ModelTier.HEAVY;
         activeTierProperty.set(ModelTier.HEAVY);
         updateBadge();
         scheduleHeavyUnload();
     }
 
-    private void loadAndWarm(Path path) throws Exception {
+    private void loadAndWarm(Path path, ModelTier tier) throws Exception {
         String name = path.getFileName().toString();
-        if (backend.status() == InferenceService.Status.READY && name.equals(backend.modelName())) {
+        if (backend.status() == InferenceService.Status.READY
+                && name.equals(backend.modelName())
+                && backend.activeProfile() == ModelLoadProfile.forTier(tier)) {
             return;
         }
         backend.preparePromptCache(inferenceConfig);
-        backend.loadModel(path);
+        backend.loadModel(path, tier);
         backend.warmup(inferenceConfig);
     }
 

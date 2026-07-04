@@ -663,7 +663,8 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         });
 
         var tokensHelp = new Label(
-                "Maximum number of tokens the model will generate in a response (up to 32k; limited by model context window).");
+                "Max tokens generated per reply. The heavy (~32B) model uses a smaller context window (6k) on 24 GB Macs — "
+                        + "this slider does not change KV size; routing handles that automatically.");
         tokensHelp.setFont(Font.font("Inter", 10));
         tokensHelp.setStyle("-fx-fill: -color-fg-subtle;");
         tokensHelp.setWrapText(true);
