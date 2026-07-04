@@ -26,7 +26,7 @@ import javafx.stage.Window;
 
 import java.util.logging.Level;
 
-/** Live developer log window — shows full in-memory log since app start. */
+/** Live developer log window with full in-memory diagnostic history. */
 public final class DeveloperLogWindow {
 
     private static Stage stage;
@@ -98,7 +98,7 @@ public final class DeveloperLogWindow {
         root.setPadding(new Insets(12));
         root.getStyleClass().add("ara-dev-log-root");
 
-        var headline = new Label("Live diagnostic log (since app start)");
+        var headline = new Label("Live diagnostic log");
         headline.setFont(Font.font("Inter", FontWeight.BOLD, 14));
 
         processFilter = new ComboBox<>();

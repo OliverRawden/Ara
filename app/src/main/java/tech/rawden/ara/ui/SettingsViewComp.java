@@ -829,7 +829,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         });
 
         var devHint = new Label(
-                "Shows a separate window with timestamped logs from startup — routing, inference, model load, chat, and tools.");
+                "Shows a separate window with timestamped logs — routing, inference, model load, chat, and tools.");
         devHint.setFont(Font.font("Inter", 11));
         devHint.setStyle("-fx-fill: -color-fg-subtle;");
         devHint.setWrapText(true);
