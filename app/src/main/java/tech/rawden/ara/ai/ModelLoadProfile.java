@@ -41,7 +41,7 @@ public record ModelLoadProfile(
             CacheType.Q8_0,
             CacheType.Q4_0,
             28_000,
-            32_768,
+            8_192,
             true,
             false);
 

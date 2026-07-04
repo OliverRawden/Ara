@@ -493,8 +493,13 @@ public class ChatViewComp extends RegionBuilder<VBox> {
             contentBox.getChildren().clear();
             return;
         }
-        var formatted = buildFormattedContent(displayText);
-        contentBox.getChildren().setAll(formatted.getChildren());
+        // Plain text while streaming — full markdown (especially partial tables) every 50ms
+        // exhausts the JavaFX heap.
+        var text = new Text(displayText);
+        text.setFont(Font.font("Inter", 14));
+        text.wrappingWidthProperty().bind(bubbleMaxWidth().subtract(28));
+        var flow = new TextFlow(text);
+        contentBox.getChildren().setAll(flow);
         var copyBtn = findCopyButton(bubble);
         if (copyBtn != null) {
             copyBtn.setOnAction(e -> {

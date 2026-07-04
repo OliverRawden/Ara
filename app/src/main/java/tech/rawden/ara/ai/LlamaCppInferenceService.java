@@ -318,7 +318,7 @@ public class LlamaCppInferenceService implements InferenceService {
             boolean withTools) {
         int contextBudget = Math.min(config.maxContextChars(), activeProfile.maxContextChars());
         var limited = PromptContextLimiter.limit(history, contextBudget);
-        int outputReserve = Math.min(config.maxTokens(), activeProfile.maxGenerateTokens());
+        int outputReserve = cappedOutputReserve(config);
         int maxPromptTokens = activeProfile.ctxSize() - outputReserve - 32;
 
         String prompt = buildPrompt(userMessage, config, limited.history(), withTools, limited.droppedMessages());
@@ -445,11 +445,27 @@ public class LlamaCppInferenceService implements InferenceService {
     }
 
     private InferenceParameters inferenceParams(String prompt, InferenceConfig config) {
-        int nPredict = Math.min(config.maxTokens(), activeProfile.maxGenerateTokens());
+        int nPredict = cappedGenerationTokens(config, countPromptTokens(prompt));
         return new InferenceParameters(prompt)
                 .setTemperature(config.temperature())
                 .setNPredict(nPredict)
                 .setCachePrompt(true);
+    }
+
+    /** Keeps output reservation within the loaded model context (avoids negative prompt budgets). */
+    private int cappedOutputReserve(InferenceConfig config) {
+        int requested = Math.min(config.maxTokens(), activeProfile.maxGenerateTokens());
+        int ctx = activeProfile.ctxSize();
+        int minPromptBudget = Math.min(8192, ctx / 2);
+        int maxOut = Math.max(256, ctx - minPromptBudget - 32);
+        return Math.min(requested, maxOut);
+    }
+
+    private int cappedGenerationTokens(InferenceConfig config, int promptTokens) {
+        int requested = Math.min(config.maxTokens(), activeProfile.maxGenerateTokens());
+        int ctx = activeProfile.ctxSize();
+        int maxOut = Math.max(64, ctx - promptTokens - 64);
+        return Math.max(1, Math.min(requested, maxOut));
     }
 
     private int systemBlockKey(InferenceConfig config, boolean withTools) {

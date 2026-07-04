@@ -770,7 +770,14 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         HBox.setHgrow(tokensHeader.getChildren().get(1), Priority.ALWAYS);
         tokensHeader.setAlignment(Pos.CENTER_LEFT);
 
-        var tokensSlider = new Slider(64, 32768, config.maxTokens());
+        int maxTokenCap = 8192;
+        var tokensSlider = new Slider(64, maxTokenCap, Math.min(config.maxTokens(), maxTokenCap));
+        if (config.maxTokens() > maxTokenCap) {
+            config.setMaxTokens(maxTokenCap);
+            appSettings.setMaxTokens(maxTokenCap);
+            settingsStorage.save(appSettings);
+            tokensValue.setText(String.valueOf(maxTokenCap));
+        }
         tokensSlider.setShowTickLabels(true);
         tokensSlider.setShowTickMarks(true);
         tokensSlider.setMajorTickUnit(4096);
@@ -784,7 +791,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         });
 
         var tokensHelp = new Label(
-                "Maximum length of each assistant reply. Ara adjusts context limits automatically based on the active model.");
+                "Maximum length of each assistant reply (up to 8,192 tokens). Ara clamps this to fit the active model context.");
         tokensHelp.setFont(Font.font("Inter", 10));
         tokensHelp.setStyle("-fx-fill: -color-fg-subtle;");
         tokensHelp.setWrapText(true);
