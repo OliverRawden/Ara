@@ -4,11 +4,13 @@
 
 Ara is a desktop JavaFX chat application that runs **fully on-device** using `java-llama.cpp` (GGUF models). It was bootstrapped from [KickstartFX](https://kickstartfx.xpipe.io/) and extensively customized. The UI uses AtlantaFX Cupertino theming with a sidebar-first layout.
 
+**Light/heavy routing** (v5.8 on `develop`): a ~7B light model stays hot for fast chat; a ~32B heavy model loads on demand for code, multi-step reasoning, and complex tool use, then unloads after idle. Routing mode: AUTO (keyword escalation), LIGHT_ONLY, or HEAVY_ONLY.
+
 Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **All Vex protocols** are auto-loaded from `~/Documents/Vex/Protocols/` into every system prompt via `VexProtocolCatalog` (IDs, names, descriptions, ara-tool mappings). Agent tools (101–106) are a subset; new protocols added in Vex appear automatically when files change. Tools are editable in Vex but built-ins cannot be deleted.
 
 **Sibling app:** [Vex](../Vex) — protocol orchestration console; manages Ara tool schemas and Vex-native protocols.
 
-**Version:** `5.5.0` on `develop`; stable `5.6` on `main` (see `version` file)  
+**Version:** `5.8.0` on `develop`; stable `5.7` on `main` (see `version` file)
 **Package:** `tech.rawden.ara`  
 **Product name:** `Ara`  
 **JDK:** Java 21+ (Java 25 recommended)  
@@ -21,34 +23,36 @@ Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **A
 
 | Branch | `version` file | Role |
 |--------|----------------|------|
-| **`main`** | `5.6` | Stable. Default branch. GitHub Releases and tags are cut from here. Holds `installers/latest.json` (update metadata). |
-| **`develop`** | `5.5.0` | Unstable. All active development and Grok build sessions land here first. Includes auto-update client code (`tech.rawden.ara.update`). |
+| **`main`** | `5.7` | Stable. Default branch. GitHub Releases and tags are cut from here. Holds `installers/latest.json` and `installers/models.json` (update + model metadata). |
+| **`develop`** | `5.8.0` | Unstable. All active development and Grok build sessions land here first. Light/heavy routing, developer mode, and next-cycle features land here before merge to `main`. |
 | **`master`** | (legacy) | Tracks older default; prefer `main` / `develop`. Keep `GROK.md` in sync when touched. |
 
 **Rule:** Never commit installer binaries (`.pkg`, `.dmg`, `.msi`) to git. They live only as GitHub Release assets.
 
 ---
 
-## Current Repository State (2 July 2026)
+## Current Repository State (4 July 2026)
 
 | Item | Status |
 |------|--------|
-| **`develop` tip** | `68a4d2a` — auto-update system (public repo, no token field) |
-| **`main` tip** | `ec93139` — `installers/latest.json`, generators, synced docs |
-| **`develop` version** | `5.5.0` (`version` file) |
-| **`main` version** | `5.6` (`version` file — stable line; metadata may differ for testing) |
-| **Repo visibility** | **Public** — no GitHub token required for update checks or downloads |
-| **Update metadata** | `installers/latest.json` on `main` → `latestVersion: 5.5.1` (test bump for develop update flow) |
-| **Metadata URL** | https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json |
-| **Auto-update code** | On **`develop` only** — not merged to `main` yet |
-| **GitHub Releases** | [v5.6](https://github.com/OliverRawden/Ara/releases/tag/v5.6) (first upload) + [v5.5.1](https://github.com/OliverRawden/Ara/releases/tag/v5.5.1) (test prerelease, current update target) |
-| **Release assets** | macOS arm64 only: `ara-installer-macos-arm64.pkg`, `ara-portable-macos-arm64.dmg` |
+| **`develop` tip** | `a11df8b` — developer log window polish |
+| **`main` tip** | `97bb482` — heavy model manifest synced (`models-heavy-v1`) |
+| **`develop` version** | `5.8.0` (`version` file) |
+| **`main` version** | `5.7` (`version` file) |
+| **`develop` vs `main`** | **9 commits ahead** — routing, developer mode, heavy-model tuning (not yet merged) |
+| **Repo visibility** | **Public** — no GitHub token required for update checks, model downloads, or release assets |
+| **Update metadata** | `installers/latest.json` on `main` → `latestVersion: 5.7` |
+| **Model metadata** | `installers/models.json` on `main` — light (`models-v1`) + heavy (`models-heavy-v1`) manifests |
+| **Metadata URLs** | `latest.json`: https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json · `models.json`: https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/models.json |
+| **GitHub Releases** | [v5.7](https://github.com/OliverRawden/Ara/releases/tag/v5.7) (stable app) · [models-v1](https://github.com/OliverRawden/Ara/releases/tag/models-v1) (light GGUF parts) · [models-heavy-v1](https://github.com/OliverRawden/Ara/releases/tag/models-heavy-v1) (heavy GGUF parts) |
+| **Release assets (v5.7)** | macOS arm64: `ara-installer-macos-arm64.pkg`, `ara-portable-macos-arm64.dmg` |
 
-**Known gaps (next release housekeeping)**
+**Known gaps (v5.8 release housekeeping)**
 
-- v5.6 `.pkg` internally reports `5.5.0-SNAPSHOT` — rebuild from `main` with `RELEASE=true` when cutting a real stable release.
-- Merge `develop` → `main` so shipped installers include Settings → Updates.
-- Align `latest.json` `latestVersion` with `main` `version` file after testing (currently `5.5.1` for update-flow test).
+- Merge `develop` → `main` so v5.8 ships light/heavy routing, developer mode, and Apple Silicon heavy-model fixes.
+- Cut v5.8 GitHub Release from `main` with `RELEASE=true` (verify embedded version matches tag, not `*-SNAPSHOT`).
+- Bump `installers/latest.json` to `5.8` after release.
+- Trim `latest.json` to only uploaded assets (or add Windows/Linux builds).
 
 **Local paths**
 
@@ -56,14 +60,13 @@ Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **A
 - Built artifacts: `dist/build/dist/artifacts/`
 - Runtime data: `~/Documents/Ara/`
 
-### What was built today (Grok session summary)
+### Recent `develop` work (v5.8 cycle)
 
-1. **`tech.rawden.ara.update` package** — `UpdateService`, `AppVersion`, `VersionComparer`, `PlatformInstallerKey`, `UpdateDialog`; optional checks; macOS prefers `.pkg`.
-2. **Settings → Updates** — startup toggle (default off), manual check, last-checked status, download + launch installer.
-3. **`installers/`** — `latest.json`, README, `generateLatestJson` Gradle task + shell script.
-4. **GitHub Releases** — uploaded macOS arm64 binaries; v5.5.1 prerelease for testing update detection (`5.5.0` → `5.5.1`).
-5. **Private-repo token field** — added briefly, then **removed** after repo was made public.
-6. **Docs** — GROK.md, README.md, Obsidian inbox notes; synced across `develop`, `main`, `master`.
+1. **Light/heavy multi-model routing** — `ModelRouter`, `RoutingInferenceService`, `RoutingMode` (AUTO / LIGHT_ONLY / HEAVY_ONLY); chat routing chip; heavy auto-unload after 10 min idle.
+2. **Ara-hosted model downloads** — `installers/models.json` + `ModelCatalog` / `ModelDownloader`; light Qwen2.5-7B (`models-v1`, 3 parts) and heavy Qwen2.5-Coder-32B (`models-heavy-v1`, 10 parts); 2000 MiB chunks under GitHub 2 GiB cap.
+3. **Apple Silicon heavy-model tuning** — `ModelLoadProfile` per tier; `SystemMemory`-aware ctx sizing; OOM/KV overflow fixes for 24 GB Macs (Ollama-style Metal offload + mmap).
+4. **Developer mode** — `AppLog` in-memory buffer + `DeveloperLogWindow` (live filtered diagnostics); toggle in Settings → System.
+5. **UI polish** — `ModelStatusControl`, condensed model settings, routing badge in chat header.
 
 ---
 
@@ -72,19 +75,28 @@ Agent **tool calling** is prompt-injected (ChatML + `<|tool_call|>` tokens). **A
 ### What lives where
 
 ```
-main branch (git)          GitHub Release v5.6 (assets, not in git)
-├── version → 5.6          ├── ara-installer-macos-arm64.pkg
+main branch (git)          GitHub Release v5.7 (assets, not in git)
+├── version → 5.7          ├── ara-installer-macos-arm64.pkg
 ├── installers/            └── ara-portable-macos-arm64.dmg
-│   ├── latest.json  ──────────► app fetches this URL at runtime
+│   ├── latest.json  ──────────► app fetches for update checks
+│   ├── models.json  ──────────► app fetches for GGUF download manifests
 │   ├── README.md
 │   ├── generate-latest-json.gradle
-│   └── generate-latest-json.sh
-└── (stable app code; update UI merges from develop later)
+│   ├── generate-latest-json.sh
+│   ├── split-and-upload-model.sh
+│   └── split-and-upload-heavy-model.sh
+└── (stable app code)
+
+GitHub model releases (not in git)
+├── models-v1          → Qwen2.5-7B Q4_K_M (.part0–.part2)
+└── models-heavy-v1    → Qwen2.5-Coder-32B Q4_K_M (.part0–.part9)
 
 develop branch (git)
-├── version → 5.5.0
-├── tech.rawden.ara.update/   ← client-side update checks
-└── Settings → Updates section
+├── version → 5.8.0
+├── tech.rawden.ara.update/       ← optional auto-update checks
+├── tech.rawden.ara.ai routing/   ← ModelRouter, RoutingInferenceService
+├── tech.rawden.ara.core.AppLog   ← developer diagnostics
+└── Settings → Updates + developer mode + light/heavy model UI
 ```
 
 ### Update flow (user)
@@ -152,7 +164,7 @@ Download URLs: `https://github.com/OliverRawden/Ara/releases/download/vX.Y/<file
 ```
 Ara/
 ├── GROK.md                       # This file — project context for AI assistants
-├── version                       # Plain-text version (5.5.0)
+├── version                       # Plain-text version (5.8.0 on develop)
 ├── build.gradle                  # Root: product identity, JVM args, JavaFX version
 ├── settings.gradle               # include 'app', 'dist'
 ├── gradlew / gradlew.bat
@@ -164,9 +176,9 @@ Ara/
 │       │   ├── module-info.java
 │       │   └── tech/rawden/ara/
 │       │       ├── Main.java              # JavaFX Application entry
-│       │       ├── ai/                    # Inference engine + model manager
+│       │       ├── ai/                    # Inference, routing, model download/load profiles
 │       │       ├── comp/                   # RegionBuilder + base components
-│       │       ├── core/                   # Model, theme, paths, security, macOS
+│       │       ├── core/                   # Model, theme, paths, security, AppLog, macOS
 │       │       ├── integration/            # Vex protocol loader for tools
 │       │       ├── model/                  # Chat, settings, audit persistence
 │       │       ├── platform/               # Threading, logo, Mac window
@@ -179,10 +191,13 @@ Ara/
 │           ├── font-config/font.css
 │           └── fonts/Inter-*.ttf
 ├── installers/
-│   ├── README.md                 # GitHub Releases + update metadata workflow
-│   ├── latest.json               # Version metadata fetched by the app (on main)
+│   ├── README.md                 # GitHub Releases + update/model metadata workflow
+│   ├── latest.json               # App update metadata (on main)
+│   ├── models.json               # Light + heavy GGUF manifests (on main)
 │   ├── generate-latest-json.gradle  # ./gradlew generateLatestJson
-│   └── generate-latest-json.sh      # Shell alternative for metadata generation
+│   ├── generate-latest-json.sh      # Shell alternative for latest.json
+│   ├── split-and-upload-model.sh    # Split + upload light GGUF → models-v1
+│   └── split-and-upload-heavy-model.sh  # Split + upload heavy GGUF → models-heavy-v1
 └── dist/                         # jpackage / native packaging
 ```
 
@@ -231,14 +246,23 @@ Privacy toggles gate which tools appear in the prompt (`terminalEnabled`, `webSe
 
 ## Source Packages
 
-### `tech.rawden.ara.ai` — Inference
+### `tech.rawden.ara.ai` — Inference & Routing
 | File | Purpose |
 |------|---------|
 | `InferenceService.java` | Interface: loadModel, generate, generateWithTools, generateTitle, shutdown |
-| `LlamaCppInferenceService.java` | java-llama.cpp bindings; ChatML prompt; `<|tool_call|>` stream detection; synchronized `loadModel` |
+| `LlamaCppInferenceService.java` | java-llama.cpp bindings; ChatML prompt; `<|tool_call|>` stream detection; synchronized `loadModel`; tier-aware `ModelLoadProfile` |
+| `RoutingInferenceService.java` | Facade: routes each request through `ModelRouter` before delegating to `LlamaCppInferenceService` |
+| `ModelRouter.java` | Light/heavy tier selection (keyword escalation, user override, idle heavy unload); JavaFX badge properties |
+| `RoutingMode.java` | `AUTO`, `LIGHT_ONLY`, `HEAVY_ONLY` |
+| `ModelTier.java` | `LIGHT` / `HEAVY` badge labels and tooltips |
+| `ModelLoadProfile.java` | Per-tier llama.cpp params; heavy profile resolved from `SystemMemory` + GGUF size at load time |
+| `SystemMemory.java` | Unified RAM stats via `OperatingSystemMXBean` (Apple Silicon Metal shares RAM) |
 | `DummyInferenceService.java` | Stub without real inference |
-| `ModelManager.java` | `~/Documents/Ara/models/` — list, resolve, HuggingFace download, delete |
-| `ModelPreloader.java` | Background GGUF preload on `ara-model-preloader` virtual thread; `whenReady()` for chat send |
+| `ModelManager.java` | `~/Documents/Ara/models/` — list, resolve, Ara-repo download, delete |
+| `ModelCatalog.java` | Fetches + caches `installers/models.json` from GitHub |
+| `ModelRelease.java` | Record for a hosted model manifest entry (filename, parts, sha256) |
+| `ModelDownloader.java` | Multi-part parallel GGUF download, verify, assemble |
+| `ModelPreloader.java` | Background light-model preload on `ara-model-preloader` virtual thread; `whenReady()` for chat send |
 
 ### `tech.rawden.ara.tool` — Agent Tools
 | File | Purpose |
@@ -262,6 +286,7 @@ Privacy toggles gate which tools appear in the prompt (`terminalEnabled`, `webSe
 | `AraModel.java` | Singleton navigation: `View` enum (CHAT, SETTINGS) |
 | `AraTheme.java` | Cupertino dark/light + system accent CSS |
 | `AraPaths.java` | Data paths + `vexProtocolsDir()` |
+| `AppLog.java` | In-memory log buffer (50k entries) with process tags; root handler; `AppLog.of("routing")` etc. |
 | `SecurityService.java` | AES-256-GCM encryption for chats, memory, audit log |
 | `MacMenuBar.java` / `ShortcutManager.java` | macOS menu + keyboard shortcuts |
 
@@ -297,8 +322,10 @@ Only version metadata is requested until the user taps **Download & Install**. S
 |------|---------|
 | `MainViewComp.java` | Sidebar + content; lazy settings build; chat session switching |
 | `SidebarComp.java` | Logo, new chat, session list (max 60 at build), settings nav |
-| `ChatViewComp.java` | Streaming chat, tool agent loop, secure memory, audit, terminal bubbles |
-| `SettingsViewComp.java` | Appearance, model, inference, personality, memory, privacy, **updates**, system info |
+| `ChatViewComp.java` | Streaming chat, tool agent loop, routing chip, secure memory, audit, terminal bubbles |
+| `SettingsViewComp.java` | Appearance, model (light/heavy + routing), inference, personality, memory, privacy, **updates**, system info, **developer mode** |
+| `DeveloperLogWindow.java` | Live filtered diagnostic log window (process, level, text filters; copy/clear) |
+| `ModelStatusControl.java` | Model load status indicator in chat header |
 
 ### `tech.rawden.ara.comp` — UI Builders
 Reactive builders on `org.int4.fx-builders`. Base components: `ToggleSwitchComp`, `ButtonComp`, `LabelComp`, `FontIconComp`, layout wrappers. `RegionBuilder<T>` is the root abstraction.
@@ -311,12 +338,14 @@ Staged startup keeps the window responsive; heavy work runs on dedicated virtual
 
 ```
 Main.start()
+  ├─ AppLog.install(); verbose if developerMode
   ├─ FX: splash → MainViewComp (empty ChatHistory) → stage.show()     ~2–3s
+  ├─ Developer mode? → DeveloperLogWindow.show()
   ├─ Encryption enabled?
   │    └─ Modal unlock → PBKDF2 on virtual thread (ara-crypto)
   └─ onSessionReady()  [after unlock, or immediately if no encryption]
        ├─ ara-data-loader: ChatStorage.load() → decrypt → update sidebar
-       └─ ara-model-preloader: ModelPreloader.schedulePreload() → loadModel()
+       ├─ ara-model-preloader: ModelPreloader.schedulePreload() → load light model
        └─ (optional) startup update check if Settings toggle enabled → UpdateService.checkForUpdate()
 ```
 
@@ -331,12 +360,27 @@ Main.start()
 **Chat inference flow**
 
 1. User sends message → `ChatViewComp.sendMessage()` shows user bubble immediately
-2. If model `READY` → `generateWithTools()`; else `ModelPreloader.whenReady()` waits for in-flight preload
-3. Model may emit `<|tool_call|>{...}` → `handleToolCall()` → `TOOL` message → up to 5 rounds
-4. Sessions persist to `~/Documents/Ara/data/chats.json`
-5. Memory: `read_memory` / `write_memory` / `append_memory` on `~/Documents/Ara/context.md` (encrypted optional)
+2. `RoutingInferenceService` → `ModelRouter.resolveTier()` (AUTO keyword escalation, or LIGHT_ONLY / HEAVY_ONLY override)
+3. If heavy tier → load heavy GGUF on demand (unload after 10 min idle); light stays hot from preload
+4. If model `READY` → `generateWithTools()`; else `ModelPreloader.whenReady()` waits for in-flight preload
+5. Model may emit `<|tool_call|>{...}` → `handleToolCall()` → `TOOL` message → up to 5 rounds (each round re-routed)
+6. Sessions persist to `~/Documents/Ara/data/chats.json`
+7. Memory: `read_memory` / `write_memory` / `append_memory` on `~/Documents/Ara/context.md` (encrypted optional)
 
-**Model resolution:** `ModelManager.resolveModel(selectedModel)` — settings filename if present, else largest `.gguf`.
+**Model resolution:** Light: `AppSettings.lightModel` (falls back to `selectedModel`) via `ModelManager`. Heavy: `AppSettings.heavyModel` (defaults to manifest filename from `models.json`). Download via Settings → Model → **Download Light** / **Download Heavy**.
+
+### Light/heavy routing (`ModelRouter`)
+
+| Mode | Behaviour |
+|------|-----------|
+| `AUTO` | Light model handles simple chat; keyword patterns (code, debug, refactor, tool use, etc.) escalate to heavy for that turn |
+| `LIGHT_ONLY` | Never loads heavy; fast replies only |
+| `HEAVY_ONLY` | Keeps heavy loaded for every turn |
+
+- Heavy auto-unloads **10 minutes** after last heavy inference (`ara-heavy-unload` scheduler).
+- Chat header shows routing chip (tier badge + escalation indicator) via `ModelRouter` JavaFX properties.
+- Each tool-call round in the agent loop re-evaluates routing.
+- `ModelLoadProfile.HEAVY` resolves ctx/gpu/batch from `SystemMemory.totalBytes()` and GGUF file size — tuned for 24 GB Apple Silicon (full Metal offload, mmap, reduced ctx when headroom is tight).
 
 ---
 
@@ -370,6 +414,10 @@ Heavy work is deferred after an early splash `stage.show()` so the dock icon app
 | `ToolCallDisplay` hides `<|tool_call|>` in assistant bubbles | Done |
 | Synchronized `loadModel` — preload + Settings manual load are safe | Done |
 | PBKDF2 iterations reduced (65k) | Done |
+| Light/heavy routing — light hot, heavy on-demand + idle unload | Done (develop) |
+| `ModelLoadProfile` per tier — heavy ctx sized from `SystemMemory` | Done (develop) |
+| Ara-hosted multi-part GGUF download (`ModelDownloader`) | Done |
+| Developer mode live log window (`AppLog` + `DeveloperLogWindow`) | Done (develop) |
 
 ---
 
@@ -386,9 +434,16 @@ Heavy work is deferred after an early splash `stage.show()` so the dock icon app
 
 ---
 
-## Default Model
+## Default Models (Ara-hosted)
 
-`Qwen2.5-7B-Instruct-Q4_K_M.gguf` (~4.5GB) — preloaded in background after session ready (bartowski HuggingFace). `AppSettings.selectedModel` overrides when set.
+Metadata: `installers/models.json` on `main` (fetched at runtime by `ModelCatalog`).
+
+| Tier | Model | Size | Release tag | Parts |
+|------|-------|------|-------------|-------|
+| **Light** (hot) | `Qwen2.5-7B-Instruct-Q4_K_M.gguf` | ~4.5 GB | `models-v1` | 3 × 2000 MiB + remainder |
+| **Heavy** (on-demand) | `Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf` | ~18.5 GB | `models-heavy-v1` | 10 × 2000 MiB + remainder |
+
+Light model preloads in background after session ready. Heavy loads on routing escalation or `HEAVY_ONLY` mode. `AppSettings.lightModel` / `heavyModel` override filenames when set. Upload scripts: `installers/split-and-upload-model.sh`, `installers/split-and-upload-heavy-model.sh`.
 
 ---
 
@@ -439,8 +494,10 @@ Work through TODO items or the user's request. Prefer code over doc-only changes
 
 | Area | Key paths |
 |------|-----------|
-| Inference / chat | `app/.../ai/`, `app/.../ui/ChatViewComp.java` |
-| Auto-update | `app/.../update/`, `SettingsViewComp.java`, `installers/` |
+| Inference / routing / chat | `app/.../ai/`, `app/.../ui/ChatViewComp.java` |
+| Model download / manifests | `app/.../ai/ModelCatalog.java`, `installers/models.json`, `installers/split-and-upload-*.sh` |
+| Auto-update | `app/.../update/`, `SettingsViewComp.java`, `installers/latest.json` |
+| Developer diagnostics | `app/.../core/AppLog.java`, `app/.../ui/DeveloperLogWindow.java` |
 | Vex tools | `app/.../integration/`, `app/.../tool/` |
 | Packaging | `dist/jpackage.gradle`, `dist/pkg/`, `dist/msi/` |
 | CI | `.github/workflows/` |
@@ -507,13 +564,21 @@ Signing and notarization require CI secrets — not for local agent runs:
 - [x] jpackage vendor set to Oliver Rawden (`dist/jpackage.gradle`)
 
 #### Auto-update & release metadata
-- [x] `tech.rawden.ara.update` package on `develop` (optional checks, Settings UI, startup hook)
+- [x] `tech.rawden.ara.update` package (optional checks, Settings UI, startup hook)
 - [x] `installers/latest.json` + generators on `main`
-- [x] GitHub Release v5.6 with macOS arm64 `.pkg` + `.dmg`
-- [ ] Rebuild v5.6+ installers from `main` with `RELEASE=true` (fix 5.5.0-SNAPSHOT mismatch)
-- [ ] Merge auto-update from `develop` → `main`
-- [ ] Trim `latest.json` to only uploaded assets (or add Windows/Linux builds)
+- [x] GitHub Release v5.7 with macOS arm64 `.pkg` + `.dmg`
+- [x] Merge auto-update from `develop` → `main` (shipped in v5.7)
 - [x] Repository is public — update checks work without a GitHub token
+- [ ] Merge v5.8 features (`develop` → `main`): routing, developer mode, heavy-model fixes
+- [ ] Cut v5.8 release from `main` with `RELEASE=true`; bump `latest.json`
+- [ ] Trim `latest.json` to only uploaded assets (or add Windows/Linux builds)
+
+#### Model hosting
+- [x] `installers/models.json` — light model manifest (`models-v1`, 3 parts)
+- [x] Heavy model manifest (`models-heavy-v1`, 10 parts) on `main`
+- [x] `ModelCatalog` + `ModelDownloader` — parallel multi-part download from Ara releases
+- [x] `split-and-upload-model.sh` + `split-and-upload-heavy-model.sh` (disk-safe, resumable)
+- [ ] Expose quant choice in settings + auto-download optimized GGUF variants
 
 #### Documentation
 - [x] README.md — cleaned up, correct package path
@@ -572,19 +637,29 @@ Signing and notarization require CI secrets — not for local agent runs:
 - [x] Inference sliders with value labels + help text
 - [x] Unified `DEFAULT_SYSTEM_PROMPT` across model classes
 - [x] Vex tool sync: live InferenceConfig sync, reload button, correct data paths
+- [x] Condensed model settings — light/heavy filenames, routing mode combo, download buttons
+- [x] Developer mode toggle (Settings → System) — opens `DeveloperLogWindow`
 
 ---
 
-### Performance & inference (open)
+### Performance & inference
 
 - [x] Background model preload after unlock (`ModelPreloader`) — first-message latency
 - [x] KV cache quantization (Q8_0 K / Q4_0 V) in `LlamaCppInferenceService`
 - [x] Prompt/context truncation for long chats (`PromptContextLimiter`, `InferenceConfig.maxContextChars`)
+- [x] Light/heavy multi-model routing (`ModelRouter`, `RoutingInferenceService`)
+- [x] Per-tier `ModelLoadProfile` — heavy ctx auto-sized for 24 GB Macs; Ollama-style Metal offload
+- [x] Heavy model idle unload (10 min) to reclaim RAM
 - [ ] Speculative decoding / draft model via llama.cpp when available
 - [ ] Profile & lazy-load non-critical resources at launch
 - [ ] Adaptive: pause model load on low battery / thermal
 - [ ] Research faster inference bindings or prebuilt jlink images for IDE launch
-- [ ] Expose quant choice in settings + auto-download optimized GGUF variants
+
+### Developer diagnostics (completed on develop)
+
+- [x] `AppLog` — in-memory buffer with process tags (`routing`, `model`, `startup`, etc.)
+- [x] `DeveloperLogWindow` — live filtered log viewer; toggle in Settings → System
+- [x] Verbose capture when developer mode enabled
 
 ---
 
