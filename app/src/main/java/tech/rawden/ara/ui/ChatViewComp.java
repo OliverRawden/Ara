@@ -531,6 +531,10 @@ public class ChatViewComp extends RegionBuilder<VBox> {
         }
         var lower = text.toLowerCase();
         if (lower.equals("/power") || lower.equals("/heavy")) {
+            if (!modelRouter.isAdvancedModelEnabled()) {
+                showSystemNote("Advanced model is disabled in Settings. Using the fast model.");
+                return true;
+            }
             modelRouter.setSingleTurnOverride(RoutingMode.HEAVY_ONLY);
             showSystemNote("Advanced model will be used for your next message.");
             return true;

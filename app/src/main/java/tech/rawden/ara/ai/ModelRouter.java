@@ -91,10 +91,18 @@ public final class ModelRouter {
 
     public record RoutingDecision(ModelTier tier, boolean autoEscalated, String reason) {}
 
+    public boolean isAdvancedModelEnabled() {
+        return appSettings.isAdvancedModelEnabled();
+    }
+
+    private boolean mayUseHeavy() {
+        return appSettings.isAdvancedModelEnabled();
+    }
+
     /** Select tier and ensure the correct GGUF is loaded and warmed. */
     public RoutingDecision prepareForRequest(String prompt, String contextSummary) throws Exception {
         if (prompt == null || prompt.isBlank()) {
-            if (activeTier == ModelTier.HEAVY) {
+            if (activeTier == ModelTier.HEAVY && mayUseHeavy()) {
                 ensureHeavyModel();
             } else {
                 ensureLightModel();
@@ -105,10 +113,13 @@ public final class ModelRouter {
         var teamTier = TeamOrchestrator.tierHintFromMessage(prompt);
         if (teamTier.isPresent()) {
             RoutingDecision decision;
-            if (teamTier.get() == ModelTier.HEAVY) {
+            if (teamTier.get() == ModelTier.HEAVY && mayUseHeavy()) {
                 decision = new RoutingDecision(ModelTier.HEAVY, false, "Team member tier (heavy)");
                 ensureHeavyModel();
             } else {
+                if (teamTier.get() == ModelTier.HEAVY) {
+                    LOG.info("Advanced model disabled — team heavy tier routed to fast model");
+                }
                 decision = new RoutingDecision(ModelTier.LIGHT, false, "Team member tier (light)");
                 ensureLightModel();
             }
@@ -125,12 +136,16 @@ public final class ModelRouter {
         }
 
         RoutingMode effective = singleTurnOverride != null ? singleTurnOverride : userOverride;
-        boolean forceHeavy = effective == RoutingMode.HEAVY_ONLY;
-        boolean forceLight = effective == RoutingMode.LIGHT_ONLY;
+        boolean forceHeavy = mayUseHeavy() && effective == RoutingMode.HEAVY_ONLY;
+        boolean forceLight = effective == RoutingMode.LIGHT_ONLY
+                || (!mayUseHeavy() && effective == RoutingMode.HEAVY_ONLY);
 
         RoutingDecision decision;
-        if (forceLight) {
-            decision = new RoutingDecision(ModelTier.LIGHT, false, "User-forced light");
+        if (forceLight || !mayUseHeavy()) {
+            if (!mayUseHeavy() && effective == RoutingMode.HEAVY_ONLY) {
+                LOG.fine("Advanced model disabled — ignoring heavy-only routing");
+            }
+            decision = new RoutingDecision(ModelTier.LIGHT, false, "Fast model");
             ensureLightModel();
         } else {
             boolean needsHeavy = forceHeavy
@@ -182,6 +197,11 @@ public final class ModelRouter {
     }
 
     public void ensureHeavyModel() throws Exception {
+        if (!mayUseHeavy()) {
+            LOG.info("Advanced model disabled — using fast model instead");
+            ensureLightModel();
+            return;
+        }
         LOG.info("ensureHeavyModel requested");
         cancelHeavyUnload();
         String filename = resolveHeavyFilename();
@@ -317,12 +337,28 @@ public final class ModelRouter {
     }
 
     public void setUserOverride(RoutingMode mode) {
-        userOverride = mode != null ? mode : RoutingMode.AUTO;
+        var resolved = mode != null ? mode : RoutingMode.AUTO;
+        if (!mayUseHeavy() && resolved == RoutingMode.HEAVY_ONLY) {
+            resolved = RoutingMode.AUTO;
+        }
+        userOverride = resolved;
         appSettings.setRoutingMode(userOverride);
         routingModeProperty.set(userOverride);
         updateBadge();
-        if (userOverride == RoutingMode.LIGHT_ONLY && activeTier == ModelTier.HEAVY) {
+        if ((userOverride == RoutingMode.LIGHT_ONLY || !mayUseHeavy()) && activeTier == ModelTier.HEAVY) {
             switchToLightAfterHeavyUse();
+        }
+    }
+
+    /** Called when the user disables the advanced model in Settings. */
+    public void onAdvancedModelDisabled() {
+        if (userOverride == RoutingMode.HEAVY_ONLY) {
+            setUserOverride(RoutingMode.AUTO);
+        }
+        if (activeTier == ModelTier.HEAVY) {
+            switchToLightAfterHeavyUse();
+        } else {
+            updateBadge();
         }
     }
 
@@ -335,9 +371,10 @@ public final class ModelRouter {
         if (settings == null) {
             return;
         }
-        userOverride = settings.getRoutingMode();
-        routingModeProperty.set(userOverride);
-        updateBadge();
+        setUserOverride(settings.getRoutingMode());
+        if (!settings.isAdvancedModelEnabled()) {
+            onAdvancedModelDisabled();
+        }
     }
 
     public RoutingMode getUserOverride() {
@@ -350,10 +387,22 @@ public final class ModelRouter {
 
     /** Forces the next message to use the given mode, then reverts to session override. */
     public void setSingleTurnOverride(RoutingMode mode) {
+        if (mode == RoutingMode.HEAVY_ONLY && !mayUseHeavy()) {
+            singleTurnOverride = RoutingMode.LIGHT_ONLY;
+            return;
+        }
         singleTurnOverride = mode;
     }
 
     public void toggleAutoHeavy() {
+        if (!mayUseHeavy()) {
+            if (userOverride == RoutingMode.LIGHT_ONLY) {
+                setUserOverride(RoutingMode.AUTO);
+            } else {
+                setUserOverride(RoutingMode.LIGHT_ONLY);
+            }
+            return;
+        }
         if (userOverride == RoutingMode.HEAVY_ONLY) {
             setUserOverride(RoutingMode.AUTO);
         } else {
@@ -404,6 +453,15 @@ public final class ModelRouter {
     private void updateBadge() {
         ModelTier tier = activeTier != null ? activeTier : ModelTier.LIGHT;
         badgeLabel.set(tier.badgeLabel());
+        if (!mayUseHeavy()) {
+            String detail = switch (userOverride) {
+                case LIGHT_ONLY -> "Fast model only — advanced model disabled in Settings";
+                case AUTO -> "Automatic routing — fast model only (advanced disabled)";
+                case HEAVY_ONLY -> "Fast model only — advanced model disabled in Settings";
+            };
+            badgeDetail.set(detail);
+            return;
+        }
         String detail = switch (userOverride) {
             case HEAVY_ONLY -> "Advanced model locked for this session";
             case LIGHT_ONLY -> "Fast model locked for this session";

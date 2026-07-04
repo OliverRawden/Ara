@@ -82,7 +82,9 @@ public final class ModelStatusControl extends Region {
         indicator.getStyleClass().removeAll("ara-model-indicator-light", "ara-model-indicator-heavy");
         chip.getStyleClass().removeAll("ara-model-chip-auto", "ara-model-chip-heavy");
 
-        if (mode == RoutingMode.HEAVY_ONLY) {
+        boolean advancedOff = !router.isAdvancedModelEnabled();
+
+        if (!advancedOff && mode == RoutingMode.HEAVY_ONLY) {
             chipLabel.setText("Advanced");
             modeIcon.setIconLiteral("mdi2f-flash");
             indicator.getStyleClass().add("ara-model-indicator-heavy");
@@ -92,10 +94,10 @@ public final class ModelStatusControl extends Region {
             modeIcon.setIconLiteral("mdi2f-feather");
             indicator.getStyleClass().add("ara-model-indicator-light");
         } else {
-            chipLabel.setText("Auto");
-            modeIcon.setIconLiteral("mdi2a-auto-fix");
+            chipLabel.setText(advancedOff ? "Fast" : "Auto");
+            modeIcon.setIconLiteral(advancedOff ? "mdi2f-feather" : "mdi2a-auto-fix");
             chip.getStyleClass().add("ara-model-chip-auto");
-            if (tier == ModelTier.HEAVY) {
+            if (!advancedOff && tier == ModelTier.HEAVY) {
                 indicator.getStyleClass().add("ara-model-indicator-heavy");
                 chip.getStyleClass().add("ara-model-chip-heavy");
             } else {
@@ -112,23 +114,11 @@ public final class ModelStatusControl extends Region {
 
     private void showContextMenu() {
         var menu = new ContextMenu();
+        boolean advancedOff = !router.isAdvancedModelEnabled();
 
         var lightTurn = new MenuItem("Fast model for next message");
         lightTurn.setOnAction(e -> {
             router.setSingleTurnOverride(RoutingMode.LIGHT_ONLY);
-            notifyChanged();
-        });
-
-        var heavyTurn = new MenuItem("Advanced model for next message");
-        heavyTurn.setOnAction(e -> {
-            router.setSingleTurnOverride(RoutingMode.HEAVY_ONLY);
-            notifyChanged();
-        });
-
-        var alwaysHeavy = new MenuItem("Always use advanced model");
-        alwaysHeavy.setOnAction(e -> {
-            router.setUserOverride(RoutingMode.HEAVY_ONLY);
-            refresh();
             notifyChanged();
         });
 
@@ -146,7 +136,24 @@ public final class ModelStatusControl extends Region {
             notifyChanged();
         });
 
-        menu.getItems().addAll(lightTurn, heavyTurn, alwaysHeavy, alwaysLight, resetAuto);
+        if (advancedOff) {
+            menu.getItems().addAll(lightTurn, alwaysLight, resetAuto);
+        } else {
+            var heavyTurn = new MenuItem("Advanced model for next message");
+            heavyTurn.setOnAction(e -> {
+                router.setSingleTurnOverride(RoutingMode.HEAVY_ONLY);
+                notifyChanged();
+            });
+
+            var alwaysHeavy = new MenuItem("Always use advanced model");
+            alwaysHeavy.setOnAction(e -> {
+                router.setUserOverride(RoutingMode.HEAVY_ONLY);
+                refresh();
+                notifyChanged();
+            });
+
+            menu.getItems().addAll(lightTurn, heavyTurn, alwaysHeavy, alwaysLight, resetAuto);
+        }
         menu.show(chip, javafx.geometry.Side.TOP, 0, -2);
     }
 }

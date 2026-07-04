@@ -74,6 +74,8 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
     private TextField lightModelField;
     private TextField heavyModelField;
     private javafx.scene.control.ComboBox<RoutingMode> routingModeCombo;
+    private VBox heavyDownloadCol;
+    private Region heavyPathCol;
 
     // System prompt editor (always available - local app, no gate)
     private TextArea systemPromptArea;
@@ -219,8 +221,29 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         statusLabel.setStyle("-fx-fill: -color-fg-subtle;");
         statusLabel.setWrapText(true);
 
+        var advancedToggle = new ToggleSwitchComp("Enable advanced model");
+        advancedToggle.selectedProperty().set(appSettings.isAdvancedModelEnabled());
+        advancedToggle.selectedProperty().addListener((obs, old, val) -> {
+            appSettings.setAdvancedModelEnabled(val);
+            settingsStorage.save(appSettings);
+            if (modelRouter != null) {
+                if (!val) {
+                    modelRouter.onAdvancedModelDisabled();
+                } else {
+                    modelRouter.setUserOverride(appSettings.getRoutingMode());
+                }
+            }
+            syncAdvancedModelUi(val);
+        });
+
+        var advancedHint = new Label(
+                "The advanced model needs about 32 GB of unified memory. Turn this off on smaller devices "
+                        + "to avoid slow load attempts and stay on the fast model.");
+        advancedHint.setFont(Font.font("Inter", 10));
+        advancedHint.setStyle("-fx-fill: -color-fg-subtle;");
+        advancedHint.setWrapText(true);
+
         routingModeCombo = new javafx.scene.control.ComboBox<>();
-        routingModeCombo.getItems().addAll(RoutingMode.AUTO, RoutingMode.LIGHT_ONLY, RoutingMode.HEAVY_ONLY);
         routingModeCombo.setValue(appSettings.getRoutingMode());
         routingModeCombo.setMaxWidth(200);
         routingModeCombo.setConverter(new javafx.util.StringConverter<>() {
@@ -292,10 +315,10 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         heavyDlHint.setStyle("-fx-fill: -color-fg-subtle;");
 
         var lightCol = new VBox(4, downloadLightBtn, lightDlHint);
-        var heavyCol = new VBox(4, downloadHeavyBtn, heavyDlHint);
+        heavyDownloadCol = new VBox(4, downloadHeavyBtn, heavyDlHint);
         HBox.setHgrow(lightCol, Priority.ALWAYS);
-        HBox.setHgrow(heavyCol, Priority.ALWAYS);
-        var downloadRow = new HBox(10, lightCol, heavyCol);
+        HBox.setHgrow(heavyDownloadCol, Priority.ALWAYS);
+        var downloadRow = new HBox(10, lightCol, heavyDownloadCol);
 
         downloadProgress = new ProgressBar(0);
         downloadProgress.setMaxWidth(Double.MAX_VALUE);
@@ -329,7 +352,7 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
 
         var pathsRow = new HBox(10);
         var lightPathCol = labeledField("Fast model file", lightModelField);
-        var heavyPathCol = labeledField("Advanced model file", heavyModelField);
+        heavyPathCol = labeledField("Advanced model file", heavyModelField);
         HBox.setHgrow(lightPathCol, Priority.ALWAYS);
         HBox.setHgrow(heavyPathCol, Priority.ALWAYS);
         pathsRow.getChildren().addAll(lightPathCol, heavyPathCol);
@@ -349,6 +372,8 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
         section.getChildren()
                 .addAll(
                         hint,
+                        advancedToggle.build(),
+                        advancedHint,
                         statusLabel,
                         routingRow,
                         downloadRow,
@@ -359,7 +384,43 @@ public class SettingsViewComp extends RegionBuilder<VBox> {
                         localHint,
                         modelListContainer);
 
+        syncAdvancedModelUi(appSettings.isAdvancedModelEnabled());
         return section;
+    }
+
+    private void syncAdvancedModelUi(boolean advancedEnabled) {
+        if (routingModeCombo != null) {
+            var current = routingModeCombo.getValue();
+            routingModeCombo.getItems().clear();
+            routingModeCombo.getItems().add(RoutingMode.AUTO);
+            routingModeCombo.getItems().add(RoutingMode.LIGHT_ONLY);
+            if (advancedEnabled) {
+                routingModeCombo.getItems().add(RoutingMode.HEAVY_ONLY);
+            }
+            if (current == RoutingMode.HEAVY_ONLY && !advancedEnabled) {
+                current = RoutingMode.AUTO;
+                appSettings.setRoutingMode(current);
+                settingsStorage.save(appSettings);
+                if (modelRouter != null) {
+                    modelRouter.setUserOverride(current);
+                }
+            }
+            routingModeCombo.setValue(current);
+        }
+        if (heavyDownloadCol != null) {
+            heavyDownloadCol.setVisible(advancedEnabled);
+            heavyDownloadCol.setManaged(advancedEnabled);
+        }
+        if (heavyPathCol != null) {
+            heavyPathCol.setVisible(advancedEnabled);
+            heavyPathCol.setManaged(advancedEnabled);
+        }
+        if (downloadHeavyBtn != null) {
+            downloadHeavyBtn.setDisable(!advancedEnabled || !modelManager.isHeavyDownloadAvailable());
+        }
+        if (heavyModelField != null) {
+            heavyModelField.setDisable(!advancedEnabled);
+        }
     }
 
     private String formatModelStatus() {

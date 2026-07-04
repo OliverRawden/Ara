@@ -323,11 +323,12 @@ public class MainViewComp extends RegionBuilder<HBox> {
         appSettings.setLightModel(settings.getLightModel());
         appSettings.setHeavyModel(settings.getHeavyModel());
         appSettings.setRoutingMode(settings.getRoutingMode());
+        appSettings.setAdvancedModelEnabled(settings.isAdvancedModelEnabled());
         appSettings.setDownloadChunkSizeMb(settings.getDownloadChunkSizeMb());
         appSettings.setDownloadHeavyFromRepo(settings.isDownloadHeavyFromRepo());
         appSettings.setUseSystemAccent(settings.isUseSystemAccent());
         if (modelRouter != null) {
-            modelRouter.setUserOverride(appSettings.getRoutingMode());
+            modelRouter.applySettings(appSettings);
         }
 
         config.setTemperature(appSettings.getTemperature());

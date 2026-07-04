@@ -1,8 +1,15 @@
 package tech.rawden.ara.model;
 
 import tech.rawden.ara.ai.RoutingMode;
+import tech.rawden.ara.ai.SystemMemory;
 
 public class AppSettings {
+
+    private static final long ADVANCED_MODEL_MIN_RAM_BYTES = 28L * 1024 * 1024 * 1024;
+
+    public static boolean recommendAdvancedModel() {
+        return SystemMemory.totalBytes() >= ADVANCED_MODEL_MIN_RAM_BYTES;
+    }
 
     private float temperature = 0.7f;
     private int maxTokens = InferenceConfig.DEFAULT_MAX_TOKENS;
@@ -26,6 +33,16 @@ public class AppSettings {
     private int maxConcurrentConnections = 4;
     /** When true, heavy model download uses Ara repo manifest. */
     private boolean downloadHeavyFromRepo = true;
+
+    /**
+     * When false, routing never loads or escalates to the advanced model (recommended on devices with
+     * less than ~32 GB unified memory).
+     */
+    private boolean advancedModelEnabled;
+
+    public AppSettings() {
+        advancedModelEnabled = recommendAdvancedModel();
+    }
 
     /** When true, a background check runs once after startup (never blocks launch). Default off for privacy. */
     private boolean checkForUpdatesOnStartup = false;
@@ -165,6 +182,14 @@ public class AppSettings {
 
     public void setDownloadHeavyFromRepo(boolean downloadHeavyFromRepo) {
         this.downloadHeavyFromRepo = downloadHeavyFromRepo;
+    }
+
+    public boolean isAdvancedModelEnabled() {
+        return advancedModelEnabled;
+    }
+
+    public void setAdvancedModelEnabled(boolean advancedModelEnabled) {
+        this.advancedModelEnabled = advancedModelEnabled;
     }
 
     public boolean isUseSystemAccent() {
