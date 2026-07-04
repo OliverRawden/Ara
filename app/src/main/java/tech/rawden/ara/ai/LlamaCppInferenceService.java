@@ -4,6 +4,7 @@ import tech.rawden.ara.integration.VexProtocolCatalog;
 import tech.rawden.ara.model.ChatMessage;
 import tech.rawden.ara.model.InferenceConfig;
 import tech.rawden.ara.tool.ToolCall;
+import tech.rawden.ara.util.AraFailures;
 
 import de.kherud.llama.InferenceParameters;
 import de.kherud.llama.LlamaModel;
@@ -25,9 +26,18 @@ import tech.rawden.ara.core.AppLog;
 import java.util.logging.Logger;
 
 /**
- * On-device inference via java-llama.cpp. Builds ChatML prompts with Vex catalog + tool JSON,
- * streams tokens, and detects {@code <|tool_call|>} markers for the agent loop in
- * {@link tech.rawden.ara.ui.ChatViewComp}.
+ * On-device inference via java-llama.cpp.
+ *
+ * <p><b>Responsibilities:</b> GGUF load/unload, ChatML prompt assembly (Vex catalog + tool JSON from
+ * {@link VexProtocolCatalog}), token streaming, and {@code <|tool_call|>} detection for the agent loop
+ * in {@link tech.rawden.ara.ui.ChatViewComp}.
+ *
+ * <p><b>Thread-safety:</b> {@link #loadModel} is synchronized on an internal lock — safe for concurrent
+ * preload and Settings manual load. Generation runs on a virtual-thread executor; {@link #cancelGeneration()}
+ * is cooperative. UI callbacks must use {@link javafx.application.Platform#runLater(Runnable)}.
+ *
+ * @implNote Tier-specific ctx/GPU settings come from {@link ModelLoadProfile}; routing selects the tier
+ *           via {@link ModelRouter} before calls reach this class.
  */
 public class LlamaCppInferenceService implements InferenceService {
 
@@ -101,7 +111,7 @@ public class LlamaCppInferenceService implements InferenceService {
             } catch (Exception e) {
                 status = Status.ERROR;
                 modelName = "None";
-                throw e;
+                throw AraFailures.modelLoad(modelPath, e);
             }
         }
 

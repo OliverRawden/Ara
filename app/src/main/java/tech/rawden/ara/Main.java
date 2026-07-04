@@ -15,6 +15,7 @@ import tech.rawden.ara.model.AppSettings;
 import tech.rawden.ara.model.ChatHistory;
 import tech.rawden.ara.model.ChatStorage;
 import tech.rawden.ara.model.InferenceConfig;
+import tech.rawden.ara.model.SettingsReloader;
 import tech.rawden.ara.model.SettingsStorage;
 import tech.rawden.ara.platform.MacWindow;
 import tech.rawden.ara.tool.ToolCatalog;
@@ -45,7 +46,15 @@ import java.util.logging.Logger;
  *   <li>Encryption unlock dialog if needed (PBKDF2 on virtual thread)</li>
  *   <li>Parallel background work: chat decrypt/load + GGUF model preload</li>
  * </ol>
- * Model preload never blocks window appearance; see {@link ModelPreloader}.
+ *
+ * <p><b>Threading:</b> all FX updates via {@link javafx.application.Platform#runLater}; background work
+ * (chat load, model preload, update checks, crypto) via virtual threads ({@code ara-data-loader},
+ * {@code ara-model-preloader}, {@code ara-crypto}) so the UI thread is never blocked.
+ *
+ * <p>Developer mode enables {@link DeveloperLogWindow} and {@link tech.rawden.ara.model.SettingsReloader}
+ * for live diagnostics and settings hot-reload.
+ *
+ * @see ModelPreloader — model preload never blocks window appearance
  */
 public class Main extends Application {
 
@@ -121,6 +130,23 @@ public class Main extends Application {
         var modelRouter = new ModelRouter(backend, modelManager, appSettings, config);
         inferenceService = new RoutingInferenceService(backend, modelRouter);
         var modelPreloader = new ModelPreloader(inferenceService, modelManager, config, modelRouter);
+
+        if (appSettings.isDeveloperMode()) {
+            var settingsReloader = new SettingsReloader(settingsStorage);
+            settingsReloader.addListener(reloaded -> Platform.runLater(() -> {
+                AppLog.setVerbose(reloaded.isDeveloperMode());
+                appSettings.setRoutingMode(reloaded.getRoutingMode());
+                appSettings.setTemperature(reloaded.getTemperature());
+                appSettings.setMaxTokens(reloaded.getMaxTokens());
+                appSettings.setSystemPrompt(reloaded.getSystemPrompt());
+                config.setTemperature(reloaded.getTemperature());
+                config.setMaxTokens(reloaded.getMaxTokens());
+                config.setSystemPrompt(reloaded.getSystemPrompt());
+                modelRouter.applySettings(reloaded);
+                LOG.info("Applied hot-reloaded settings");
+            }));
+            settingsReloader.start();
+        }
 
         // Start light GGUF mmap/GPU init immediately — does not need encryption unlock or chat data.
         LOG.info("Scheduling light model preload: " + appSettings.getLightModel());
@@ -237,16 +263,16 @@ public class Main extends Application {
             Platform.runLater(() -> MacWindow.applyModernStyle(stage));
         }
 
-        Runnable loadRealChats =
-                () -> Thread.ofVirtual().name("ara-data-loader").start(() -> {
-                    try {
-                        LOG.info("Loading chat history from disk");
-                        ChatHistory realHistory = chatStorage.load();
-                        LOG.info("Chat history loaded: " + realHistory.sessions().size() + " sessions");
-                        Platform.runLater(() -> mainView.updateChatHistory(realHistory));
-                    } catch (Exception ex) {
+        // Virtual thread: decrypt + lazy-load recent sessions — never blocks FX thread.
+        Runnable loadRealChats = () -> chatStorage
+                .loadAsync(r -> Thread.ofVirtual().name("ara-data-loader").start(r))
+                .whenComplete((realHistory, ex) -> {
+                    if (ex != null) {
                         LOG.warning("Data load failed: " + ex.getMessage());
+                        return;
                     }
+                    LOG.info("Chat history loaded: " + realHistory.sessions().size() + " sessions");
+                    Platform.runLater(() -> mainView.updateChatHistory(realHistory));
                 });
 
         Runnable onSessionReady = () -> {

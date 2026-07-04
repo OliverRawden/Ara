@@ -16,6 +16,13 @@ import java.util.logging.Logger;
 /**
  * {@link InferenceService} facade that routes each request through {@link ModelRouter} before
  * delegating to {@link LlamaCppInferenceService}.
+ *
+ * <p><b>Thread-safety:</b> submits work to a virtual-thread executor; each request calls
+ * {@link ModelRouter#prepareForRequest} then generation on the backend. Safe for concurrent chat
+ * sessions if only one generation is active (enforced by {@link tech.rawden.ara.ui.ChatViewComp}).
+ *
+ * @implNote Model switching is synchronous within each routed task; cancellation propagates to
+ *           {@link LlamaCppInferenceService#cancelGeneration()}.
  */
 public final class RoutingInferenceService implements InferenceService {
 

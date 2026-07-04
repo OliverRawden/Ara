@@ -1,7 +1,10 @@
 package tech.rawden.ara.ai;
 
+import tech.rawden.ara.core.AraConfig;
 import tech.rawden.ara.core.AppLog;
 import tech.rawden.ara.core.AraPaths;
+import tech.rawden.ara.util.AraFailures;
+import tech.rawden.ara.util.RetryExecutor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,21 +18,23 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
-import java.time.Duration;
 import java.util.HexFormat;
 import java.util.logging.Logger;
 
 /**
- * Chunked GGUF download with SHA-256 verification and atomic placement.
- * Metadata comes from {@link ModelCatalog} / {@code installers/models.json}.
+ * Chunked GGUF download with SHA-256 verification, exponential-backoff retries, and atomic placement.
+ *
+ * <p>Metadata comes from {@link ModelCatalog} / {@code installers/models.json}. Transient HTTP
+ * failures are retried via {@link RetryExecutor}; checksum and size mismatches are not retried.
+ *
+ * <p><b>Thread-safety:</b> each instance is safe for single-threaded use per download; parallel
+ * part downloads should use separate instances or serialized access.
  */
 public final class ModelDownloader {
 
     private static final Logger LOG = AppLog.of("model");
 
     private static final Path MODELS_DIR = AraPaths.modelsDir();
-    private static final Duration DOWNLOAD_TIMEOUT = Duration.ofHours(6);
-    private static final String USER_AGENT = "Ara/" + tech.rawden.ara.update.AppVersion.current() + " (model-download)";
 
     private final HttpClient httpClient;
     private final int chunkSizeBytes;
@@ -55,23 +60,29 @@ public final class ModelDownloader {
         if (meta == null || meta.filename == null || meta.filename.isBlank()) {
             throw new IOException("Model metadata is missing a filename.");
         }
-        ensureModelsDirectory();
-        Path target = MODELS_DIR.resolve(meta.filename);
-        Path tempFile = target.resolveSibling(target.getFileName() + ".tmp");
+        try {
+            ensureModelsDirectory();
+            Path target = MODELS_DIR.resolve(meta.filename);
+            Path tempFile = target.resolveSibling(target.getFileName() + ".tmp");
 
-        if (hasParts(meta)) {
-            LOG.info("Downloading model from Ara repo (" + meta.parts.size() + " parts): " + meta.filename);
-            downloadAndAssembleParts(meta, tempFile, callback);
-        } else if (meta.downloadUrl != null && !meta.downloadUrl.isBlank()) {
-            LOG.info("Downloading model from " + meta.downloadUrl);
-            downloadUrlToFile(meta.downloadUrl, tempFile, meta.sizeBytes, callback);
-        } else {
-            throw new IOException("No download URL or parts defined for " + meta.filename + ".");
+            if (hasParts(meta)) {
+                LOG.info("Downloading model from Ara repo (" + meta.parts.size() + " parts): " + meta.filename);
+                downloadAndAssembleParts(meta, tempFile, callback);
+            } else if (meta.downloadUrl != null && !meta.downloadUrl.isBlank()) {
+                LOG.info("Downloading model from " + meta.downloadUrl);
+                downloadUrlToFile(meta.downloadUrl, tempFile, meta.sizeBytes, callback);
+            } else {
+                throw new IOException("No download URL or parts defined for " + meta.filename + ".");
+            }
+
+            verifyDownload(tempFile, meta);
+            Files.move(tempFile, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            LOG.info("Download complete: " + target);
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw AraFailures.modelDownload(meta.filename, e);
         }
-
-        verifyDownload(tempFile, meta);
-        Files.move(tempFile, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        LOG.info("Download complete: " + target);
     }
 
     public boolean isDownloadAvailable(ModelRelease.DefaultModel meta) {
@@ -117,10 +128,30 @@ public final class ModelDownloader {
     private long downloadUrlToStream(
             String url, OutputStream out, long downloadedSoFar, long totalBytes, ProgressCallback callback)
             throws IOException, InterruptedException {
+        try {
+            return RetryExecutor.run(
+                    "model-part:" + url,
+                    () -> downloadUrlToStreamOnce(url, out, downloadedSoFar, totalBytes, callback));
+        } catch (IOException | InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            if (e.getCause() instanceof IOException io) {
+                throw io;
+            }
+            if (e.getCause() instanceof InterruptedException ie) {
+                throw ie;
+            }
+            throw new IOException("Model part download failed: " + url, e);
+        }
+    }
+
+    private long downloadUrlToStreamOnce(
+            String url, OutputStream out, long downloadedSoFar, long totalBytes, ProgressCallback callback)
+            throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .timeout(DOWNLOAD_TIMEOUT)
-                .header("User-Agent", USER_AGENT)
+                .timeout(AraConfig.modelDownloadTimeout())
+                .header("User-Agent", AraConfig.userAgent("model-download"))
                 .GET()
                 .build();
 

@@ -1,5 +1,6 @@
 package tech.rawden.ara.ai;
 
+import tech.rawden.ara.core.AraConfig;
 import tech.rawden.ara.model.AppSettings;
 import tech.rawden.ara.model.InferenceConfig;
 
@@ -24,13 +25,21 @@ import java.util.regex.Pattern;
 
 /**
  * On-device multi-model router: light ~7B stays hot; heavy ~30B loads on demand for complex work.
- * Integrates with {@link RoutingInferenceService} before each inference or Vex tool round.
+ *
+ * <p>Routes each request based on {@link ModelTier} + {@link ModelLoadProfile}; falls back per
+ * {@link RoutingMode} (AUTO keyword escalation, LIGHT_ONLY, HEAVY_ONLY). Integrates with
+ * {@link RoutingInferenceService} before each inference or Vex tool round.
+ *
+ * <p><b>Vex integration:</b> tool-round continuations re-use the active tier; keyword patterns include
+ * {@code execute_command} and {@code vex protocol} to escalate for agent work.
+ *
+ * <p><b>Thread-safety:</b> tier state is {@code volatile}; JavaFX badge properties are updated from
+ * inference virtual threads — bind in UI only on the FX thread. Model load delegates to
+ * {@link LlamaCppInferenceService} which serializes {@code loadModel}.
  */
 public final class ModelRouter {
 
     private static final Logger LOG = AppLog.of("routing");
-
-    private static final long HEAVY_IDLE_UNLOAD_MINUTES = 10;
 
     private static final Pattern HEAVY_KEYWORDS = Pattern.compile(
             "(?i)\\b("
@@ -223,7 +232,7 @@ public final class ModelRouter {
                         switchToLightAfterHeavyUse();
                     }
                 },
-                HEAVY_IDLE_UNLOAD_MINUTES,
+                AraConfig.heavyIdleUnloadMinutes(),
                 TimeUnit.MINUTES);
     }
 
@@ -292,6 +301,20 @@ public final class ModelRouter {
         if (userOverride == RoutingMode.LIGHT_ONLY && activeTier == ModelTier.HEAVY) {
             switchToLightAfterHeavyUse();
         }
+    }
+
+    /**
+     * Applies routing fields from hot-reloaded settings without persisting back to disk.
+     *
+     * @implNote Used by {@link tech.rawden.ara.model.SettingsReloader} in developer mode.
+     */
+    public void applySettings(AppSettings settings) {
+        if (settings == null) {
+            return;
+        }
+        userOverride = settings.getRoutingMode();
+        routingModeProperty.set(userOverride);
+        updateBadge();
     }
 
     public RoutingMode getUserOverride() {

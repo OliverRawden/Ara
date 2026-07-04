@@ -1,6 +1,7 @@
 package tech.rawden.ara.ai;
 
 import tech.rawden.ara.core.AppLog;
+import tech.rawden.ara.core.AraConfig;
 import tech.rawden.ara.core.AraPaths;
 
 import java.io.IOException;
@@ -15,8 +16,14 @@ import java.util.stream.Stream;
 
 /**
  * Discovers, downloads, and resolves GGUF model files under {@code ~/Documents/Ara/models/}.
- * Default model metadata and download URLs come from {@code installers/models.json} on the Ara
- * GitHub repo (see {@link ModelCatalog}).
+ *
+ * <p>Default and heavy model metadata come from {@link ModelCatalog} ({@code installers/models.json}
+ * on GitHub). Downloads use {@link ModelDownloader} with exponential-backoff retries.
+ *
+ * <p><b>Thread-safety:</b> safe for concurrent reads; download methods should not overlap the same
+ * target filename without external coordination.
+ *
+ * @apiNote UI progress callbacks should marshal to the FX thread via {@link tech.rawden.ara.platform.PlatformThread}.
  */
 public class ModelManager {
 
@@ -30,7 +37,7 @@ public class ModelManager {
     public ModelManager() {
         this.httpClient = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
-                .connectTimeout(Duration.ofSeconds(30))
+                .connectTimeout(AraConfig.httpConnectTimeout())
                 .build();
         this.downloader = new ModelDownloader(httpClient);
     }
@@ -38,7 +45,7 @@ public class ModelManager {
     public ModelManager(int downloadChunkSizeMb) {
         this.httpClient = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
-                .connectTimeout(Duration.ofSeconds(30))
+                .connectTimeout(AraConfig.httpConnectTimeout())
                 .build();
         this.downloader = new ModelDownloader(httpClient, downloadChunkSizeMb);
     }

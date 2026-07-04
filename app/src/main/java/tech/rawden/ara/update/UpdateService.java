@@ -1,6 +1,8 @@
 package tech.rawden.ara.update;
 
+import tech.rawden.ara.core.AraConfig;
 import tech.rawden.ara.util.OsType;
+import tech.rawden.ara.util.RetryExecutor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -12,26 +14,25 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * Optional, privacy-respecting update checks against {@code installers/latest.json}.
- * Network access only occurs when the user enables checks or taps "Check for updates now".
+ * Optional, privacy-respecting update checks against {@link AraConfig#UPDATE_METADATA_URL}.
+ *
+ * <p>Network access only occurs when the user enables checks or taps "Check for updates now".
+ * Metadata fetches use {@link RetryExecutor} for transient failures.
+ *
+ * <p><b>Thread-safety:</b> each instance is safe for concurrent use from virtual threads.
  */
 public class UpdateService {
 
     private static final Logger LOG = Logger.getLogger(UpdateService.class.getName());
 
     /** Public raw GitHub URL for {@code installers/latest.json} on the main branch. */
-    public static final String DEFAULT_METADATA_URL =
-            "https://raw.githubusercontent.com/OliverRawden/Ara/main/installers/latest.json";
+    public static final String DEFAULT_METADATA_URL = AraConfig.UPDATE_METADATA_URL;
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final Duration METADATA_TIMEOUT = Duration.ofSeconds(20);
-    private static final Duration DOWNLOAD_TIMEOUT = Duration.ofMinutes(30);
-    private static final String USER_AGENT = "Ara/" + AppVersion.current() + " (update-check)";
 
     private final HttpClient httpClient;
     private final String metadataUrl;
@@ -44,7 +45,7 @@ public class UpdateService {
         this.metadataUrl = metadataUrl;
         this.httpClient = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
-                .connectTimeout(METADATA_TIMEOUT)
+                .connectTimeout(AraConfig.httpConnectTimeout())
                 .build();
     }
 
@@ -102,17 +103,18 @@ public class UpdateService {
 
         LOG.info("Downloading update installer from " + url);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .header("User-Agent", USER_AGENT)
-                .header("Accept", "application/octet-stream")
-                .GET()
-                .timeout(DOWNLOAD_TIMEOUT)
-                .build();
-
         Path tempFile = target.resolveSibling(fileName + ".part");
         try {
-            HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            HttpResponse<InputStream> response = RetryExecutor.run("update-download", () -> {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(uri)
+                        .header("User-Agent", AraConfig.userAgent("update-download"))
+                        .header("Accept", "application/octet-stream")
+                        .GET()
+                        .timeout(AraConfig.updateDownloadTimeout())
+                        .build();
+                return httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            });
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw new IOException("Download failed with HTTP " + response.statusCode());
             }
@@ -136,29 +138,40 @@ public class UpdateService {
             Files.move(tempFile, target);
             launchInstaller(target);
             return target;
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException e) {
             Files.deleteIfExists(tempFile);
             throw e;
+        } catch (Exception e) {
+            Files.deleteIfExists(tempFile);
+            throw new IOException("Update download failed", e);
         }
     }
 
     private ReleaseMetadata fetchMetadata() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(metadataUrl))
-                .header("Accept", "application/json")
-                .header("User-Agent", USER_AGENT)
-                .GET()
-                .timeout(METADATA_TIMEOUT)
-                .build();
+        try {
+            return RetryExecutor.run("update-metadata", () -> {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(metadataUrl))
+                        .header("Accept", "application/json")
+                        .header("User-Agent", AraConfig.userAgent("update-check"))
+                        .GET()
+                        .timeout(AraConfig.metadataTimeout())
+                        .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new IOException("Could not fetch update metadata (HTTP " + response.statusCode() + ")");
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                    throw new IOException("Could not fetch update metadata (HTTP " + response.statusCode() + ")");
+                }
+
+                ReleaseMetadata metadata = MAPPER.readValue(response.body(), ReleaseMetadata.class);
+                LOG.fine("Fetched update metadata: latest=" + metadata.latestVersion);
+                return metadata;
+            });
+        } catch (IOException | InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException("Could not fetch update metadata", e);
         }
-
-        ReleaseMetadata metadata = MAPPER.readValue(response.body(), ReleaseMetadata.class);
-        LOG.fine("Fetched update metadata: latest=" + metadata.latestVersion);
-        return metadata;
     }
 
     private static void launchInstaller(Path file) throws IOException {
