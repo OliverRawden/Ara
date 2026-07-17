@@ -1,0 +1,48 @@
+[
+  {
+    "label": "Launch Ara (Java)",
+    "adapter": "Java",
+    "request": "launch",
+    "mainClass": "tech.rawden.ara.Main",
+    "projectName": "app",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "vmArgs": [
+      "-Xms300m",
+      "-Xmx4G",
+      "-XX:+UseG1GC",
+      "-XX:+UseStringDeduplication",
+      "-Djavafx.enablePreview=true",
+      "-Dapple.awt.application.appearance=system",
+      "-Xdock:name=Ara",
+      "--enable-native-access=com.sun.jna",
+      "--enable-native-access=javafx.graphics",
+      "--enable-native-access=javafx.web",
+      "--enable-native-access=javafx.media",
+      "--enable-native-access=de.kherud.llama",
+      "--add-exports",
+      "javafx.graphics/com.sun.javafx.tk=tech.rawden.ara",
+      "--add-opens",
+      "javafx.graphics/com.sun.glass.ui=tech.rawden.ara",
+      "--add-opens",
+      "javafx.graphics/javafx.stage=tech.rawden.ara",
+      "--add-opens",
+      "javafx.graphics/com.sun.javafx.tk=tech.rawden.ara",
+      "--add-opens",
+      "javafx.graphics/com.sun.javafx.tk.quantum=tech.rawden.ara",
+      "-Dtech.rawden.ara.useVirtualThreads=false",
+      "-Dtech.rawden.ara.writeLogs=true",
+      "-Dtech.rawden.ara.writeSysOut=true",
+      "-Dtech.rawden.ara.logLevel=trace"
+    ],
+    "console": "integratedTerminal"
+  },
+  {
+    "label": "Attach Ara (Gradle --debug-jvm :5005)",
+    "adapter": "Java",
+    "request": "attach",
+    "hostName": "localhost",
+    "port": 5005,
+    "projectName": "app",
+    "timeout": 60000
+  }
+]

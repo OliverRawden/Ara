@@ -1,0 +1,131 @@
+// Ara — project settings for Zed IDE
+// Docs: https://zed.dev/docs/configuring-zed
+// Java extension: https://github.com/zed-extensions/java
+//
+// Prerequisites:
+//   1. Install the "Java" extension (zed: extensions → Java)
+//   2. JDK 21+ on PATH (JDK 25 recommended; matches this project)
+//   3. Open the repo root (folder that contains build.gradle / gradlew)
+//
+// If JDTLS fails to start, set java_home under lsp.jdtls.settings to your
+// JDK 25 install, e.g. on Homebrew macOS:
+//   /opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home
+// Or:  /usr/libexec/java_home -v 25
+{
+  "languages": {
+    "Java": {
+      "language_servers": ["jdtls"],
+      "formatter": "language_server",
+      "tab_size": 4,
+      "preferred_line_length": 120
+    }
+  },
+  "lsp": {
+    "jdtls": {
+      "settings": {
+        // Leave unset to use $JAVA_HOME / java on PATH (must be 21+).
+        // "java_home": "/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home",
+        "lombok_support": true,
+        "min_memory": "1G",
+        "max_memory": "2G",
+        "check_updates": "once"
+      },
+      "initialization_options": {
+        "settings": {
+          "java": {
+            "configuration": {
+              "updateBuildConfiguration": "automatic",
+              "runtimes": [
+                {
+                  "name": "JavaSE-25",
+                  "path": "/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home",
+                  "default": true
+                }
+              ]
+            },
+            "import": {
+              "gradle": {
+                "enabled": true,
+                "wrapper": {
+                  "enabled": true
+                },
+                "annotationProcessing": {
+                  "enabled": true
+                },
+                // JVM for the Gradle daemon (must be 17+; this project targets 25)
+                "java": {
+                  "home": "/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home"
+                }
+              },
+              "maven": {
+                "enabled": false
+              },
+              "exclusions": [
+                "**/node_modules/**",
+                "**/.metadata/**",
+                "**/build/**",
+                "**/dist/build/**",
+                "**/dist/javafx/**",
+                "**/dist/model-upload/**",
+                "**/dist/model-upload-heavy/**"
+              ]
+            },
+            "autobuild": {
+              "enabled": true
+            },
+            "eclipse": {
+              "downloadSources": true
+            },
+            "signatureHelp": {
+              "enabled": true
+            },
+            "completion": {
+              "enabled": true,
+              "importOrder": [
+                "tech.rawden",
+                "javafx",
+                "",
+                "java",
+                "#"
+              ]
+            },
+            "format": {
+              "enabled": true
+            },
+            "saveActions": {
+              "organizeImports": false
+            },
+            "errors": {
+              "incompleteClasspath": {
+                "severity": "warning"
+              }
+            },
+            "project": {
+              "resourceFilters": [
+                "node_modules",
+                "\\.git",
+                "build",
+                "dist/build",
+                "dist/javafx",
+                "dist/model-upload",
+                "dist/model-upload-heavy"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "gradle-language-server": {
+      "settings": {
+        "java_home": "/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home",
+        "gradleWrapperEnabled": true
+      }
+    }
+  },
+  "terminal": {
+    "env": {
+      // Helps tasks / integrated terminal pick the project JDK on this machine
+      "JAVA_HOME": "/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home"
+    }
+  }
+}
