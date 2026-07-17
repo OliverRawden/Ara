@@ -92,6 +92,8 @@ Vex defines protocols and ara-tool schemas; Ara auto-loads them into every syste
 RELEASE=true ./gradlew :dist:jpackage
 ```
 
+**Zed IDE:** open the repo root, install the **Java** extension, then command palette → `task: spawn` → **Run Ara**. See [`.zed/README.md`](.zed/README.md) for LSP, tasks, and debug setup.
+
 Outputs land in `dist/build/dist/artifacts/`. Binaries are **not** committed to git.
 
 ---

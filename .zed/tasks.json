@@ -1,0 +1,66 @@
+[
+  {
+    "label": "Run Ara",
+    "command": "./gradlew",
+    "args": [":app:run"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "never",
+    "tags": ["java-main-method"]
+  },
+  {
+    "label": "Run Ara (debug wait :5005)",
+    "command": "./gradlew",
+    "args": [
+      ":app:run",
+      "--debug-jvm"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "never"
+  },
+  {
+    "label": "Compile Ara",
+    "command": "./gradlew",
+    "args": [":app:compileJava"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": true,
+    "reveal": "always",
+    "hide": "on_success"
+  },
+  {
+    "label": "Format (Spotless)",
+    "command": "./gradlew",
+    "args": ["spotlessApply"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": true,
+    "reveal": "always",
+    "hide": "on_success"
+  },
+  {
+    "label": "Clean + Compile Ara",
+    "command": "./gradlew",
+    "args": [":app:clean", ":app:compileJava"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "on_success"
+  },
+  {
+    "label": "Gradle: list app tasks",
+    "command": "./gradlew",
+    "args": [":app:tasks", "--group=application"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": true,
+    "reveal": "always",
+    "hide": "never"
+  }
+]

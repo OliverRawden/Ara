@@ -472,7 +472,23 @@ Light model preloads in background after session ready. Heavy loads on routing e
 ./gradlew :app:run
 ```
 
-IntelliJ: open `Ara/`, trust Gradle, run **run app** configuration.
+**IntelliJ:** open `Ara/`, trust Gradle, run **run app** configuration.
+
+**Zed IDE:** open the repo root (folder with `build.gradle` / `gradlew`). Project config lives in `.zed/`:
+
+| File | Purpose |
+|------|---------|
+| `.zed/settings.json` | JDTLS + Gradle LSP (Java 25, Lombok, wrapper, import exclusions) |
+| `.zed/tasks.json` | **Run Ara**, compile, Spotless, debug-wait |
+| `.zed/debug.json` | Launch / attach debugger scenarios |
+| `.zed/README.md` | Full one-time setup |
+
+1. Install the **Java** extension (`zed: extensions`).
+2. JDK 25 on PATH (or set `java_home` / `JAVA_HOME` paths in `.zed/settings.json` to your install — Homebrew defaults are pre-filled for this machine).
+3. Command palette → `task: spawn` → **Run Ara** (same as `./gradlew :app:run`).
+4. Debug: **Run Ara (debug wait :5005)** then attach with **Attach Ara (Gradle --debug-jvm :5005)**. Prefer Gradle attach over direct JDTLS launch for JavaFX + modular + llama/JNA.
+
+After cloning, `workspace: reload` once so JDTLS imports the Gradle multi-module project.
 
 ---
 
@@ -511,10 +527,12 @@ Work through TODO items or the user's request. Prefer code over doc-only changes
 | Developer diagnostics | `app/.../core/AppLog.java`, `app/.../ui/DeveloperLogWindow.java` |
 | Vex tools | `app/.../integration/`, `app/.../tool/` |
 | Packaging | `dist/jpackage.gradle`, `dist/pkg/`, `dist/msi/` |
+| Zed IDE | `.zed/settings.json`, `.zed/tasks.json`, `.zed/debug.json`, `.zed/README.md` |
 | CI | `.github/workflows/` |
 
 ```bash
 ./gradlew :app:compileJava
+# or in Zed: task: spawn → Compile Ara / Run Ara
 ```
 
 ### 4. Update GROK.md
