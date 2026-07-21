@@ -19,7 +19,7 @@ configurations {
 dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind:2.20.0"
     implementation 'de.kherud:llama:4.1.0'
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.0"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.0"
     implementation "org.kordamp.ikonli:ikonli-material2-pack:12.4.0"
     implementation "org.kordamp.ikonli:ikonli-materialdesign2-pack:12.4.0"
     implementation "org.kordamp.ikonli:ikonli-javafx:12.4.0"
